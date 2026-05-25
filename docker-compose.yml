@@ -12,10 +12,16 @@ services:
       - SECRET_KEY=eduquest-secret-key-change-me-2026
       - PARENT_PASSWORD=parent123
       - CHILD_PASSWORD=child123
+      - CHILD_NAME=Тимофей
       - TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_HERE
       - TELEGRAM_CHAT_ID=YOUR_CHAT_ID_HERE
-      - CHILD_NAME=Тимофей
       - UPLOAD_DIR=/app/data/uploads
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   frontend:
     build: ./frontend
@@ -24,4 +30,5 @@ services:
     ports:
       - "0.0.0.0:8090:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
