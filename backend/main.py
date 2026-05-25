@@ -5,15 +5,16 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import sqlite3, os, jwt, shutil, json
 from datetime import datetime, timedelta
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
 import httpx, asyncio
 
-DB_PATH        = os.getenv("DB_PATH",        "/app/data/eduquest.db")
-SECRET_KEY     = os.getenv("SECRET_KEY",     "eduquest-secret-key-2026")
-PARENT_PASS    = os.getenv("PARENT_PASSWORD","parent123")
-CHILD_PASS     = os.getenv("CHILD_PASSWORD", "child123")
-UPLOAD_DIR     = os.getenv("UPLOAD_DIR",     "/app/data/uploads")
+DB_PATH        = os.getenv("DB_PATH",         "/app/data/eduquest.db")
+SECRET_KEY     = os.getenv("SECRET_KEY",      "eduquest-secret-key-2026")
+PARENT_PASS    = os.getenv("PARENT_PASSWORD", "parent123")
+CHILD_PASS     = os.getenv("CHILD_PASSWORD",  "child123")
+CHILD_NAME     = os.getenv("CHILD_NAME",      "Тимофей")
+UPLOAD_DIR     = os.getenv("UPLOAD_DIR",      "/app/data/uploads")
 TG_TOKEN       = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TG_CHAT_ID     = os.getenv("TELEGRAM_CHAT_ID",   "")
 
@@ -71,10 +72,10 @@ def init_db():
         );
 
         CREATE TABLE IF NOT EXISTS rewards (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            name        TEXT NOT NULL,
-            cost_coins  INTEGER NOT NULL,
-            status      TEXT DEFAULT 'pending',
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            name         TEXT NOT NULL,
+            cost_coins   INTEGER NOT NULL,
+            status       TEXT DEFAULT 'pending',
             requested_at TEXT DEFAULT (datetime('now')),
             approved_at  TEXT
         );
@@ -93,7 +94,7 @@ def init_db():
 # ── Telegram ──────────────────────────────────────────────────────────────────
 
 async def tg_send(text: str):
-    if not TG_TOKEN or not TG_CHAT_ID:
+    if not TG_TOKEN or not TG_CHAT_ID or TG_TOKEN == "YOUR_BOT_TOKEN_HERE":
         return
     try:
         async with httpx.AsyncClient(timeout=5) as client:
@@ -146,15 +147,40 @@ class LoginIn(BaseModel):
 
 @app.post("/api/login")
 def login(data: LoginIn):
-    expected = PARENT_PASS if data.role == "parent" else CHILD_PASS
-    if data.password != expected:
+    # Re-read env each request so changing docker-compose + recreate works instantly
+    parent_pass = os.environ.get("PARENT_PASSWORD", "parent123")
+    child_pass  = os.environ.get("CHILD_PASSWORD",  "child123")
+    expected = parent_pass if data.role == "parent" else child_pass
+    if data.password.strip() != expected.strip():
         raise HTTPException(status_code=401, detail="Wrong password")
     return {"token": make_token(data.role), "role": data.role}
+
+@app.get("/api/config")
+def get_config():
+    """Public config — child name, no secrets"""
+    return {"child_name": os.environ.get("CHILD_NAME", "Тимофей")}
+
+@app.get("/api/health")
+def health():
+    p = os.environ.get("PARENT_PASSWORD", "parent123")
+    c = os.environ.get("CHILD_PASSWORD",  "child123")
+    return {
+        "ok": True,
+        "parent_pass_set": p != "parent123",
+        "child_pass_set":  c != "child123",
+        "parent_pass_len": len(p),
+        "child_pass_len":  len(c),
+    }
 
 # ── Lessons ───────────────────────────────────────────────────────────────────
 
 SUBJECTS = ["math", "russian", "science", "history"]
-SUBJECT_LABELS = {"math": "Математика", "russian": "Русский язык", "science": "Окружающий мир", "history": "История"}
+SUBJECT_LABELS = {
+    "math":    "Математика",
+    "russian": "Русский язык",
+    "science": "Окружающий мир",
+    "history": "История"
+}
 
 class LessonIn(BaseModel):
     subject: str
@@ -231,7 +257,7 @@ def delete_lesson(lesson_id: int, role: str = Depends(require_parent)):
     conn.close()
     return {"ok": True}
 
-# ── Upload audio / image ──────────────────────────────────────────────────────
+# ── Upload ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/lessons/{lesson_id}/upload-audio")
 async def upload_audio(lesson_id: int, file: UploadFile = File(...), role: str = Depends(require_parent)):
@@ -285,8 +311,9 @@ async def start_lesson(data: StartLessonIn, role: str = Depends(require_any)):
     progress_id = c.lastrowid
     conn.commit()
     conn.close()
+    child = os.environ.get("CHILD_NAME", "Тимофей")
     asyncio.create_task(tg_send(
-        f"📚 <b>Артём начал урок</b>\n"
+        f"📚 <b>{child} начал урок</b>\n"
         f"Предмет: {SUBJECT_LABELS.get(lesson['subject'], lesson['subject'])}\n"
         f"Тема: {lesson['topic']}"
     ))
@@ -313,8 +340,9 @@ async def finish_lesson(data: FinishLessonIn, role: str = Depends(require_any)):
     conn.commit()
     streak_row = conn.execute("SELECT days FROM streak WHERE id=1").fetchone()
     conn.close()
+    child = os.environ.get("CHILD_NAME", "Тимофей")
     asyncio.create_task(tg_send(
-        f"✅ <b>Артём завершил урок!</b>\n"
+        f"✅ <b>{child} завершил урок!</b>\n"
         f"Тема: {lesson['topic'] if lesson else ''}\n"
         f"Результат: {data.score}/5\n"
         f"Заработано: +{coins} монет 🪙\n"
@@ -342,30 +370,35 @@ def get_progress(role: str = Depends(require_any)):
     conn.close()
     return [dict(r) for r in rows]
 
-# ── Stats / Analytics ─────────────────────────────────────────────────────────
+# ── Stats ─────────────────────────────────────────────────────────────────────
 
 @app.get("/api/stats")
 def get_stats(role: str = Depends(require_any)):
     conn = get_conn()
-    total_lessons = conn.execute("SELECT COUNT(*) as n FROM progress WHERE finished_at IS NOT NULL").fetchone()["n"]
-    total_coins_earned = conn.execute("SELECT COALESCE(SUM(amount),0) as s FROM coins WHERE type='earned'").fetchone()["s"]
-    total_coins_spent  = conn.execute("SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'").fetchone()["s"]
-    balance = total_coins_earned - total_coins_spent
-    streak  = conn.execute("SELECT days FROM streak WHERE id=1").fetchone()
-    avg_score = conn.execute("SELECT AVG(score*1.0/max_score) as a FROM progress WHERE finished_at IS NOT NULL").fetchone()["a"]
+    total_lessons = conn.execute(
+        "SELECT COUNT(*) as n FROM progress WHERE finished_at IS NOT NULL"
+    ).fetchone()["n"]
+    total_coins_earned = conn.execute(
+        "SELECT COALESCE(SUM(amount),0) as s FROM coins WHERE type='earned'"
+    ).fetchone()["s"]
+    total_coins_spent = conn.execute(
+        "SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'"
+    ).fetchone()["s"]
+    balance   = total_coins_earned - total_coins_spent
+    streak    = conn.execute("SELECT days FROM streak WHERE id=1").fetchone()
+    avg_score = conn.execute(
+        "SELECT AVG(score*1.0/max_score) as a FROM progress WHERE finished_at IS NOT NULL"
+    ).fetchone()["a"]
     by_subject = conn.execute("""
         SELECT l.subject, COUNT(*) as cnt, AVG(p.score*1.0/p.max_score) as avg
         FROM progress p JOIN lessons l ON p.lesson_id=l.id
-        WHERE p.finished_at IS NOT NULL
-        GROUP BY l.subject
+        WHERE p.finished_at IS NOT NULL GROUP BY l.subject
     """).fetchall()
     week_activity = conn.execute("""
         SELECT date(started_at) as day, COUNT(*) as cnt,
                SUM(CASE WHEN finished_at IS NOT NULL THEN 1 ELSE 0 END) as done
-        FROM progress
-        WHERE started_at >= date('now','-7 days')
-        GROUP BY date(started_at)
-        ORDER BY day
+        FROM progress WHERE started_at >= date('now','-7 days')
+        GROUP BY date(started_at) ORDER BY day
     """).fetchall()
     weak_topics = conn.execute("""
         SELECT l.topic, l.subject, AVG(p.score*1.0/p.max_score) as avg, COUNT(*) as attempts
@@ -376,14 +409,14 @@ def get_stats(role: str = Depends(require_any)):
     """).fetchall()
     conn.close()
     return {
-        "total_lessons": total_lessons,
-        "balance": balance,
+        "total_lessons":  total_lessons,
+        "balance":        balance,
         "total_coins_earned": total_coins_earned,
-        "streak_days": streak["days"] if streak else 0,
-        "avg_score": round(avg_score * 100) if avg_score else 0,
-        "by_subject": [dict(r) for r in by_subject],
-        "week_activity": [dict(r) for r in week_activity],
-        "weak_topics": [dict(r) for r in weak_topics],
+        "streak_days":    streak["days"] if streak else 0,
+        "avg_score":      round(avg_score * 100) if avg_score else 0,
+        "by_subject":     [dict(r) for r in by_subject],
+        "week_activity":  [dict(r) for r in week_activity],
+        "weak_topics":    [dict(r) for r in weak_topics],
     }
 
 # ── Coins & Rewards ───────────────────────────────────────────────────────────
@@ -391,8 +424,12 @@ def get_stats(role: str = Depends(require_any)):
 @app.get("/api/coins/balance")
 def get_balance(role: str = Depends(require_any)):
     conn = get_conn()
-    earned = conn.execute("SELECT COALESCE(SUM(amount),0) as s FROM coins WHERE type='earned'").fetchone()["s"]
-    spent  = conn.execute("SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'").fetchone()["s"]
+    earned = conn.execute(
+        "SELECT COALESCE(SUM(amount),0) as s FROM coins WHERE type='earned'"
+    ).fetchone()["s"]
+    spent = conn.execute(
+        "SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'"
+    ).fetchone()["s"]
     conn.close()
     return {"balance": earned - spent, "earned": earned, "spent": spent}
 
@@ -403,8 +440,12 @@ class RewardIn(BaseModel):
 @app.post("/api/rewards/request")
 async def request_reward(data: RewardIn, role: str = Depends(require_any)):
     conn = get_conn()
-    earned = conn.execute("SELECT COALESCE(SUM(amount),0) as s FROM coins WHERE type='earned'").fetchone()["s"]
-    spent  = conn.execute("SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'").fetchone()["s"]
+    earned = conn.execute(
+        "SELECT COALESCE(SUM(amount),0) as s FROM coins WHERE type='earned'"
+    ).fetchone()["s"]
+    spent = conn.execute(
+        "SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'"
+    ).fetchone()["s"]
     balance = earned - spent
     if balance < data.cost_coins:
         conn.close()
@@ -413,8 +454,9 @@ async def request_reward(data: RewardIn, role: str = Depends(require_any)):
     c.execute("INSERT INTO rewards (name, cost_coins) VALUES (?,?)", (data.name, data.cost_coins))
     conn.commit()
     conn.close()
+    child = os.environ.get("CHILD_NAME", "Тимофей")
     asyncio.create_task(tg_send(
-        f"🎁 <b>Артём запрашивает награду!</b>\n"
+        f"🎁 <b>{child} запрашивает награду!</b>\n"
         f"Награда: {data.name}\n"
         f"Стоимость: {data.cost_coins} монет 🪙\n\n"
         f"Открой кабинет родителя чтобы одобрить: http://147.45.42.169:8090"
@@ -424,7 +466,9 @@ async def request_reward(data: RewardIn, role: str = Depends(require_any)):
 @app.get("/api/rewards")
 def get_rewards(role: str = Depends(require_any)):
     conn = get_conn()
-    rows = conn.execute("SELECT * FROM rewards ORDER BY requested_at DESC LIMIT 30").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM rewards ORDER BY requested_at DESC LIMIT 30"
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -435,7 +479,10 @@ async def approve_reward(reward_id: int, role: str = Depends(require_parent)):
     if not reward:
         conn.close()
         raise HTTPException(404)
-    conn.execute("UPDATE rewards SET status='approved', approved_at=datetime('now') WHERE id=?", (reward_id,))
+    conn.execute(
+        "UPDATE rewards SET status='approved', approved_at=datetime('now') WHERE id=?",
+        (reward_id,)
+    )
     conn.commit()
     conn.close()
     asyncio.create_task(tg_send(
@@ -449,10 +496,4 @@ def reject_reward(reward_id: int, role: str = Depends(require_parent)):
     conn.execute("UPDATE rewards SET status='rejected' WHERE id=?", (reward_id,))
     conn.commit()
     conn.close()
-    return {"ok": True}
-
-# ── Health ────────────────────────────────────────────────────────────────────
-
-@app.get("/api/health")
-def health():
     return {"ok": True}
