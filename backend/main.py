@@ -299,7 +299,14 @@ async def finish_lesson(data: FinishLessonIn, role: str = Depends(require_any)):
     if not prog:
         conn.close(); raise HTTPException(404)
     lesson = conn.execute("SELECT * FROM lessons WHERE id=?", (prog["lesson_id"],)).fetchone()
-    coins  = (lesson["coins_lesson"] if lesson else 50) + (lesson["coins_boss"] if data.boss_done and lesson else 0)
+    # Монеты за урок пропорциональны результату
+    # 5/5 = 100%, 4/5 = 80%, ..., 0/5 = 10% (минимум за попытку)
+    max_score = 5
+    ratio = max(data.score / max_score, 0.1) if max_score > 0 else 0.1
+    base_coins = lesson["coins_lesson"] if lesson else 50
+    lesson_coins = max(round(base_coins * ratio), 5)  # минимум 5 монет
+    boss_coins = (lesson["coins_boss"] if lesson else 30) if data.boss_done else 0
+    coins = lesson_coins + boss_coins
     conn.execute("UPDATE progress SET finished_at=datetime('now'),score=?,boss_done=?,coins_earned=? WHERE id=?",
                  (data.score, 1 if data.boss_done else 0, coins, data.progress_id))
     conn.execute("INSERT INTO coins (amount,type,note) VALUES (?,?,?)",
