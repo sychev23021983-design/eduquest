@@ -19,6 +19,7 @@ export default function LessonPage() {
   const [bossInput,  setBossInput]  = useState('')
   const [bossCheck,  setBossCheck]  = useState(null)
   const [coinsEarned, setCoins]     = useState(0)
+  const [bossWasDone, setBossWasDone] = useState(false)
   const [audio,      setAudio]      = useState(null)
 
   useEffect(() => { loadLesson() }, [id])
@@ -55,6 +56,7 @@ export default function LessonPage() {
   function checkBoss() {
     if (!bossInput.trim()) return
     setBossCheck('submitted')
+    setBossWasDone(true)
     finishLesson(true)
   }
 
@@ -219,23 +221,79 @@ export default function LessonPage() {
         )}
 
         {/* DONE */}
-        {phase === 'done' && (
-          <div style={{ textAlign: 'center', paddingTop: 40 }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🏆</div>
-            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Урок завершён!</h2>
-            <div style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 24 }}>
-              Правильных ответов: {score} из {questions.length}
+        {phase === 'done' && (() => {
+          const total = questions.length || 1
+          const pct   = Math.round((score / total) * 100)
+          const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🥇' : pct >= 60 ? '🥈' : pct >= 40 ? '🥉' : '📚'
+          const msg   = pct === 100 ? 'Идеально! Все ответы верны!'
+                      : pct >= 80   ? 'Отлично! Почти всё правильно!'
+                      : pct >= 60   ? 'Хорошая работа!'
+                      : pct >= 40   ? 'Неплохо, но есть над чем поработать.'
+                      :               'В следующий раз будет лучше!'
+          const lessonCoins = coinsEarned - (bossWasDone && lesson ? lesson.coins_boss : 0)
+          return (
+            <div style={{ paddingTop: 20 }}>
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <div style={{ fontSize: 64, marginBottom: 12 }}>{emoji}</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Урок завершён!</h2>
+                <p style={{ color: 'var(--muted)', fontSize: 15 }}>{msg}</p>
+              </div>
+
+              {/* Score bar */}
+              <div className="card" style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontWeight: 600 }}>Правильных ответов</span>
+                  <span style={{ fontWeight: 700, color: pct >= 60 ? 'var(--green)' : 'var(--red)' }}>
+                    {score} / {questions.length}
+                  </span>
+                </div>
+                <div style={{ height: 10, background: 'var(--border)', borderRadius: 5, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 5, transition: 'width .6s',
+                    width: `${pct}%`,
+                    background: pct === 100 ? 'var(--green)' : pct >= 60 ? 'var(--blue)' : 'var(--amber)'
+                  }} />
+                </div>
+                <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{pct}%</div>
+              </div>
+
+              {/* Coins breakdown */}
+              <div className="card" style={{ marginBottom: 24 }}>
+                <div style={{ fontWeight: 600, marginBottom: 12 }}>🪙 Заработано монет</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0',
+                              borderBottom: '1px solid var(--border)', fontSize: 14 }}>
+                  <span style={{ color: 'var(--muted)' }}>За ответы ({score}/{questions.length})</span>
+                  <span style={{ fontWeight: 600 }}>+{lessonCoins}</span>
+                </div>
+                {bossWasDone && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0',
+                                borderBottom: '1px solid var(--border)', fontSize: 14 }}>
+                    <span style={{ color: 'var(--muted)' }}>За финальную задачу ⚔️</span>
+                    <span style={{ fontWeight: 600, color: 'var(--green)' }}>+{lesson?.coins_boss || 30}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0',
+                              fontSize: 18, fontWeight: 700 }}>
+                  <span>Итого</span>
+                  <span style={{ color: 'var(--amber)' }}>+{coinsEarned} 🪙</span>
+                </div>
+              </div>
+
+              {pct < 80 && questions.length > 0 && (
+                <div style={{ background: 'var(--blue-light)', borderRadius: 12, padding: '12px 16px',
+                              fontSize: 14, color: 'var(--blue)', marginBottom: 20 }}>
+                  💡 Пройди урок ещё раз чтобы улучшить результат и заработать больше монет!
+                </div>
+              )}
+
+              <button className="btn btn-primary"
+                      style={{ width: '100%', justifyContent: 'center', padding: '13px 0', fontSize: 16 }}
+                      onClick={() => nav('/')}>
+                На главную →
+              </button>
             </div>
-            <div style={{ background: 'var(--amber-light)', borderRadius: 14, padding: '20px', display: 'inline-block', marginBottom: 32 }}>
-              <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--amber)' }}>+{coinsEarned} 🪙</div>
-              <div style={{ fontSize: 14, color: 'var(--amber)' }}>монет заработано!</div>
-            </div>
-            <br />
-            <button className="btn btn-primary" style={{ padding: '13px 40px', fontSize: 16 }} onClick={() => nav('/')}>
-              На главную →
-            </button>
-          </div>
-        )}
+          )
+        })()}
       </div>
     </div>
   )
