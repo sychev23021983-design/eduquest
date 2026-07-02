@@ -47,7 +47,7 @@
 .dl-dot.done { background: var(--dl-gold); }
 .dl-dot.current { background: #fff; }
 
-.dl-wrap { max-width: 1000px; margin: 0 auto; padding: 22px 16px; }
+.dl-wrap { max-width: 1000px; margin: 0 auto; padding: 22px 16px; padding-top: 60px; }
 
 /* Cover (intro) */
 .dl-cover { text-align: center; padding: 20px 6px 6px; }
@@ -127,7 +127,7 @@
   display: inline-block;
 }
 .dl-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #6f2019; }
-.dl-btn.wide { width: 100%; text-align: center; }
+.dl-btn.wide { width: 100%; max-width: 620px; text-align: center; display: block; margin-left: auto; margin-right: auto; }
 .dl-btn.secondary { background: var(--dl-green); box-shadow: 0 4px 0 #274527; }
 .dl-btn.secondary:active { box-shadow: 0 1px 0 #274527; }
 .dl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -135,11 +135,11 @@
 .dl-coins-note {
   background: #fff8e6; border-left: 4px solid var(--dl-gold);
   padding: 12px 14px; border-radius: 0 4px 4px 0; font-size: 0.92rem;
-  margin-bottom: 18px; font-family: var(--font-mono);
+  margin: 0 auto 18px; max-width: 620px; font-family: var(--font-mono);
 }
 
 /* Questions */
-.dl-options { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.dl-options { display: flex; flex-direction: column; gap: 10px; margin: 14px auto; max-width: 620px; }
 .dl-option {
   font-family: var(--font-body);
   text-align: left;
@@ -157,14 +157,14 @@
 .dl-option.wrong { background: #fbe9e7; border-color: var(--dl-red); color: var(--dl-red); }
 .dl-option:disabled { cursor: default; }
 
-.dl-feedback { font-family: var(--font-mono); font-size: 0.9rem; padding: 10px 12px; border-radius: 4px; margin: 12px 0; }
+.dl-feedback { font-family: var(--font-mono); font-size: 0.9rem; padding: 10px 12px; border-radius: 4px; margin: 12px auto; max-width: 620px; }
 .dl-feedback.correct { background: #e6f2e6; color: var(--dl-green); }
 .dl-feedback.wrong { background: #fbe9e7; color: var(--dl-red); }
 
 /* Boss task */
 .dl-boss-header {
   background: var(--dl-navy); color: var(--paper);
-  border-radius: 10px; padding: 20px; margin-bottom: 18px;
+  border-radius: 10px; padding: 20px; margin: 0 auto 18px; max-width: 620px;
 }
 .dl-boss-header .dl-eyebrow { color: var(--dl-gold); }
 .dl-boss-header h2 { font-family: var(--font-display); font-size: 1.2rem; margin: 4px 0 10px; }
@@ -172,10 +172,11 @@
 .dl-boss-header .dl-reward { margin-top: 10px; font-size: 0.85rem; color: var(--dl-gold); font-family: var(--font-mono); }
 
 .dl-textarea {
-  width: 100%; min-height: 90px; font-family: var(--font-body);
+  width: 100%; max-width: 620px; min-height: 90px; font-family: var(--font-body);
   font-size: 1rem; padding: 12px; border: 2px solid var(--ink); border-radius: 8px;
-  margin-bottom: 12px; background: var(--paper);
+  margin: 0 auto 12px; display: block; background: var(--paper);
 }
+.dl-hint { max-width: 620px; margin: 0 auto; }
 .dl-hint summary { cursor: pointer; color: #6b5a3f; font-size: 0.88rem; font-family: var(--font-mono); margin-bottom: 6px; }
 .dl-hint p { margin-top: 6px; font-size: 0.9rem; padding: 8px 12px; background: #fff8e6; border-radius: 6px; }
 
