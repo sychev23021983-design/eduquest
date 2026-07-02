@@ -98,7 +98,7 @@ export default function ChildHome() {
 
       <div className="gh-shell" style={{ gridTemplateColumns: gridCols, gridTemplateRows: gridRows, gridTemplateAreas: gridAreas }}>
         {hasLeft && (
-          <div className="gh-side-panel gh-img-area" style={{ backgroundImage: `url(${settings.sidebar_left_url})` }} />
+          <img className="gh-panel-img gh-img-area" src={settings.sidebar_left_url} alt="" />
         )}
 
         <div className="gh-stats-area">
@@ -286,7 +286,7 @@ export default function ChildHome() {
           )}
         </div>
 
-        {hasRight && <div className="gh-side-panel gh-right-area" style={{ backgroundImage: `url(${settings.sidebar_right_url})` }} />}
+        {hasRight && <img className="gh-panel-img gh-right-area" src={settings.sidebar_right_url} alt="" />}
       </div>
     </div>
   )
