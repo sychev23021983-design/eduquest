@@ -1,0 +1,197 @@
+/* Тема "Детектив чисел" — визуальный стиль прохождения урока (LessonPage) */
+.detective-lesson {
+  --board:#3b2f22;
+  --board-dark:#2c2318;
+  --paper:#f4ecd8;
+  --paper-dark:#e7dcc0;
+  --ink:#2a2118;
+  --dl-red:#a13327;
+  --dl-gold:#c99a3e;
+  --dl-navy:#1f2a38;
+  --dl-green:#3f6b3f;
+  --font-display:'Special Elite', cursive;
+  --font-body:'Lora', serif;
+  --font-mono:'IBM Plex Mono', monospace;
+
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.03), transparent 40%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0 2px, transparent 2px 4px),
+    var(--board);
+  padding-bottom: 60px;
+}
+
+/* Top bar */
+.dl-topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--dl-navy);
+  color: var(--paper);
+  padding: 12px 18px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  font-family: var(--font-display);
+  letter-spacing: 0.4px;
+}
+.dl-topbar button.dl-back {
+  background: none; border: none; color: #cfcfe6; font-size: 20px; cursor: pointer; flex-shrink: 0;
+}
+.dl-topbar .dl-title { flex: 1; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dl-topbar .dl-sub { font-size: 0.7rem; color: #a9b4c9; font-family: var(--font-body); margin-top: 2px; }
+.dl-dots { display: flex; gap: 4px; flex-shrink: 0; }
+.dl-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+.dl-dot.done { background: var(--dl-gold); }
+.dl-dot.current { background: #fff; }
+
+.dl-wrap { max-width: 680px; margin: 0 auto; padding: 22px 16px; }
+
+/* Cover (intro) */
+.dl-cover { text-align: center; padding: 20px 6px 6px; }
+.dl-stamp {
+  display: inline-block;
+  border: 3px solid var(--dl-red);
+  color: var(--dl-red);
+  font-family: var(--font-display);
+  padding: 8px 18px;
+  transform: rotate(-5deg);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+.dl-magnifier { font-size: 3rem; display: block; margin: 6px auto 16px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+.dl-cover h1 {
+  font-family: var(--font-display);
+  color: var(--paper);
+  font-size: 1.6rem;
+  line-height: 1.35;
+  margin: 6px 0 14px;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+}
+
+/* Cards pinned to the board */
+.dl-card {
+  background: var(--paper);
+  border-radius: 3px;
+  padding: 22px 22px 26px;
+  margin: 0 auto 20px;
+  max-width: 620px;
+  position: relative;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+}
+.dl-card.rot-l { transform: rotate(-0.6deg); }
+.dl-card.rot-r { transform: rotate(0.5deg); }
+.dl-pin {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #e2544a, #8f1f18);
+  box-shadow: 0 3px 5px rgba(0,0,0,0.5);
+}
+.dl-eyebrow {
+  font-family: var(--font-mono);
+  color: var(--dl-red);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.dl-card h2 { font-family: var(--font-display); font-size: 1.25rem; margin: 0 0 12px; color: var(--ink); }
+.dl-card p { line-height: 1.65; font-size: 1rem; margin: 0 0 6px; }
+
+.dl-evidence-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.dl-evidence-tag {
+  font-family: var(--font-mono);
+  background: var(--dl-navy);
+  color: var(--paper);
+  padding: 7px 11px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* Buttons */
+.dl-btn {
+  font-family: var(--font-display);
+  background: var(--dl-red);
+  color: var(--paper);
+  border: none;
+  padding: 13px 26px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #6f2019;
+  transition: transform .08s ease;
+  display: inline-block;
+}
+.dl-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #6f2019; }
+.dl-btn.wide { width: 100%; text-align: center; }
+.dl-btn.secondary { background: var(--dl-green); box-shadow: 0 4px 0 #274527; }
+.dl-btn.secondary:active { box-shadow: 0 1px 0 #274527; }
+.dl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dl-coins-note {
+  background: #fff8e6; border-left: 4px solid var(--dl-gold);
+  padding: 12px 14px; border-radius: 0 4px 4px 0; font-size: 0.92rem;
+  margin-bottom: 18px; font-family: var(--font-mono);
+}
+
+/* Questions */
+.dl-options { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.dl-option {
+  font-family: var(--font-body);
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 2px solid var(--ink);
+  background: var(--paper-dark);
+  cursor: pointer;
+  font-size: 0.98rem;
+  transition: border-color .15s, background .15s;
+}
+.dl-option:hover:not(:disabled) { border-color: var(--dl-gold); }
+.dl-option .dl-letter { font-family: var(--font-mono); font-weight: 700; margin-right: 8px; }
+.dl-option.correct { background: #e6f2e6; border-color: var(--dl-green); color: var(--dl-green); font-weight: 600; }
+.dl-option.wrong { background: #fbe9e7; border-color: var(--dl-red); color: var(--dl-red); }
+.dl-option:disabled { cursor: default; }
+
+.dl-feedback { font-family: var(--font-mono); font-size: 0.9rem; padding: 10px 12px; border-radius: 4px; margin: 12px 0; }
+.dl-feedback.correct { background: #e6f2e6; color: var(--dl-green); }
+.dl-feedback.wrong { background: #fbe9e7; color: var(--dl-red); }
+
+/* Boss task */
+.dl-boss-header {
+  background: var(--dl-navy); color: var(--paper);
+  border-radius: 10px; padding: 20px; margin-bottom: 18px;
+}
+.dl-boss-header .dl-eyebrow { color: var(--dl-gold); }
+.dl-boss-header h2 { font-family: var(--font-display); font-size: 1.2rem; margin: 4px 0 10px; }
+.dl-boss-header p { line-height: 1.7; color: #d8d8ee; }
+.dl-boss-header .dl-reward { margin-top: 10px; font-size: 0.85rem; color: var(--dl-gold); font-family: var(--font-mono); }
+
+.dl-textarea {
+  width: 100%; min-height: 90px; font-family: var(--font-body);
+  font-size: 1rem; padding: 12px; border: 2px solid var(--ink); border-radius: 8px;
+  margin-bottom: 12px; background: var(--paper);
+}
+.dl-hint summary { cursor: pointer; color: #6b5a3f; font-size: 0.88rem; font-family: var(--font-mono); margin-bottom: 6px; }
+.dl-hint p { margin-top: 6px; font-size: 0.9rem; padding: 8px 12px; background: #fff8e6; border-radius: 6px; }
+
+/* Finale */
+.dl-finale { text-align: center; }
+.dl-badge {
+  width: 130px; height: 130px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f4d98c, var(--dl-gold));
+  display: flex; align-items: center; justify-content: center;
+  margin: 6px auto 16px; font-size: 2.6rem;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 6px rgba(255,255,255,0.35);
+}
+.dl-scorebar-track { height: 10px; background: var(--paper-dark); border-radius: 5px; overflow: hidden; }
+.dl-scorebar-fill { height: 100%; border-radius: 5px; transition: width .6s; }
+
+@media (max-width: 520px) {
+  .dl-cover h1 { font-size: 1.3rem; }
+  .dl-card { padding: 18px 16px 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detective-lesson * { transition: none !important; animation: none !important; }
+}

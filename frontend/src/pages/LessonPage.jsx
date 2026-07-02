@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
+import '../detective-theme.css'
 
 export default function LessonPage() {
   const { id } = useParams()
@@ -20,7 +21,6 @@ export default function LessonPage() {
   const [bossCheck,  setBossCheck]  = useState(null)
   const [coinsEarned, setCoins]     = useState(0)
   const [bossWasDone, setBossWasDone] = useState(false)
-  const [audio,      setAudio]      = useState(null)
 
   useEffect(() => { loadLesson() }, [id])
 
@@ -66,72 +66,86 @@ export default function LessonPage() {
     setPhase('done')
   }
 
-  if (!lesson) return <div className="page" style={{ color: 'var(--muted)', paddingTop: 60, textAlign: 'center' }}>Загрузка...</div>
+  if (!lesson) return (
+    <div className="detective-lesson">
+      <div className="dl-wrap" style={{ paddingTop: 60, textAlign: 'center', color: 'var(--paper)' }}>🔍 Открываю дело…</div>
+    </div>
+  )
 
   const q = questions[current]
   const boss = (() => { try { return JSON.parse(lesson.boss_task || 'null') } catch { return null } })()
+  const stars = score
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      {/* Header */}
-      <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--muted)' }}>‹</button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600 }}>{lesson.topic}</div>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            {phase === 'questions' ? `Вопрос ${current + 1} из ${questions.length}` :
-             phase === 'boss' ? 'Финальная задача' :
-             phase === 'done' ? 'Урок завершён!' : 'Введение'}
+    <div className="detective-lesson">
+      {/* Top bar */}
+      <div className="dl-topbar">
+        <button className="dl-back" onClick={() => nav('/')}>‹</button>
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <div className="dl-title">🗂 {lesson.topic}</div>
+          <div className="dl-sub">
+            {phase === 'questions' ? `Улика ${current + 1} из ${questions.length}` :
+             phase === 'boss' ? 'Финальное задание' :
+             phase === 'done' ? 'Дело раскрыто' : 'Дело открыто'}
           </div>
         </div>
         {phase === 'questions' && (
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div className="dl-dots">
             {questions.map((_, i) => (
-              <div key={i} style={{ width: 8, height: 8, borderRadius: '50%',
-                background: i < current ? 'var(--green)' : i === current ? 'var(--blue)' : 'var(--border)' }} />
+              <div key={i} className={`dl-dot ${i < current ? 'done' : i === current ? 'current' : ''}`} />
             ))}
           </div>
         )}
+        {(phase === 'questions' || phase === 'done') && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--dl-gold)' }}>⭐ {stars}</span>
+        )}
       </div>
 
-      <div className="page" style={{ maxWidth: 680 }}>
+      <div className="dl-wrap">
 
-        {/* INTRO */}
+        {/* INTRO / COVER */}
         {phase === 'intro' && (
           <div>
+            <div className="dl-cover">
+              <div className="dl-stamp">ДЕЛО №{lesson.id}</div>
+              <span className="dl-magnifier">🔍</span>
+              <h1>{lesson.topic}</h1>
+            </div>
+
             {lesson.infographic && (
-              <img src={lesson.infographic} alt="инфографика" style={{ width: '100%', borderRadius: 12, marginBottom: 16 }} />
+              <img src={lesson.infographic} alt="инфографика" style={{ width: '100%', borderRadius: 10, marginBottom: 16 }} />
             )}
             {lesson.audio_file && (
-              <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 24 }}>🎧</span>
+              <div className="dl-card rot-l" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div className="dl-pin" />
+                <span style={{ fontSize: 22 }}>🎧</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, marginBottom: 6 }}>Аудио-объяснение</div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Аудио-улика</div>
                   <audio controls src={lesson.audio_file} style={{ width: '100%' }} />
                 </div>
               </div>
             )}
-            <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid var(--blue)' }}>
-              <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--blue)' }}>
-                {lesson.context_theme === 'minecraft' ? '⛏️ История Стива' : '🎮 Игровая история'}
-              </div>
-              <p style={{ lineHeight: 1.7 }}>{lesson.explanation_game || lesson.explanation || 'Объяснение скоро появится'}</p>
+
+            <div className="dl-card rot-l">
+              <div className="dl-pin" />
+              <div className="dl-eyebrow">История дела</div>
+              <p>{lesson.explanation_game || lesson.explanation || 'Объяснение скоро появится'}</p>
             </div>
+
             {lesson.explanation_game && lesson.explanation && (
-              <div className="card" style={{ marginBottom: 16 }}>
-                <div style={{ fontWeight: 600, marginBottom: 8 }}>📖 Официальное объяснение</div>
-                <p style={{ lineHeight: 1.7, color: 'var(--muted)' }}>{lesson.explanation}</p>
+              <div className="dl-card rot-r">
+                <div className="dl-pin" />
+                <div className="dl-eyebrow">Официальная справка</div>
+                <p style={{ color: '#5a4b36' }}>{lesson.explanation}</p>
               </div>
             )}
-            <div style={{ background: 'var(--amber-light)', borderRadius: 12, padding: 14, marginBottom: 20, display: 'flex', gap: 10 }}>
-              <span>🪙</span>
-              <span style={{ fontSize: 14, color: 'var(--amber)' }}>
-                За урок: <b>+{lesson.coins_lesson} монет</b> · За финальную задачу: <b>+{lesson.coins_boss} монет</b>
-              </span>
+
+            <div className="dl-coins-note">
+              🪙 За расследование: <b>+{lesson.coins_lesson} монет</b> · за финальное задание: <b>+{lesson.coins_boss} монет</b>
             </div>
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '13px 0', fontSize: 16 }}
-                    onClick={startLesson}>
-              {questions.length > 0 ? `Начать — ${questions.length} вопросов ›` : 'Начать урок ›'}
+
+            <button className="dl-btn wide" onClick={startLesson}>
+              {questions.length > 0 ? `Открыть дело — ${questions.length} улик ›` : 'Открыть дело ›'}
             </button>
           </div>
         )}
@@ -139,42 +153,38 @@ export default function LessonPage() {
         {/* QUESTIONS */}
         {phase === 'questions' && q && (
           <div>
-            <div className="card" style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>Вопрос {current + 1} из {questions.length}</div>
-              <p style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.5 }}>{q.text}</p>
+            <div className="dl-card rot-l">
+              <div className="dl-pin" />
+              <div className="dl-eyebrow">Улика №{current + 1}</div>
+              <h2 style={{ fontSize: '1.1rem' }}>{q.text}</h2>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+
+            <div className="dl-options">
               {q.options.map((opt, i) => {
-                let bg = '#fff', border = 'var(--border)', color = 'var(--text)'
+                let cls = 'dl-option'
                 if (answered) {
-                  if (i === q.correct)          { bg = 'var(--green-light)'; border = 'var(--green)'; color = 'var(--green)' }
-                  else if (i === selected)       { bg = 'var(--red-light)';   border = 'var(--red)';   color = 'var(--red)' }
+                  if (i === q.correct) cls += ' correct'
+                  else if (i === selected) cls += ' wrong'
                 }
                 return (
-                  <button key={i} onClick={() => selectAnswer(i)} style={{
-                    padding: '12px 16px', border: `1.5px solid ${border}`, borderRadius: 10,
-                    background: bg, color, textAlign: 'left', fontSize: 15, fontWeight: answered && i === q.correct ? 600 : 400,
-                    cursor: answered ? 'default' : 'pointer'
-                  }}>
-                    <span style={{ fontWeight: 600, marginRight: 8 }}>{['А', 'Б', 'В', 'Г'][i]})</span>{opt}
+                  <button key={i} className={cls} disabled={answered} onClick={() => selectAnswer(i)}>
+                    <span className="dl-letter">{['А', 'Б', 'В', 'Г'][i]})</span>{opt}
                   </button>
                 )
               })}
             </div>
+
             {answered && (
               <div>
                 {selected === q.correct ? (
-                  <div style={{ background: 'var(--green-light)', borderRadius: 10, padding: '12px 16px', marginBottom: 14, color: 'var(--green)', fontWeight: 500 }}>
-                    ✅ Верно! {q.explanation || ''}
-                  </div>
+                  <div className="dl-feedback correct">✅ Точно! {q.explanation || ''}</div>
                 ) : (
-                  <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 16px', marginBottom: 14 }}>
-                    <div style={{ color: 'var(--red)', fontWeight: 500, marginBottom: 4 }}>❌ Неверно</div>
-                    <div style={{ fontSize: 14 }}>{q.explanation || (q.hint ? `Подсказка: ${q.hint}` : '')}</div>
+                  <div className="dl-feedback wrong">
+                    ❌ Мимо. {q.explanation || (q.hint ? `Подсказка: ${q.hint}` : '')}
                   </div>
                 )}
-                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={nextQuestion}>
-                  {current + 1 < questions.length ? 'Следующий вопрос →' : lesson.boss_task ? 'Финальная задача →' : 'Завершить урок →'}
+                <button className="dl-btn wide" onClick={nextQuestion}>
+                  {current + 1 < questions.length ? 'Следующая улика →' : lesson.boss_task ? 'Финальное задание →' : 'Закрыть дело →'}
                 </button>
               </div>
             )}
@@ -184,37 +194,39 @@ export default function LessonPage() {
         {/* BOSS */}
         {phase === 'boss' && boss && (
           <div>
-            <div style={{ background: '#1a1a2e', borderRadius: 14, padding: '20px', marginBottom: 20, color: '#fff' }}>
-              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>⚔️ Финальная задача — Босс!</div>
-              <p style={{ lineHeight: 1.7, color: '#c8c8e8' }}>{boss.text}</p>
-              <div style={{ marginTop: 12, fontSize: 13, color: '#fbbf24' }}>Награда: +{lesson.coins_boss} монет за решение!</div>
+            <div className="dl-boss-header">
+              <div className="dl-eyebrow">⚔️ Финальное задание</div>
+              <h2>Разгадай последнюю улику</h2>
+              <p>{boss.text}</p>
+              <div className="dl-reward">Награда: +{lesson.coins_boss} монет за раскрытие!</div>
             </div>
+
             {bossCheck !== 'submitted' ? (
               <>
-                <textarea className="input" rows={4} placeholder="Запиши своё решение здесь..."
-                          value={bossInput} onChange={e => setBossInput(e.target.value)}
-                          style={{ marginBottom: 12 }} />
+                <textarea className="dl-textarea" placeholder="Запиши своё решение здесь..."
+                          value={bossInput} onChange={e => setBossInput(e.target.value)} />
                 {boss.hint1 && (
-                  <details style={{ marginBottom: 10 }}>
-                    <summary style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 14 }}>💡 Подсказка 1</summary>
-                    <p style={{ marginTop: 6, fontSize: 14, padding: '8px 12px', background: 'var(--amber-light)', borderRadius: 8 }}>{boss.hint1}</p>
+                  <details className="dl-hint">
+                    <summary>💡 Подсказка 1</summary>
+                    <p>{boss.hint1}</p>
                   </details>
                 )}
                 {boss.hint2 && (
-                  <details style={{ marginBottom: 14 }}>
-                    <summary style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 14 }}>💡 Подсказка 2</summary>
-                    <p style={{ marginTop: 6, fontSize: 14, padding: '8px 12px', background: 'var(--amber-light)', borderRadius: 8 }}>{boss.hint2}</p>
+                  <details className="dl-hint">
+                    <summary>💡 Подсказка 2</summary>
+                    <p>{boss.hint2}</p>
                   </details>
                 )}
-                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '13px 0' }}
+                <button className="dl-btn secondary wide" style={{ marginTop: 14 }}
                         onClick={checkBoss} disabled={!bossInput.trim()}>
                   Сдать решение →
                 </button>
               </>
             ) : (
-              <div style={{ background: 'var(--green-light)', borderRadius: 12, padding: 16, marginBottom: 14 }}>
-                <div style={{ fontWeight: 600, color: 'var(--green)', marginBottom: 8 }}>✅ Решение принято!</div>
-                {boss.solution && <div style={{ fontSize: 14, lineHeight: 1.6 }}><b>Правильное решение:</b><br />{boss.solution}</div>}
+              <div className="dl-card rot-l">
+                <div className="dl-pin" />
+                <div className="dl-eyebrow" style={{ color: 'var(--dl-green)' }}>✅ Решение принято</div>
+                {boss.solution && <p><b>Разгадка:</b><br />{boss.solution}</p>}
               </div>
             )}
           </div>
@@ -225,72 +237,63 @@ export default function LessonPage() {
           const total = questions.length || 1
           const pct   = Math.round((score / total) * 100)
           const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🥇' : pct >= 60 ? '🥈' : pct >= 40 ? '🥉' : '📚'
-          const msg   = pct === 100 ? 'Идеально! Все ответы верны!'
-                      : pct >= 80   ? 'Отлично! Почти всё правильно!'
-                      : pct >= 60   ? 'Хорошая работа!'
-                      : pct >= 40   ? 'Неплохо, но есть над чем поработать.'
-                      :               'В следующий раз будет лучше!'
+          const rank  = pct === 100 ? 'Детектив чисел — высшая категория!'
+                      : pct >= 80   ? 'Детектив чисел I уровня'
+                      : pct >= 60   ? 'Детектив-стажёр'
+                      : pct >= 40   ? 'Дело почти раскрыто — есть над чем поработать'
+                      :               'В следующий раз след будет вернее'
           const lessonCoins = coinsEarned - (bossWasDone && lesson ? lesson.coins_boss : 0)
           return (
-            <div style={{ paddingTop: 20 }}>
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <div style={{ fontSize: 64, marginBottom: 12 }}>{emoji}</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Урок завершён!</h2>
-                <p style={{ color: 'var(--muted)', fontSize: 15 }}>{msg}</p>
-              </div>
+            <div className="dl-finale">
+              <div className="dl-badge">{emoji}</div>
+              <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--paper)', fontSize: '1.3rem', marginBottom: 6 }}>
+                Дело раскрыто!
+              </h2>
+              <p style={{ color: '#cfcfe6', marginBottom: 20 }}>{rank}</p>
 
-              {/* Score bar */}
-              <div className="card" style={{ marginBottom: 16 }}>
+              <div className="dl-card rot-l" style={{ textAlign: 'left' }}>
+                <div className="dl-pin" />
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontWeight: 600 }}>Правильных ответов</span>
-                  <span style={{ fontWeight: 700, color: pct >= 60 ? 'var(--green)' : 'var(--red)' }}>
+                  <span style={{ fontWeight: 600 }}>Разгаданных улик</span>
+                  <span style={{ fontWeight: 700, color: pct >= 60 ? 'var(--dl-green)' : 'var(--dl-red)' }}>
                     {score} / {questions.length}
                   </span>
                 </div>
-                <div style={{ height: 10, background: 'var(--border)', borderRadius: 5, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 5, transition: 'width .6s',
+                <div className="dl-scorebar-track">
+                  <div className="dl-scorebar-fill" style={{
                     width: `${pct}%`,
-                    background: pct === 100 ? 'var(--green)' : pct >= 60 ? 'var(--blue)' : 'var(--amber)'
+                    background: pct === 100 ? 'var(--dl-green)' : pct >= 60 ? 'var(--dl-navy)' : 'var(--dl-gold)'
                   }} />
                 </div>
-                <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{pct}%</div>
+                <div style={{ textAlign: 'right', fontSize: 13, color: '#8a7a5e', marginTop: 4 }}>{pct}%</div>
               </div>
 
-              {/* Coins breakdown */}
-              <div className="card" style={{ marginBottom: 24 }}>
+              <div className="dl-card rot-r" style={{ textAlign: 'left' }}>
+                <div className="dl-pin" />
                 <div style={{ fontWeight: 600, marginBottom: 12 }}>🪙 Заработано монет</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0',
-                              borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-                  <span style={{ color: 'var(--muted)' }}>За ответы ({score}/{questions.length})</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)', fontSize: 14 }}>
+                  <span style={{ color: '#8a7a5e' }}>За улики ({score}/{questions.length})</span>
                   <span style={{ fontWeight: 600 }}>+{lessonCoins}</span>
                 </div>
                 {bossWasDone && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0',
-                                borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-                    <span style={{ color: 'var(--muted)' }}>За финальную задачу ⚔️</span>
-                    <span style={{ fontWeight: 600, color: 'var(--green)' }}>+{lesson?.coins_boss || 30}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)', fontSize: 14 }}>
+                    <span style={{ color: '#8a7a5e' }}>За финальное задание ⚔️</span>
+                    <span style={{ fontWeight: 600, color: 'var(--dl-green)' }}>+{lesson?.coins_boss || 30}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0',
-                              fontSize: 18, fontWeight: 700 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: 18, fontWeight: 700 }}>
                   <span>Итого</span>
-                  <span style={{ color: 'var(--amber)' }}>+{coinsEarned} 🪙</span>
+                  <span style={{ color: 'var(--dl-gold)' }}>+{coinsEarned} 🪙</span>
                 </div>
               </div>
 
               {pct < 80 && questions.length > 0 && (
-                <div style={{ background: 'var(--blue-light)', borderRadius: 12, padding: '12px 16px',
-                              fontSize: 14, color: 'var(--blue)', marginBottom: 20 }}>
-                  💡 Пройди урок ещё раз чтобы улучшить результат и заработать больше монет!
+                <div className="dl-coins-note" style={{ textAlign: 'left' }}>
+                  💡 Пройди дело ещё раз, чтобы собрать больше улик и монет!
                 </div>
               )}
 
-              <button className="btn btn-primary"
-                      style={{ width: '100%', justifyContent: 'center', padding: '13px 0', fontSize: 16 }}
-                      onClick={() => nav('/')}>
-                На главную →
-              </button>
+              <button className="dl-btn wide" onClick={() => nav('/')}>На главную →</button>
             </div>
           )
         })()}
