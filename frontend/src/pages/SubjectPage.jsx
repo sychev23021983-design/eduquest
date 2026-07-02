@@ -71,7 +71,7 @@ export default function SubjectPage() {
   return (
     <div className="game-home">
       <div className="gh-topbar">
-        <button className="gh-logout" onClick={() => nav('/')} style={{ fontSize: 20 }}>‹</button>
+        <button className="gh-back-btn" onClick={() => nav('/')}>‹</button>
         <span className="gh-logo">{SUBJ_ICON[subject]} {SUBJ[subject]}</span>
         <span style={{ marginLeft: 'auto', color: 'var(--gh-muted)', fontSize: '0.85rem', fontFamily: 'var(--font-num)' }}>{grade} класс</span>
       </div>

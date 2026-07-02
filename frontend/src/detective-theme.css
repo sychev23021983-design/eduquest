@@ -35,8 +35,11 @@
   letter-spacing: 0.4px;
 }
 .dl-topbar button.dl-back {
-  background: none; border: none; color: #cfcfe6; font-size: 20px; cursor: pointer; flex-shrink: 0;
+  background: rgba(255,255,255,0.08); border: none; color: #fff; font-size: 28px; cursor: pointer; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  line-height: 1; padding: 0;
 }
+.dl-topbar button.dl-back:active { background: rgba(255,255,255,0.18); }
 .dl-topbar .dl-title { flex: 1; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dl-topbar .dl-sub { font-size: 0.7rem; color: #a9b4c9; font-family: var(--font-body); margin-top: 2px; }
 .dl-dots { display: flex; gap: 4px; flex-shrink: 0; }

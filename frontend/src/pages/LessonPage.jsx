@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
 import '../detective-theme.css'
 
+const WRONG_ANSWER_PENALTY = 5
+
 export default function LessonPage() {
   const { id } = useParams()
   const { token } = useAuth()
@@ -21,6 +23,8 @@ export default function LessonPage() {
   const [bossCheck,  setBossCheck]  = useState(null)
   const [coinsEarned, setCoins]     = useState(0)
   const [bossWasDone, setBossWasDone] = useState(false)
+  const [coinsLost,   setCoinsLost] = useState(0)
+  const [bossSubmitting, setBossSubmitting] = useState(false)
 
   useEffect(() => { loadLesson() }, [id])
 
@@ -40,7 +44,15 @@ export default function LessonPage() {
     if (answered) return
     setSelected(idx)
     setAnswered(true)
-    if (idx === questions[current].correct) setScore(s => s + 1)
+    if (idx === questions[current].correct) {
+      setScore(s => s + 1)
+    } else {
+      setCoinsLost(c => c + WRONG_ANSWER_PENALTY)
+      api.coinPenalty(token, {
+        lesson_id: Number(id), amount: WRONG_ANSWER_PENALTY,
+        note: `Неверный ответ: ${lesson.topic}`,
+      }).catch(() => {})
+    }
   }
 
   function nextQuestion() {
@@ -57,7 +69,12 @@ export default function LessonPage() {
     if (!bossInput.trim()) return
     setBossCheck('submitted')
     setBossWasDone(true)
-    finishLesson(true)
+  }
+
+  async function finishAfterBoss() {
+    setBossSubmitting(true)
+    await finishLesson(true)
+    setBossSubmitting(false)
   }
 
   async function finishLesson(boss) {
@@ -132,14 +149,6 @@ export default function LessonPage() {
               <p>{lesson.explanation_game || lesson.explanation || 'Объяснение скоро появится'}</p>
             </div>
 
-            {lesson.explanation_game && lesson.explanation && (
-              <div className="dl-card rot-r">
-                <div className="dl-pin" />
-                <div className="dl-eyebrow">Официальная справка</div>
-                <p style={{ color: '#5a4b36' }}>{lesson.explanation}</p>
-              </div>
-            )}
-
             <div className="dl-coins-note">
               🪙 За расследование: <b>+{lesson.coins_lesson} монет</b> · за финальное задание: <b>+{lesson.coins_boss} монет</b>
             </div>
@@ -180,7 +189,7 @@ export default function LessonPage() {
                   <div className="dl-feedback correct">✅ Точно! {q.explanation || ''}</div>
                 ) : (
                   <div className="dl-feedback wrong">
-                    ❌ Мимо. {q.explanation || (q.hint ? `Подсказка: ${q.hint}` : '')}
+                    ❌ Мимо, −{WRONG_ANSWER_PENALTY} 🪙. {q.explanation || (q.hint ? `Подсказка: ${q.hint}` : '')}
                   </div>
                 )}
                 <button className="dl-btn wide" onClick={nextQuestion}>
@@ -228,6 +237,11 @@ export default function LessonPage() {
                 <div className="dl-eyebrow" style={{ color: 'var(--dl-green)' }}>✅ Решение принято</div>
                 {boss.solution && <p><b>Разгадка:</b><br />{boss.solution}</p>}
               </div>
+            )}
+            {bossCheck === 'submitted' && (
+              <button className="dl-btn wide" onClick={finishAfterBoss} disabled={bossSubmitting}>
+                {bossSubmitting ? 'Закрываю дело…' : 'Понятно, закрыть дело →'}
+              </button>
             )}
           </div>
         )}
@@ -281,11 +295,23 @@ export default function LessonPage() {
                     <span style={{ fontWeight: 600, color: 'var(--dl-green)' }}>+{lesson?.coins_boss || 30}</span>
                   </div>
                 )}
+                {coinsLost > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)', fontSize: 14 }}>
+                    <span style={{ color: '#8a7a5e' }}>Штраф за неверные ответы</span>
+                    <span style={{ fontWeight: 600, color: 'var(--dl-red)' }}>−{coinsLost}</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: 18, fontWeight: 700 }}>
                   <span>Итого</span>
-                  <span style={{ color: 'var(--dl-gold)' }}>+{coinsEarned} 🪙</span>
+                  <span style={{ color: 'var(--dl-gold)' }}>+{coinsEarned - coinsLost} 🪙</span>
                 </div>
               </div>
+
+              {coinsLost > 0 && (
+                <div className="dl-coins-note" style={{ textAlign: 'left' }}>
+                  🤔 В следующий раз выбирай ответ вдумчивее — за ошибки списываются монеты!
+                </div>
+              )}
 
               {pct < 80 && questions.length > 0 && (
                 <div className="dl-coins-note" style={{ textAlign: 'left' }}>

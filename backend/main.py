@@ -1284,7 +1284,7 @@ def get_stats(role: str = Depends(require_any)):
     week    = conn.execute("""SELECT date(started_at) as day, COUNT(*) as cnt
         FROM progress WHERE started_at >= date('now','-7 days')
         GROUP BY date(started_at) ORDER BY day""").fetchall()
-    weak    = conn.execute("""SELECT l.topic, l.subject, AVG(p.score*1.0/p.max_score) as avg, COUNT(*) as attempts
+    weak    = conn.execute("""SELECT l.id as lesson_id, l.topic, l.subject, AVG(p.score*1.0/p.max_score) as avg, COUNT(*) as attempts
         FROM progress p JOIN lessons l ON p.lesson_id=l.id WHERE p.finished_at IS NOT NULL
         GROUP BY l.id HAVING avg < 0.6 AND attempts >= 1 ORDER BY avg ASC LIMIT 5""").fetchall()
     conn.close()
@@ -1306,6 +1306,24 @@ def get_balance(role: str = Depends(require_any)):
     spent  = conn.execute("SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'").fetchone()["s"]
     conn.close()
     return {"balance": earned - spent, "earned": earned, "spent": spent}
+
+class PenaltyIn(BaseModel):
+    lesson_id: Optional[int] = None
+    amount: int = 5
+    note: Optional[str] = None
+
+@app.post("/api/coins/penalty")
+def coin_penalty(data: PenaltyIn, role: str = Depends(require_any)):
+    """Списывает монеты сразу за неверный ответ — стимулирует отвечать вдумчивее."""
+    conn = get_conn()
+    amt = -abs(data.amount)
+    conn.execute("INSERT INTO coins (amount,type,note) VALUES (?,?,?)",
+                 (amt, "earned", data.note or "Штраф за неверный ответ"))
+    conn.commit()
+    earned = conn.execute("SELECT COALESCE(SUM(amount),0) as s FROM coins WHERE type='earned'").fetchone()["s"]
+    spent  = conn.execute("SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'").fetchone()["s"]
+    conn.close()
+    return {"balance": earned - spent, "penalty": abs(amt)}
 
 class RewardIn(BaseModel):
     name: str

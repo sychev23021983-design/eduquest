@@ -156,21 +156,23 @@ export default function ChildHome() {
               })}
             </div>
 
-            {/* All lessons */}
-            <div className="gh-section-title">Все уроки</div>
+            {/* Нужно повторить */}
+            <div className="gh-section-title">⚠️ Нужно повторить</div>
             <div>
-              {lessons.map(l => (
-                <div key={l.id} className="gh-lesson-row" onClick={() => nav(`/lesson/${l.id}`)}>
-                  <span className="emoji"><SubjectIcon subj={l.subject} icons={settings.subject_icons} size={24} /></span>
+              {(stats?.weak_topics || []).map(t => (
+                <div key={t.lesson_id} className="gh-lesson-row" onClick={() => nav(`/lesson/${t.lesson_id}`)}>
+                  <span className="emoji"><SubjectIcon subj={t.subject} icons={settings.subject_icons} size={24} /></span>
                   <div style={{ flex: 1 }}>
-                    <span className={`gh-badge ${l.subject}`}>{SUBJ[l.subject]}</span>
-                    <div className="title">{l.topic}</div>
+                    <span className={`gh-badge ${t.subject}`}>{SUBJ[t.subject]}</span>
+                    <div className="title">{t.topic}</div>
                   </div>
-                  <span style={{ fontFamily: 'var(--font-num)', fontWeight: 700, color: 'var(--gh-amber)', fontSize: '0.85rem' }}>🪙 {l.coins_lesson}</span>
+                  <span style={{ fontFamily: 'var(--font-num)', fontWeight: 700, color: 'var(--gh-red)', fontSize: '0.85rem' }}>{Math.round(t.avg * 100)}%</span>
                   <span style={{ color: 'var(--gh-blue)', fontSize: 20 }}>›</span>
                 </div>
               ))}
-              {lessons.length === 0 && <div className="gh-card gh-empty">Уроки скоро появятся 🚀</div>}
+              {(!stats?.weak_topics || stats.weak_topics.length === 0) && (
+                <div className="gh-card gh-empty">Пока нечего повторять — все темы даются хорошо! 🎉</div>
+              )}
             </div>
           </>}
 

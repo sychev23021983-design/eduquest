@@ -37,7 +37,7 @@ export default function IntroPage() {
   return (
     <div className="game-home">
       <div className="gh-topbar">
-        <button className="gh-logout" onClick={() => nav(`/subject/${subject}`)} style={{ fontSize: 20 }}>‹</button>
+        <button className="gh-back-btn" onClick={() => nav(`/subject/${subject}`)}>‹</button>
         <span className="gh-logo">📖 Введение</span>
       </div>
 
