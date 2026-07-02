@@ -4,7 +4,6 @@ import Login from './pages/Login.jsx'
 import ChildHome from './pages/ChildHome.jsx'
 import LessonPage from './pages/LessonPage.jsx'
 import ParentDashboard from './pages/ParentDashboard.jsx'
-import LessonEditor from './pages/LessonEditor.jsx'
 import SubjectPage from './pages/SubjectPage.jsx'
 import Curriculum from './pages/Curriculum.jsx'
 
@@ -26,7 +25,6 @@ export default function App() {
           <Route path="/lesson/:id" element={<Guard><LessonPage /></Guard>} />
           <Route path="/parent" element={<Guard role="parent"><ParentDashboard /></Guard>} />
           <Route path="/parent/curriculum" element={<Guard role="parent"><Curriculum /></Guard>} />
-          <Route path="/parent/lesson/:id/edit" element={<Guard role="parent"><LessonEditor /></Guard>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

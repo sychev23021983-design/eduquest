@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
+import '../game-theme.css'
 
 const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
 const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️' }
 const SUBJ_KEY  = ['math', 'russian', 'science', 'history']
+const XP_PER_LEVEL = 300
 
 export default function ChildHome() {
-  const { token, logout } = useAuth()
+  const { logout, token } = useAuth()
   const nav = useNavigate()
   const [lessons, setLessons]   = useState([])
   const [stats,   setStats]     = useState(null)
-  const [balance, setBalance]   = useState(0)
+  const [balance, setBalance]   = useState({ balance: 0, earned: 0, spent: 0 })
   const [rewards, setRewards]   = useState([])
+  const [config,  setConfig]    = useState({ child_name: '' })
   const [rewardName, setRName]  = useState('')
   const [rewardCost, setRCost]  = useState(50)
   const [tab, setTab]           = useState('home')
@@ -22,10 +25,10 @@ export default function ChildHome() {
   useEffect(() => { load() }, [])
 
   async function load() {
-    const [ls, st, bl, rw] = await Promise.all([
-      api.lessons(token), api.stats(token), api.balance(token), api.rewards(token)
+    const [ls, st, bl, rw, cfg] = await Promise.all([
+      api.lessons(token), api.stats(token), api.balance(token), api.rewards(token), api.config()
     ])
-    setLessons(ls); setStats(st); setBalance(bl.balance); setRewards(rw)
+    setLessons(ls); setStats(st); setBalance(bl); setRewards(rw); setConfig(cfg)
   }
 
   async function requestReward() {
@@ -40,139 +43,143 @@ export default function ChildHome() {
 
   const pending = rewards.filter(r => r.status === 'pending')
   const streak  = stats?.streak_days || 0
+  const xp      = balance.earned || 0
+  const level   = Math.floor(xp / XP_PER_LEVEL) + 1
+  const xpInLvl = xp % XP_PER_LEVEL
+  const subjAvg = s => { const row = stats?.by_subject?.find(x => x.subject === s); return row ? Math.round(row.avg * 100) : null }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div className="game-home">
       {/* Top bar */}
-      <div style={{ background: '#1a1a2e', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>🎓 EduQuest</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ background: '#faeeda', color: '#7a4a00', borderRadius: 20, padding: '4px 12px', fontSize: 13, fontWeight: 600 }}>
-            🪙 {balance} монет
-          </span>
-          <button onClick={logout} style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 13 }}>Выйти</button>
+      <div className="gh-topbar">
+        <span className="gh-logo">🕹️ EduQuest</span>
+        <div className="gh-nav">
+          {[['home','🏠 Главная'],['progress','📊 Прогресс'],['shop','🎁 Награды']].map(([k,l]) => (
+            <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>
+          ))}
         </div>
+        <span className="gh-coin-pill">🪙 {balance.balance || 0}</span>
+        <button className="gh-logout" onClick={logout}>Выйти</button>
       </div>
 
-      {/* Nav tabs */}
-      <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', display: 'flex', gap: 0 }}>
-        {[['home','🏠 Главная'],['progress','📊 Прогресс'],['shop','🎁 Награды']].map(([k,l]) => (
-          <button key={k} onClick={() => setTab(k)} style={{
-            padding: '12px 20px', border: 'none', background: 'none', fontWeight: tab === k ? 600 : 400,
-            color: tab === k ? 'var(--blue)' : 'var(--muted)', borderBottom: tab === k ? '2px solid var(--blue)' : '2px solid transparent',
-            fontSize: 14
-          }}>{l}</button>
-        ))}
-      </div>
+      <div className="gh-wrap">
 
-      <div className="page">
         {/* HOME TAB */}
         {tab === 'home' && <>
-          {/* Streak */}
-          {streak > 0 && (
-            <div style={{ background: 'var(--green-light)', border: '1px solid #86efac', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-              <span style={{ fontSize: 28 }}>🔥</span>
-              <div>
-                <div style={{ fontWeight: 700, color: 'var(--green)' }}>{streak} дней подряд!</div>
-                <div style={{ fontSize: 13, color: '#15803d' }}>Отличная серия, продолжай!</div>
+          <div className="gh-hero">
+            <h1>Привет, {config.child_name || 'исследователь'}! 👋</h1>
+            <p>Учись, зарабатывай монеты и открывай новые темы!</p>
+            {streak > 0 && (
+              <div className="gh-streak-chip">🔥 {streak} {streak === 1 ? 'день' : 'дня'} подряд — не останавливайся!</div>
+            )}
+          </div>
+
+          {lessons.length > 0 && (
+            <div className="gh-lod">
+              <div className="gh-lod-label">⭐ УРОК ДНЯ</div>
+              <span className={`gh-badge ${lessons[0].subject}`}>{SUBJ[lessons[0].subject]}</span>
+              <h2>{lessons[0].topic}</h2>
+              <div className="gh-lod-meta">
+                <span className="gh-chip coin">🪙 +{lessons[0].coins_lesson} монет</span>
+                <span className="gh-chip gem">💎 +{lessons[0].coins_boss} за финал</span>
               </div>
+              <button className="gh-btn" onClick={() => nav(`/lesson/${lessons[0].id}`)}>Начать урок →</button>
             </div>
           )}
 
-          {/* Today's lesson */}
-          {lessons.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>УРОК ДНЯ</h2>
-              <div className="card" style={{ borderLeft: '4px solid var(--blue)', cursor: 'pointer' }}
-                   onClick={() => nav(`/lesson/${lessons[0].id}`)}>
-                <span className={`badge badge-${lessons[0].subject}`}>{SUBJ[lessons[0].subject]}</span>
-                <h3 style={{ fontSize: 17, fontWeight: 600, margin: '8px 0 4px' }}>{lessons[0].topic}</h3>
-                <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
-                  Контекст: {lessons[0].context_theme === 'minecraft' ? '⛏️ Minecraft' : '🎮 ' + lessons[0].context_theme}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 13, color: 'var(--green)', fontWeight: 500 }}>+{lessons[0].coins_lesson} монет за урок · +{lessons[0].coins_boss} за босса</span>
-                  <button className="btn btn-primary btn-sm">Начать →</button>
-                </div>
-              </div>
+          {/* Level & streak */}
+          <div className="gh-stats-row">
+            <div className="gh-stat-card">
+              <div className="gh-stat-label">Твой уровень</div>
+              <div className="gh-level-badge">{level}</div>
+              <div className="gh-xp-track"><div className="gh-xp-fill" style={{ width: `${(xpInLvl / XP_PER_LEVEL) * 100}%` }} /></div>
+              <div className="gh-xp-label">{xpInLvl} / {XP_PER_LEVEL} XP</div>
             </div>
-          )}
+            <div className="gh-stat-card">
+              <div className="gh-stat-label">Серия дней</div>
+              <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-num)', fontWeight: 800 }}>🔥 {streak}</div>
+              <div className="gh-xp-label">дней подряд</div>
+            </div>
+            <div className="gh-stat-card">
+              <div className="gh-stat-label">Пройдено уроков</div>
+              <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-num)', fontWeight: 800 }}>📚 {stats?.total_lessons || 0}</div>
+              <div className="gh-xp-label">всего попыток</div>
+            </div>
+          </div>
 
           {/* Subjects grid */}
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>ПРЕДМЕТЫ</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 24 }}>
+          <div className="gh-section-title">Предметы</div>
+          <div className="gh-subjects-grid">
             {SUBJ_KEY.map(s => {
               const subLessons = lessons.filter(l => l.subject === s)
+              const avg = subjAvg(s)
               return (
-                <div key={s} className="card" style={{ cursor: 'pointer' }}
-                     onClick={() => nav(`/subject/${s}`)}>
-                  <div style={{ fontSize: 28, marginBottom: 6 }}>{SUBJ_ICON[s]}</div>
-                  <div style={{ fontWeight: 600 }}>{SUBJ[s]}</div>
-                  <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{subLessons.length} уроков</div>
+                <div key={s} className={`gh-subject-card ${s}`} onClick={() => nav(`/subject/${s}`)}>
+                  <span className="icon">{SUBJ_ICON[s]}</span>
+                  <div className="name">{SUBJ[s]}</div>
+                  <div className="count">{subLessons.length} {subLessons.length === 1 ? 'урок' : 'уроков'}{avg !== null ? ` · ${avg}%` : ''}</div>
                 </div>
               )
             })}
           </div>
 
           {/* All lessons */}
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>ВСЕ УРОКИ</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="gh-section-title">Все уроки</div>
+          <div>
             {lessons.map(l => (
-              <div key={l.id} className="card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}
-                   onClick={() => nav(`/lesson/${l.id}`)}>
-                <span style={{ fontSize: 24 }}>{SUBJ_ICON[l.subject]}</span>
+              <div key={l.id} className="gh-lesson-row" onClick={() => nav(`/lesson/${l.id}`)}>
+                <span className="emoji">{SUBJ_ICON[l.subject]}</span>
                 <div style={{ flex: 1 }}>
-                  <span className={`badge badge-${l.subject}`} style={{ marginBottom: 2 }}>{SUBJ[l.subject]}</span>
-                  <div style={{ fontWeight: 500 }}>{l.topic}</div>
+                  <span className={`gh-badge ${l.subject}`}>{SUBJ[l.subject]}</span>
+                  <div className="title">{l.topic}</div>
                 </div>
-                <span style={{ fontSize: 13, color: 'var(--muted)', whiteSpace: 'nowrap' }}>🪙 {l.coins_lesson}</span>
-                <span style={{ color: 'var(--blue)', fontSize: 20 }}>›</span>
+                <span style={{ fontFamily: 'var(--font-num)', fontWeight: 700, color: 'var(--gh-amber)', fontSize: '0.85rem' }}>🪙 {l.coins_lesson}</span>
+                <span style={{ color: 'var(--gh-blue)', fontSize: 20 }}>›</span>
               </div>
             ))}
-            {lessons.length === 0 && <p style={{ color: 'var(--muted)', textAlign: 'center', padding: 40 }}>Уроки скоро появятся 🚀</p>}
+            {lessons.length === 0 && <div className="gh-card gh-empty">Уроки скоро появятся 🚀</div>}
           </div>
         </>}
 
         {/* PROGRESS TAB */}
         {tab === 'progress' && stats && (
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+            <div className="gh-stats-row">
               {[
                 ['Уроков', stats.total_lessons, '📚'],
-                ['Монет', balance, '🪙'],
+                ['Монет', balance.balance || 0, '🪙'],
                 ['Серия', stats.streak_days + ' дн.', '🔥'],
               ].map(([l, v, i]) => (
-                <div key={l} className="card" style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 28 }}>{i}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{v}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>{l}</div>
+                <div key={l} className="gh-stat-card" style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 26 }}>{i}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4, fontFamily: 'var(--font-num)' }}>{v}</div>
+                  <div className="gh-xp-label">{l}</div>
                 </div>
               ))}
             </div>
 
-            <h3 style={{ marginBottom: 12, fontWeight: 600 }}>По предметам</h3>
+            <div className="gh-section-title">По предметам</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
               {stats.by_subject.map(s => (
-                <div key={s.subject} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div key={s.subject} className="gh-card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 20 }}>{SUBJ_ICON[s.subject]}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 500, marginBottom: 4 }}>{SUBJ[s.subject]}</div>
-                    <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', background: 'var(--blue)', width: `${Math.round(s.avg * 100)}%`, borderRadius: 3 }} />
-                    </div>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>{SUBJ[s.subject]}</div>
+                    <div className="gh-xp-track"><div className="gh-xp-fill" style={{ width: `${Math.round(s.avg * 100)}%` }} /></div>
                   </div>
-                  <span style={{ fontSize: 14, color: 'var(--muted)', width: 40, textAlign: 'right' }}>{Math.round(s.avg * 100)}%</span>
+                  <span style={{ fontSize: 14, color: 'var(--gh-muted)', width: 44, textAlign: 'right', fontFamily: 'var(--font-num)' }}>{Math.round(s.avg * 100)}%</span>
                 </div>
               ))}
+              {stats.by_subject.length === 0 && <div className="gh-card gh-empty">Пройди первый урок, чтобы увидеть прогресс</div>}
             </div>
 
             {stats.weak_topics.length > 0 && <>
-              <h3 style={{ marginBottom: 12, fontWeight: 600, color: 'var(--amber)' }}>⚠️ Нужно повторить</h3>
+              <div className="gh-section-title" style={{ color: 'var(--gh-amber)' }}>⚠️ Нужно повторить</div>
               {stats.weak_topics.map(t => (
-                <div key={t.topic} className="card" style={{ borderLeft: '3px solid var(--amber)', marginBottom: 8 }}>
-                  <span className={`badge badge-${t.subject}`}>{SUBJ[t.subject]}</span>
-                  <div style={{ fontWeight: 500, marginTop: 4 }}>{t.topic}</div>
-                  <div style={{ fontSize: 13, color: 'var(--muted)' }}>Результат: {Math.round(t.avg * 100)}%</div>
+                <div key={t.topic} className="gh-card" style={{ borderLeft: '3px solid var(--gh-amber)', marginBottom: 8 }}>
+                  <span className={`gh-badge ${t.subject}`}>{SUBJ[t.subject]}</span>
+                  <div style={{ fontWeight: 700, marginTop: 4 }}>{t.topic}</div>
+                  <div className="gh-xp-label">Результат: {Math.round(t.avg * 100)}%</div>
                 </div>
               ))}
             </>}
@@ -182,54 +189,54 @@ export default function ChildHome() {
         {/* SHOP TAB */}
         {tab === 'shop' && (
           <div>
-            <div className="card" style={{ marginBottom: 20, textAlign: 'center' }}>
-              <div style={{ fontSize: 36 }}>🪙</div>
-              <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>{balance}</div>
-              <div style={{ color: 'var(--muted)', fontSize: 14 }}>монет на балансе</div>
+            <div className="gh-card" style={{ marginBottom: 20, textAlign: 'center' }}>
+              <div style={{ fontSize: 34 }}>🪙</div>
+              <div style={{ fontSize: 28, fontWeight: 800, marginTop: 4, fontFamily: 'var(--font-num)' }}>{balance.balance || 0}</div>
+              <div className="gh-xp-label">монет на балансе</div>
             </div>
 
-            <div className="card" style={{ marginBottom: 20 }}>
-              <h3 style={{ fontWeight: 600, marginBottom: 14 }}>Запросить награду</h3>
+            <div className="gh-card" style={{ marginBottom: 20 }}>
+              <div style={{ fontWeight: 800, marginBottom: 14 }}>Запросить награду</div>
               <input className="input" placeholder="Название (например: 60 мин Roblox)"
                      value={rewardName} onChange={e => setRName(e.target.value)}
                      style={{ marginBottom: 10 }} />
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
-                <label style={{ fontSize: 14, color: 'var(--muted)', whiteSpace: 'nowrap' }}>Стоимость монет:</label>
-                <input className="input" type="number" min="10" max={balance} value={rewardCost}
+                <label style={{ fontSize: 14, color: 'var(--gh-muted)', whiteSpace: 'nowrap' }}>Стоимость монет:</label>
+                <input className="input" type="number" min="10" max={balance.balance} value={rewardCost}
                        onChange={e => setRCost(e.target.value)} />
               </div>
-              {msg && <p style={{ fontSize: 14, color: rewardCost > balance ? 'var(--red)' : 'var(--green)', marginBottom: 10 }}>{msg}</p>}
-              <button className="btn btn-primary" onClick={requestReward} style={{ width: '100%', justifyContent: 'center' }}>
+              {msg && <p style={{ fontSize: 14, color: rewardCost > balance.balance ? 'var(--gh-red)' : 'var(--gh-green)', marginBottom: 10 }}>{msg}</p>}
+              <button className="gh-btn blue" style={{ width: '100%', justifyContent: 'center' }} onClick={requestReward}>
                 Отправить запрос родителю
               </button>
             </div>
 
             {pending.length > 0 && (
               <div>
-                <h3 style={{ fontWeight: 600, marginBottom: 12 }}>Ожидают одобрения</h3>
+                <div className="gh-section-title">Ожидают одобрения</div>
                 {pending.map(r => (
-                  <div key={r.id} className="card" style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={r.id} className="gh-card" style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontWeight: 500 }}>{r.name}</div>
-                      <div style={{ fontSize: 13, color: 'var(--muted)' }}>{r.cost_coins} монет</div>
+                      <div style={{ fontWeight: 700 }}>{r.name}</div>
+                      <div className="gh-xp-label">{r.cost_coins} монет</div>
                     </div>
-                    <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderRadius: 6, padding: '3px 10px', fontSize: 12 }}>⏳ Ждём</span>
+                    <span style={{ background: 'rgba(255,201,77,0.15)', color: 'var(--gh-amber)', borderRadius: 6, padding: '3px 10px', fontSize: 12 }}>⏳ Ждём</span>
                   </div>
                 ))}
               </div>
             )}
 
-            <h3 style={{ fontWeight: 600, margin: '20px 0 12px' }}>История наград</h3>
+            <div className="gh-section-title" style={{ marginTop: 20 }}>История наград</div>
             {rewards.filter(r => r.status !== 'pending').map(r => (
-              <div key={r.id} className="card" style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div key={r.id} className="gh-card" style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: 500 }}>{r.name}</div>
-                  <div style={{ fontSize: 13, color: 'var(--muted)' }}>{r.cost_coins} монет</div>
+                  <div style={{ fontWeight: 700 }}>{r.name}</div>
+                  <div className="gh-xp-label">{r.cost_coins} монет</div>
                 </div>
                 <span style={{
                   borderRadius: 6, padding: '3px 10px', fontSize: 12,
-                  background: r.status === 'approved' ? 'var(--green-light)' : 'var(--red-light)',
-                  color: r.status === 'approved' ? 'var(--green)' : 'var(--red)',
+                  background: r.status === 'approved' ? 'rgba(34,211,139,0.15)' : 'rgba(255,93,122,0.15)',
+                  color: r.status === 'approved' ? 'var(--gh-green)' : 'var(--gh-red)',
                 }}>
                   {r.status === 'approved' ? '✅ Одобрено' : '❌ Отклонено'}
                 </span>

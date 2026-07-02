@@ -1,0 +1,176 @@
+/* Игровая тема главного экрана EduQuest — voxel/game-UI стиль (без чужих логотипов и персонажей) */
+.game-home {
+  --gh-bg1: #0d1024;
+  --gh-bg2: #171b3d;
+  --gh-bg3: #1f2450;
+  --gh-card: #1c2148;
+  --gh-card-hi: #262c5c;
+  --gh-border: rgba(255,255,255,0.08);
+  --gh-text: #f2f3fb;
+  --gh-muted: #9aa1c9;
+  --gh-blue: #4da3ff;
+  --gh-green: #22d38b;
+  --gh-red: #ff5d7a;
+  --gh-purple: #b17bff;
+  --gh-amber: #ffc94d;
+  --font-fun: 'Nunito', sans-serif;
+  --font-num: 'Baloo 2', 'Nunito', sans-serif;
+
+  min-height: 100vh;
+  font-family: var(--font-fun);
+  color: var(--gh-text);
+  background:
+    radial-gradient(1200px 500px at 15% -10%, rgba(77,163,255,0.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(177,123,255,0.16), transparent 55%),
+    linear-gradient(180deg, var(--gh-bg1), var(--gh-bg2) 45%, var(--gh-bg3));
+  padding-bottom: 40px;
+}
+
+/* Top bar */
+.gh-topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 18px;
+  background: rgba(13,16,36,0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--gh-border);
+}
+.gh-logo { font-family: var(--font-num); font-weight: 800; font-size: 1.15rem; letter-spacing: .3px; display: flex; align-items: center; gap: 6px; }
+.gh-nav { display: flex; gap: 6px; margin-left: 8px; flex: 1; overflow-x: auto; }
+.gh-nav button {
+  font-family: var(--font-fun); font-weight: 700; font-size: 0.85rem;
+  color: var(--gh-muted); background: transparent; border: none; border-radius: 10px;
+  padding: 8px 14px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s;
+}
+.gh-nav button.active { background: var(--gh-blue); color: #fff; }
+.gh-nav button:not(.active):hover { background: var(--gh-card-hi); color: var(--gh-text); }
+.gh-coin-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: linear-gradient(180deg, #3a3410, #241f08);
+  border: 1px solid rgba(255,201,77,0.4);
+  color: var(--gh-amber); font-family: var(--font-num); font-weight: 700;
+  padding: 6px 12px; border-radius: 20px; font-size: 0.95rem; flex-shrink: 0;
+}
+.gh-logout { background: none; border: none; color: var(--gh-muted); font-size: 0.8rem; cursor: pointer; flex-shrink: 0; }
+
+.gh-wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px; }
+
+/* Hero */
+.gh-hero {
+  background: linear-gradient(120deg, #2a3a8f, #5b3aa8 60%, #8a3aa8);
+  border-radius: 18px; padding: 22px 22px;
+  margin-bottom: 18px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 12px 30px rgba(60,40,150,0.35);
+}
+.gh-hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 18px, transparent 18px 36px);
+  pointer-events: none;
+}
+.gh-hero h1 { font-family: var(--font-num); font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+.gh-hero p { color: #dcd9ff; font-size: 0.95rem; }
+.gh-streak-chip {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+  background: rgba(34,211,139,0.18); border: 1px solid rgba(34,211,139,0.4);
+  color: #7cf7c4; padding: 7px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
+}
+
+/* Lesson of the day */
+.gh-lod {
+  border-radius: 18px; padding: 20px;
+  background: linear-gradient(120deg, #1a3a6b, #1c5a8a 60%, #147a8f);
+  margin-bottom: 20px; position: relative; overflow: hidden;
+  box-shadow: 0 10px 26px rgba(20,90,140,0.35);
+}
+.gh-lod-label { font-family: var(--font-num); font-size: 0.75rem; letter-spacing: 2px; color: #9fe3ff; margin-bottom: 8px; font-weight: 700; }
+.gh-lod h2 { font-family: var(--font-num); font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+.gh-lod-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.gh-chip { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; font-weight: 700; }
+.gh-chip.coin { color: var(--gh-amber); }
+.gh-chip.gem { color: #c9a8ff; }
+
+/* Generic game button */
+.gh-btn {
+  font-family: var(--font-fun); font-weight: 800; border: none; border-radius: 12px;
+  padding: 12px 22px; font-size: 0.95rem; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, var(--gh-green), #17a374);
+  box-shadow: 0 5px 0 #0f7a58, 0 8px 16px rgba(0,0,0,0.25);
+  transition: transform .08s;
+}
+.gh-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #0f7a58; }
+.gh-btn.blue { background: linear-gradient(180deg, var(--gh-blue), #2a72d4); box-shadow: 0 5px 0 #1c4f96, 0 8px 16px rgba(0,0,0,0.25); }
+.gh-btn.blue:active { box-shadow: 0 2px 0 #1c4f96; }
+.gh-btn.sm { padding: 8px 16px; font-size: 0.82rem; border-radius: 10px; box-shadow: 0 4px 0 #0f7a58; }
+.gh-btn.sm:active { box-shadow: 0 1px 0 #0f7a58; }
+
+/* Level / streak row */
+.gh-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.gh-stat-card {
+  background: var(--gh-card); border: 1px solid var(--gh-border); border-radius: 14px; padding: 14px 16px;
+}
+.gh-stat-card .gh-stat-label { font-size: 0.75rem; color: var(--gh-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.gh-level-badge {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6ec8ff, var(--gh-blue));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-num); font-weight: 800; font-size: 1.2rem; color: #fff;
+  box-shadow: 0 4px 10px rgba(77,163,255,0.4);
+  margin-bottom: 8px;
+}
+.gh-xp-track { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.gh-xp-fill { height: 100%; background: linear-gradient(90deg, var(--gh-blue), #8ad2ff); border-radius: 4px; }
+.gh-xp-label { font-size: 0.72rem; color: var(--gh-muted); margin-top: 4px; font-family: var(--font-num); }
+
+/* Subjects grid */
+.gh-section-title {
+  font-family: var(--font-num); font-size: 0.85rem; font-weight: 800; letter-spacing: 1.5px;
+  color: var(--gh-muted); margin-bottom: 12px; text-transform: uppercase;
+}
+.gh-subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.gh-subject-card {
+  border-radius: 16px; padding: 16px; cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .12s;
+  border: 1px solid var(--gh-border);
+}
+.gh-subject-card:hover { transform: translateY(-3px); }
+.gh-subject-card .icon { font-size: 1.8rem; margin-bottom: 10px; display: block; }
+.gh-subject-card .name { font-weight: 800; font-family: var(--font-fun); margin-bottom: 4px; }
+.gh-subject-card .count { font-size: 0.78rem; opacity: 0.85; }
+.gh-subject-card.math    { background: linear-gradient(150deg, #1c3f8f, #16305e); }
+.gh-subject-card.russian { background: linear-gradient(150deg, #9c2a4a, #5e1830); }
+.gh-subject-card.science { background: linear-gradient(150deg, #1c7a4e, #0f4a30); }
+.gh-subject-card.history { background: linear-gradient(150deg, #6a3ab0, #3f1f6e); }
+
+/* Lessons list */
+.gh-lesson-row {
+  background: var(--gh-card); border: 1px solid var(--gh-border); border-radius: 14px;
+  padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+  margin-bottom: 10px; transition: background .12s;
+}
+.gh-lesson-row:hover { background: var(--gh-card-hi); }
+.gh-lesson-row .emoji { font-size: 1.4rem; }
+.gh-lesson-row .title { font-weight: 700; }
+.gh-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800;
+  margin-bottom: 3px;
+}
+.gh-badge.math    { background: rgba(77,163,255,0.18); color: #6fb4ff; }
+.gh-badge.russian { background: rgba(255,93,122,0.18); color: #ff8ca1; }
+.gh-badge.science { background: rgba(34,211,139,0.18); color: #5fe6b0; }
+.gh-badge.history { background: rgba(177,123,255,0.18); color: #c6a3ff; }
+
+.gh-card { background: var(--gh-card); border: 1px solid var(--gh-border); border-radius: 14px; padding: 16px; }
+.gh-empty { text-align: center; padding: 40px 20px; color: var(--gh-muted); }
+
+.game-home .input {
+  background: #12152e; border: 1px solid var(--gh-border); color: var(--gh-text);
+  border-radius: 10px;
+}
+.game-home .input::placeholder { color: #6b729c; }
+.game-home .input:focus { border-color: var(--gh-blue); }
+
+@media (max-width: 560px) {
+  .gh-hero h1 { font-size: 1.25rem; }
+  .gh-lod h2 { font-size: 1.1rem; }
+}
