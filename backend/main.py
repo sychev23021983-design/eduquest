@@ -32,6 +32,7 @@ SUBJECT_LABELS = {
 DEFAULT_SETTINGS = {
     "site_name": "EduQuest",
     "logo_url": None,
+    "logo_size": 28,
     "favicon_url": None,
     "bg_main": None,
     "bg_hero": None,
@@ -850,6 +851,7 @@ def read_settings():
 class SettingsIn(BaseModel):
     site_name: Optional[str] = None
     logo_url: Optional[str] = None
+    logo_size: Optional[int] = None
     favicon_url: Optional[str] = None
     bg_main: Optional[str] = None
     bg_hero: Optional[str] = None

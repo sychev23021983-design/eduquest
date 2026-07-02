@@ -53,10 +53,10 @@
 }
 .gh-logout { background: none; border: none; color: var(--gh-muted); font-size: 0.8rem; cursor: pointer; flex-shrink: 0; }
 
-.gh-wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px; }
+.gh-wrap { max-width: 1960px; margin: 0 auto; padding: 20px 16px; }
 
 /* 3-column responsive shell (боковые узкие панели + широкая центральная колонка) */
-.gh-shell { display: grid; gap: 16px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.gh-shell { display: grid; gap: 16px; max-width: 2400px; margin: 0 auto; align-items: start; }
 .gh-side-panel {
   position: sticky; top: 76px; min-height: 420px; border-radius: 18px; overflow: hidden;
   background-size: cover; background-position: center; background-color: var(--gh-card);

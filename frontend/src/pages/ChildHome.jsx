@@ -79,7 +79,7 @@ export default function ChildHome() {
       {/* Top bar */}
       <div className="gh-topbar">
         {settings.logo_url ? (
-          <img src={settings.logo_url} alt={settings.site_name} style={{ height: 28, objectFit: 'contain' }} />
+          <img src={settings.logo_url} alt={settings.site_name} style={{ height: settings.logo_size || 28, objectFit: 'contain' }} />
         ) : (
           <span className="gh-logo">🕹️ {settings.site_name || 'EduQuest'}</span>
         )}

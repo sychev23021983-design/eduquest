@@ -67,6 +67,7 @@ export default function Settings() {
     try {
       await api.updateSettings(token, {
         site_name: form.site_name,
+        logo_size: form.logo_size,
         font_heading: form.font_heading,
         font_body: form.font_body,
         color_accent: form.color_accent,
@@ -114,6 +115,12 @@ export default function Settings() {
           <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Топбар</h3>
           <UploadRow label="Логотип" hint="Показывается в шапке вместо названия. PNG/SVG с прозрачным фоном лучше всего."
                      currentUrl={form.logo_url} uploading={uploadingSlot === 'logo_url'} onUpload={f => uploadTo('logo_url', f)} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0' }}>
+            <label style={{ fontWeight: 600, fontSize: 14, minWidth: 160 }}>Высота логотипа</label>
+            <input type="range" min="16" max="80" value={form.logo_size || 28}
+                   onChange={e => setF('logo_size', Number(e.target.value))} style={{ flex: 1 }} />
+            <span style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--muted)', width: 44 }}>{form.logo_size || 28}px</span>
+          </div>
           <UploadRow label="Favicon (иконка вкладки)" hint="Квадратная картинка, отобразится в заголовке вкладки браузера."
                      currentUrl={form.favicon_url} uploading={uploadingSlot === 'favicon_url'} onUpload={f => uploadTo('favicon_url', f)} previewSize={40} />
         </div>
