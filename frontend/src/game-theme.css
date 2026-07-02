@@ -181,32 +181,28 @@
   display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;
 }
 
-/* Path / node map (LogicLike-style chain) */
-.gh-path { position: relative; padding: 26px 10px 6px; }
-.gh-path::before {
-  content: ''; position: absolute; top: 20px; bottom: 20px; left: 50%; width: 3px;
-  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.18) 0 8px, transparent 8px 18px);
-  transform: translateX(-50%); z-index: 0;
+/* Path / node map (LogicLike-style snake path with smooth curve) */
+.gh-path-wrap { position: relative; margin: 0 auto; max-width: 480px; }
+.gh-path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+.gh-node-abs {
+  position: absolute; transform: translateX(-50%); width: 120px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  z-index: 1; background: none; border: none;
 }
-.gh-node-row { position: relative; z-index: 1; display: flex; margin-bottom: 20px; }
-.gh-node-row.pos-c { justify-content: center; }
-.gh-node-row.pos-l { justify-content: flex-start; padding-left: 6%; }
-.gh-node-row.pos-r { justify-content: flex-end; padding-right: 6%; }
-.gh-node { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 118px; text-align: center; background: none; border: none; }
-.gh-node.clickable { cursor: pointer; }
-.gh-node.locked, .gh-node.soon { cursor: default; opacity: 0.55; }
+.gh-node-abs.clickable { cursor: pointer; }
+.gh-node-abs.locked, .gh-node-abs.soon { cursor: default; opacity: 0.55; }
 .gh-node-circle {
   width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; border: 3px solid rgba(255,255,255,0.15);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.35); transition: transform .12s;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35); transition: transform .12s; flex-shrink: 0;
 }
-.gh-node.clickable:hover .gh-node-circle { transform: translateY(-3px) scale(1.06); }
+.gh-node-abs.clickable:hover .gh-node-circle { transform: translateY(-3px) scale(1.06); }
 .gh-node-circle.intro     { background: linear-gradient(160deg, #ffe08a, var(--gh-amber)); }
 .gh-node-circle.available { background: linear-gradient(160deg, #74b8ff, var(--gh-blue)); animation: gh-pulse 1.8s ease-in-out infinite; }
 .gh-node-circle.completed { background: linear-gradient(160deg, #57e6ac, var(--gh-green)); }
 .gh-node-circle.locked, .gh-node-circle.soon { background: #262b52; }
 .gh-node-label { font-size: 0.72rem; font-weight: 700; line-height: 1.3; color: var(--gh-text); }
-.gh-node.locked .gh-node-label, .gh-node.soon .gh-node-label { color: var(--gh-muted); }
+.gh-node-abs.locked .gh-node-label, .gh-node-abs.soon .gh-node-label { color: var(--gh-muted); }
 @keyframes gh-pulse {
   0%, 100% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 0 rgba(77,163,255,0.5); }
   50% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 8px rgba(77,163,255,0); }
@@ -228,6 +224,6 @@
 @media (max-width: 560px) {
   .gh-hero h1 { font-size: 1.25rem; }
   .gh-lod h2 { font-size: 1.1rem; }
-  .gh-node { width: 92px; }
+  .gh-node-abs { width: 96px; }
   .gh-node-circle { width: 52px; height: 52px; font-size: 1.3rem; }
 }
