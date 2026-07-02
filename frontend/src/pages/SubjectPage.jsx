@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
+import '../game-theme.css'
 
 const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
 const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️' }
+
+// Позиции узлов вдоль дорожки: центр → лево → право → центр → ...
+const POSITIONS = ['c', 'l', 'r']
 
 export default function SubjectPage() {
   const { subject } = useParams()
@@ -12,9 +16,8 @@ export default function SubjectPage() {
   const nav = useNavigate()
   const [grade, setGrade] = useState(5)
   const [tree, setTree]   = useState([])
-  const [lessonsByTopic, setLessonsByTopic] = useState({})
-  const [openTopic, setOpenTopic] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [soonMsg, setSoonMsg] = useState(false)
 
   useEffect(() => { init() }, [subject])
 
@@ -28,76 +31,92 @@ export default function SubjectPage() {
     setLoading(false)
   }
 
-  async function toggleTopic(t) {
-    if (openTopic === t.id) { setOpenTopic(null); return }
-    setOpenTopic(t.id)
-    if (!lessonsByTopic[t.id]) {
-      const ls = await api.lessons(token, subject, t.id)
-      setLessonsByTopic(m => ({ ...m, [t.id]: ls }))
-    }
+  function nodeState(section, topic, prevDone) {
+    if (topic.completed) return 'completed'
+    if (!prevDone) return 'locked'
+    return topic.lesson_count > 0 ? 'available' : 'soon'
+  }
+
+  function onNodeClick(state, action) {
+    if (state === 'locked') return
+    if (state === 'soon') { setSoonMsg(true); setTimeout(() => setSoonMsg(false), 2000); return }
+    action()
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <div style={{ background: '#1a1a2e', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <button onClick={() => nav('/')} style={{ background: 'none', border: 'none', fontSize: 20, color: '#aaa' }}>‹</button>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{SUBJ_ICON[subject]} {SUBJ[subject]} · {grade} класс</span>
+    <div className="game-home">
+      <div className="gh-topbar">
+        <button className="gh-logout" onClick={() => nav('/')} style={{ fontSize: 20 }}>‹</button>
+        <span className="gh-logo">{SUBJ_ICON[subject]} {SUBJ[subject]}</span>
+        <span style={{ marginLeft: 'auto', color: 'var(--gh-muted)', fontSize: '0.85rem', fontFamily: 'var(--font-num)' }}>{grade} класс</span>
       </div>
 
-      <div className="page">
-        {loading && <p style={{ color: 'var(--muted)' }}>Загрузка…</p>}
+      <div className="gh-wrap">
+        {loading && <div className="gh-empty">🔍 Загружаю карту тем…</div>}
         {!loading && tree.length === 0 && (
-          <p style={{ color: 'var(--muted)', textAlign: 'center', padding: 40 }}>
-            Программа по этому предмету пока не заполнена 🚧
-          </p>
+          <div className="gh-card gh-empty">Программа по этому предмету пока не заполнена 🚧</div>
         )}
 
-        {tree.map((s, si) => (
-          <div key={s.id} style={{ marginBottom: 22 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--muted)', marginBottom: 10 }}>
-              {si + 1}. {s.title.toUpperCase()}
-            </h2>
-            {s.intro && (
-              <div className="card" style={{
-                marginBottom: 14, background: 'var(--blue-light)', borderColor: 'var(--blue)',
-                whiteSpace: 'pre-wrap', lineHeight: 1.7, fontSize: 14.5,
-              }}>
-                <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 8, fontSize: 13, letterSpacing: 0.3 }}>
-                  📘 ВВЕДЕНИЕ
-                </div>
-                {s.intro}
-              </div>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {s.topics.map((t, ti) => (
-                <div key={t.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                  <div onClick={() => toggleTopic(t)} style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontWeight: 600, flex: 1 }}>{si + 1}.{ti + 1} {t.title}</span>
-                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-                      {t.lesson_count > 0 ? `📚 ${t.lesson_count} урок(ов)` : 'скоро появятся'}
-                    </span>
-                    <span style={{ color: 'var(--blue)', transform: openTopic === t.id ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>›</span>
-                  </div>
-                  {openTopic === t.id && (
-                    <div style={{ borderTop: '1px solid var(--border)', padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {(lessonsByTopic[t.id] || []).map(l => (
-                        <div key={l.id} onClick={() => nav(`/lesson/${l.id}`)}
-                             style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg)', borderRadius: 8, padding: '10px 12px' }}>
-                          <span style={{ flex: 1 }}>{l.topic}</span>
-                          <span style={{ fontSize: 12, color: 'var(--muted)' }}>🪙 {l.coins_lesson}</span>
-                          <span style={{ color: 'var(--blue)' }}>›</span>
-                        </div>
-                      ))}
-                      {(lessonsByTopic[t.id] || []).length === 0 && (
-                        <p style={{ color: 'var(--muted)', fontSize: 13, padding: '6px 4px' }}>Уроков пока нет — скоро появятся 🚀</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+        {soonMsg && (
+          <div style={{
+            position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 100,
+            background: 'var(--gh-card-hi)', border: '1px solid var(--gh-border)', borderRadius: 12,
+            padding: '10px 18px', fontWeight: 700, fontSize: '0.85rem', boxShadow: '0 8px 20px rgba(0,0,0,0.4)'
+          }}>
+            🤖 Этот урок ещё не готов — скоро появится!
           </div>
-        ))}
+        )}
+
+        {tree.map((s, si) => {
+          const hasIntro = !!s.intro
+          let prevDone = hasIntro ? s.intro_done : true
+          const nodes = []
+
+          if (hasIntro) {
+            nodes.push({ kind: 'intro', state: s.intro_done ? 'completed' : 'available', label: 'Введение' })
+          }
+          s.topics.forEach((t, ti) => {
+            const state = nodeState(s, t, prevDone)
+            nodes.push({ kind: 'topic', topic: t, index: ti, state, label: `${si + 1}.${ti + 1} ${t.title}` })
+            prevDone = t.completed
+          })
+
+          return (
+            <div key={s.id} className="gh-section-block">
+              <div className="gh-section-head">
+                <span className="gh-section-num">{si + 1}</span>
+                {s.title}
+              </div>
+
+              <div className="gh-path">
+                {nodes.map((n, i) => {
+                  const pos = POSITIONS[i % POSITIONS.length]
+                  const clickable = n.state === 'available' || n.state === 'completed'
+                  const icon = n.kind === 'intro' ? '📖'
+                    : n.state === 'completed' ? '⭐'
+                    : n.state === 'locked' ? '🔒'
+                    : n.state === 'soon' ? '⏳'
+                    : (n.kind === 'topic' ? n.index + 1 : '•')
+                  const circleClass = n.kind === 'intro' && n.state !== 'completed' ? 'intro' : n.state
+                  const action = n.kind === 'intro'
+                    ? () => nav(`/subject/${subject}/intro/${s.id}`)
+                    : () => nav(`/lesson/${n.topic.lessons[0].id}`)
+                  return (
+                    <div key={i} className={`gh-node-row pos-${pos}`}>
+                      <div
+                        className={`gh-node ${clickable ? 'clickable' : n.state}`}
+                        onClick={() => onNodeClick(n.state, action)}
+                      >
+                        <div className={`gh-node-circle ${circleClass}`}>{icon}</div>
+                        <div className="gh-node-label">{n.label}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

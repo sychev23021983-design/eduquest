@@ -321,6 +321,7 @@ def init_db():
     """)
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
     migrate_add_column(conn, "sections", "intro", "TEXT")
+    migrate_add_column(conn, "sections", "intro_seen_at", "TEXT")
     seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
     seed_section_intro_if_missing(conn, 5, "math", "Натуральные числа", SECTION_INTRO_NATURAL_NUMBERS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Цифры и натуральные числа", LESSON_NATURAL_DIGITS)
@@ -443,10 +444,40 @@ def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
             t_lessons = conn.execute(
                 "SELECT id, topic FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
             ).fetchall()
-            topic_list.append({**dict(t), "lessons": [dict(l) for l in t_lessons], "lesson_count": len(t_lessons)})
-        result.append({**dict(s), "topics": topic_list})
+            lesson_ids = [l["id"] for l in t_lessons]
+            completed = False
+            if lesson_ids:
+                placeholders = ",".join("?" * len(lesson_ids))
+                cnt = conn.execute(
+                    f"SELECT COUNT(*) as n FROM progress WHERE lesson_id IN ({placeholders}) AND finished_at IS NOT NULL",
+                    lesson_ids
+                ).fetchone()["n"]
+                completed = cnt > 0
+            topic_list.append({
+                **dict(t),
+                "lessons": [dict(l) for l in t_lessons],
+                "lesson_count": len(t_lessons),
+                "completed": completed,
+            })
+        result.append({**dict(s), "intro_done": bool(s["intro_seen_at"]), "topics": topic_list})
     conn.close()
     return {"grade": grade, "subject": subject, "sections": result}
+
+@app.get("/api/sections/{section_id}")
+def get_section(section_id: int, role: str = Depends(require_any)):
+    conn = get_conn()
+    s = conn.execute("SELECT * FROM sections WHERE id=?", (section_id,)).fetchone()
+    conn.close()
+    if not s:
+        raise HTTPException(404, "Not found")
+    return {**dict(s), "intro_done": bool(s["intro_seen_at"])}
+
+@app.post("/api/sections/{section_id}/intro-done")
+def complete_intro(section_id: int, role: str = Depends(require_any)):
+    conn = get_conn()
+    conn.execute("UPDATE sections SET intro_seen_at=datetime('now') WHERE id=?", (section_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
 
 @app.post("/api/sections")
 def create_section(data: SectionIn, role: str = Depends(require_parent)):
