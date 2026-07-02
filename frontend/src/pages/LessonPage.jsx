@@ -123,11 +123,13 @@ export default function LessonPage() {
         {/* INTRO / COVER */}
         {phase === 'intro' && (
           <div>
-            <div className="dl-cover">
-              <div className="dl-stamp">ДЕЛО №{lesson.id}</div>
-              <span className="dl-magnifier">🔍</span>
-              <h1>{lesson.topic}</h1>
-            </div>
+            {!lesson.infographic && (
+              <div className="dl-cover">
+                <div className="dl-stamp">ДЕЛО №{lesson.id}</div>
+                <span className="dl-magnifier">🔍</span>
+                <h1>{lesson.topic}</h1>
+              </div>
+            )}
 
             {lesson.infographic ? (
               <img src={lesson.infographic} alt="История дела" style={{ width: '100%', borderRadius: 14, marginBottom: 16, boxShadow: '0 10px 20px rgba(0,0,0,0.35)' }} />
