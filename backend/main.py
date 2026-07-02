@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-import sqlite3, os, jwt, shutil, re
+import sqlite3, os, jwt, shutil, re, json
 from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import BaseModel
@@ -49,6 +49,107 @@ def parse_curriculum_text(text: str):
             current["topics"].append(m_topic.group(1).strip())
             continue
     return sections
+
+def seed_lesson_if_missing(conn, grade: int, subject: str, section_title: str, topic_title: str, lesson: dict):
+    """Создаёт урок для темы (по названию раздела+темы), если у темы ещё нет ни одного активного урока."""
+    row = conn.execute("""
+        SELECT t.id as topic_id FROM topics t
+        JOIN sections s ON t.section_id = s.id
+        WHERE s.grade=? AND s.subject=? AND s.title=? AND t.title=?
+    """, (grade, subject, section_title, topic_title)).fetchone()
+    if not row:
+        return  # раздел/тема ещё не созданы — пропускаем, попробуем на следующем старте
+    topic_id = row["topic_id"]
+    existing = conn.execute(
+        "SELECT COUNT(*) as n FROM lessons WHERE topic_id=? AND active=1", (topic_id,)
+    ).fetchone()["n"]
+    if existing > 0:
+        return
+    conn.execute("""INSERT INTO lessons
+        (subject,grade,topic,topic_id,context_theme,explanation,explanation_game,questions,boss_task,coins_lesson,coins_boss)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (subject, grade, lesson["topic"], topic_id, lesson.get("context_theme", "detective"),
+         lesson.get("explanation", ""), lesson.get("explanation_game", ""),
+         json.dumps(lesson["questions"], ensure_ascii=False),
+         json.dumps(lesson["boss_task"], ensure_ascii=False) if lesson.get("boss_task") else None,
+         lesson.get("coins_lesson", 50), lesson.get("coins_boss", 30)))
+
+LESSON_NATURAL_DIGITS = {
+    "topic": "Цифры и натуральные числа",
+    "context_theme": "detective",
+    "explanation": (
+        "Натуральные числа — это числа, которыми считают предметы: 1, 2, 3, 4 и так далее без конца. "
+        "К любому натуральному числу всегда можно прибавить единицу и получить следующее — поэтому "
+        "самого большого натурального числа не существует. Отдельно от них стоит число 0 — оно обозначает "
+        "отсутствие предметов, «пусто». Цифры — это десять знаков (0,1,2,3,4,5,6,7,8,9), из которых "
+        "составляются все числа: цифр всего десять, а чисел из них можно построить бесконечно много. "
+        "Многозначные числа читаются по классам — единицы, тысячи, миллионы, — каждый класс состоит из "
+        "трёх разрядов: сотни, десятки, единицы."
+    ),
+    "explanation_game": (
+        "Ночью в Музей математики пробрался загадочный вор и украл цифры со всех экспонатов. Чтобы найти "
+        "его, тебе нужно стать детективом чисел и разобраться, как устроены числа на самом деле. Первая улика: "
+        "цифра и число — это не одно и то же. Цифр всего десять — они как десять букв в особом алфавите, а "
+        "чисел из них можно составить бесконечно много, как слов из букв. Вторая улика: место цифры в записи "
+        "числа решает всё — в числе 5824 цифра 5 стоит в разряде тысяч и означает 5 тысяч, а если её "
+        "переставить в конец, получится совсем другое число. Третья улика: у чисел нет потолка — к любому, "
+        "даже самому огромному числу всегда можно прибавить единицу, поэтому вору никогда не удастся украсть "
+        "«последнее» число — его просто не существует. И главная тайна дела — число 0: это не «ничего не "
+        "значащая» цифра, а важный знак, обозначающий пустоту, отсутствие предметов."
+    ),
+    "questions": [
+        {
+            "text": "Детектив нашёл на месте преступления цифру и число. Сколько всего цифр существует?",
+            "options": ["9", "10", "100", "Бесконечно много"],
+            "correct": 1,
+            "hint": "Вспомни: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 — посчитай их.",
+            "explanation": "Цифр ровно 10 (от 0 до 9). А вот чисел, которые из них можно составить, — бесконечно много."
+        },
+        {
+            "text": "Сколько цифр использовано в записи числа 5824?",
+            "options": ["3", "4", "5", "8"],
+            "correct": 1,
+            "hint": "Посчитай все знаки подряд: 5, 8, 2, 4.",
+            "explanation": "В числе 5824 четыре цифры: 5, 8, 2 и 4 — они стоят в разрядах тысяч, сотен, десятков и единиц."
+        },
+        {
+            "text": "Какое число идёт сразу после 999 999?",
+            "options": ["9 999 991", "1 000 000", "999 991", "100 000"],
+            "correct": 1,
+            "hint": "Когда все девятки заканчиваются, появляется новый, более старший разряд.",
+            "explanation": "После 999 999 идёт 1 000 000 — миллион. Это как одометр, где все девятки одновременно превращаются в нули, а спереди добавляется единица."
+        },
+        {
+            "text": "Что означает число 0 в математике?",
+            "options": ["Самое маленькое натуральное число", "Отсутствие предметов, «пусто»", "Ошибку в счёте", "Бесконечность"],
+            "correct": 1,
+            "hint": "Представь пустую коробку — сколько в ней предметов?",
+            "explanation": "Ноль обозначает отсутствие предметов, «пусто». Это не ошибка и не пустое место — это полноценное число со своим смыслом."
+        },
+        {
+            "text": "В числе 3 452 810 какая цифра стоит в самом старшем классе — классе миллионов?",
+            "options": ["3", "4", "5", "8"],
+            "correct": 0,
+            "hint": "Раздели число на классы по три цифры справа налево: 3 | 452 | 810.",
+            "explanation": "3 452 810 делится на классы так: 3 — класс миллионов, 452 — класс тысяч, 810 — класс единиц. В классе миллионов стоит цифра 3."
+        }
+    ],
+    "boss_task": {
+        "text": (
+            "Вор оставил зашифрованное послание с кодом от сейфа: «Мой код — самое большое шестизначное число, "
+            "в котором все цифры разные и оно заканчивается на 0». Реши, какой код у сейфа."
+        ),
+        "solution": (
+            "Ответ: 987650. Раз число должно заканчиваться на 0, эта цифра уже занимает последнее место. "
+            "Чтобы число получилось максимально большим, на оставшиеся пять мест ставим самые большие из "
+            "неповторяющихся цифр по убыванию: 9, 8, 7, 6, 5. Получаем 987650."
+        ),
+        "hint1": "Чтобы число было как можно больше, самые большие цифры нужно ставить в начале, слева направо.",
+        "hint2": "Раз число обязательно заканчивается на 0, эта цифра уже стоит на своём месте — какие цифры остались для остальных пяти позиций?",
+    },
+    "coins_lesson": 60,
+    "coins_boss": 40,
+}
 
 def seed_curriculum_if_empty(conn, grade: int, subject: str, raw_text: str):
     existing = conn.execute(
@@ -196,6 +297,7 @@ def init_db():
     """)
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
     seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
+    seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Цифры и натуральные числа", LESSON_NATURAL_DIGITS)
     conn.commit()
     conn.close()
 
