@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
 
@@ -14,16 +14,22 @@ const EMPTY_Q = { text: '', options: ['', '', '', ''], correct: 0, hint: '', exp
 
 export default function LessonEditor() {
   const { id } = useParams()
+  const [params] = useSearchParams()
   const { token } = useAuth()
   const nav = useNavigate()
   const isNew = !id
+  const [topicInfo, setTopicInfo] = useState(null) // {section: {title}, title} — контекст темы из программы
 
   const [saving,  setSaving]  = useState(false)
   const [msg,     setMsg]     = useState('')
   const [savedId, setSavedId] = useState(null)
 
   const [form, setForm] = useState({
-    subject: 'math', grade: 4, topic: '', context_theme: 'minecraft',
+    subject: params.get('subject') || 'math',
+    grade: Number(params.get('grade')) || 4,
+    topic: params.get('topic') || '',
+    topic_id: params.get('topic_id') ? Number(params.get('topic_id')) : null,
+    context_theme: 'minecraft',
     explanation: '', explanation_game: '',
     coins_lesson: 50, coins_boss: 30,
   })
@@ -38,10 +44,16 @@ export default function LessonEditor() {
     if (!isNew) loadLesson()
   }, [id])
 
+  useEffect(() => {
+    if (form.topic_id) {
+      api.topic(token, form.topic_id).then(setTopicInfo).catch(() => {})
+    }
+  }, [form.topic_id])
+
   async function loadLesson() {
     const l = await api.lesson(token, id)
     setForm({
-      subject: l.subject, grade: l.grade, topic: l.topic,
+      subject: l.subject, grade: l.grade, topic: l.topic, topic_id: l.topic_id || null,
       context_theme: l.context_theme, explanation: l.explanation || '',
       explanation_game: l.explanation_game || '',
       coins_lesson: l.coins_lesson, coins_boss: l.coins_boss,
@@ -123,6 +135,20 @@ export default function LessonEditor() {
       </div>
 
       <div className="page" style={{ maxWidth: 760 }}>
+
+        {topicInfo && (
+          <div className="card" style={{ marginBottom: 20, background: 'var(--blue-light)', borderColor: 'var(--blue)' }}>
+            <div style={{ fontSize: 12, color: 'var(--blue)', fontWeight: 700, marginBottom: 4 }}>
+              📖 ИЗ ПРОГРАММЫ: {topicInfo.section?.title}
+            </div>
+            <div style={{ fontWeight: 600 }}>{topicInfo.title}</div>
+            {topicInfo.lessons?.length > 0 && (
+              <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+                Уже есть уроков по этой теме: {topicInfo.lessons.length}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Basic info */}
         <div className="card" style={{ marginBottom: 20 }}>

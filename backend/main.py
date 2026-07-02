@@ -35,9 +35,30 @@ def get_conn():
     conn.row_factory = sqlite3.Row
     return conn
 
+def migrate_add_column(conn, table, col, coltype):
+    cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+    if col not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {coltype}")
+
 def init_db():
     conn = get_conn()
     conn.executescript("""
+        CREATE TABLE IF NOT EXISTS sections (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            grade        INTEGER NOT NULL,
+            subject      TEXT NOT NULL,
+            title        TEXT NOT NULL,
+            order_index  INTEGER DEFAULT 0,
+            created_at   TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS topics (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            section_id   INTEGER NOT NULL,
+            title        TEXT NOT NULL,
+            order_index  INTEGER DEFAULT 0,
+            created_at   TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(section_id) REFERENCES sections(id)
+        );
         CREATE TABLE IF NOT EXISTS lessons (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             subject       TEXT NOT NULL,
@@ -87,6 +108,7 @@ def init_db():
         );
         INSERT OR IGNORE INTO streak(id, days, last_day) VALUES (1, 0, NULL);
     """)
+    migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
     conn.commit()
     conn.close()
 
@@ -153,7 +175,11 @@ def health():
 
 @app.get("/api/config")
 def config():
-    return {"child_name": os.environ.get("CHILD_NAME", "Тимофей")}
+    return {
+        "child_name": os.environ.get("CHILD_NAME", "Тимофей"),
+        "child_grade": int(os.environ.get("CHILD_GRADE", "5")),
+        "subjects": SUBJECT_LABELS,
+    }
 
 # ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -170,12 +196,113 @@ def login(data: LoginIn):
         raise HTTPException(status_code=401, detail="Wrong password")
     return {"token": make_token(data.role), "role": data.role}
 
+# ── Curriculum: Класс → Предмет → Раздел → Тема ─────────────────────────────────
+
+class SectionIn(BaseModel):
+    grade: int
+    subject: str
+    title: str
+    order_index: int = 0
+
+class TopicIn(BaseModel):
+    section_id: int
+    title: str
+    order_index: int = 0
+
+@app.get("/api/curriculum")
+def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
+    """Полное дерево разделов и тем предмета — общая картина для планирования уроков."""
+    conn = get_conn()
+    sections = conn.execute(
+        "SELECT * FROM sections WHERE grade=? AND subject=? ORDER BY order_index, id",
+        (grade, subject)
+    ).fetchall()
+    result = []
+    for s in sections:
+        topics = conn.execute(
+            "SELECT * FROM topics WHERE section_id=? ORDER BY order_index, id", (s["id"],)
+        ).fetchall()
+        topic_list = []
+        for t in topics:
+            cnt = conn.execute(
+                "SELECT COUNT(*) as n FROM lessons WHERE topic_id=? AND active=1", (t["id"],)
+            ).fetchone()["n"]
+            topic_list.append({**dict(t), "lesson_count": cnt})
+        result.append({**dict(s), "topics": topic_list})
+    conn.close()
+    return {"grade": grade, "subject": subject, "sections": result}
+
+@app.post("/api/sections")
+def create_section(data: SectionIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("INSERT INTO sections (grade,subject,title,order_index) VALUES (?,?,?,?)",
+              (data.grade, data.subject, data.title, data.order_index))
+    sid = c.lastrowid; conn.commit(); conn.close()
+    return {"id": sid}
+
+@app.put("/api/sections/{section_id}")
+def update_section(section_id: int, data: SectionIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    conn.execute("UPDATE sections SET grade=?,subject=?,title=?,order_index=? WHERE id=?",
+                 (data.grade, data.subject, data.title, data.order_index, section_id))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.delete("/api/sections/{section_id}")
+def delete_section(section_id: int, role: str = Depends(require_parent)):
+    conn = get_conn()
+    topic_ids = [r["id"] for r in conn.execute("SELECT id FROM topics WHERE section_id=?", (section_id,)).fetchall()]
+    if topic_ids:
+        conn.execute("UPDATE lessons SET topic_id=NULL WHERE topic_id IN (%s)" % ",".join("?"*len(topic_ids)), topic_ids)
+        conn.execute("DELETE FROM topics WHERE section_id=?", (section_id,))
+    conn.execute("DELETE FROM sections WHERE id=?", (section_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.post("/api/topics")
+def create_topic(data: TopicIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("INSERT INTO topics (section_id,title,order_index) VALUES (?,?,?)",
+              (data.section_id, data.title, data.order_index))
+    tid = c.lastrowid; conn.commit(); conn.close()
+    return {"id": tid}
+
+@app.put("/api/topics/{topic_id}")
+def update_topic(topic_id: int, data: TopicIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    conn.execute("UPDATE topics SET section_id=?,title=?,order_index=? WHERE id=?",
+                 (data.section_id, data.title, data.order_index, topic_id))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.delete("/api/topics/{topic_id}")
+def delete_topic(topic_id: int, role: str = Depends(require_parent)):
+    conn = get_conn()
+    conn.execute("UPDATE lessons SET topic_id=NULL WHERE topic_id=?", (topic_id,))
+    conn.execute("DELETE FROM topics WHERE id=?", (topic_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.get("/api/topics/{topic_id}")
+def get_topic(topic_id: int, role: str = Depends(require_any)):
+    conn = get_conn()
+    t = conn.execute("SELECT * FROM topics WHERE id=?", (topic_id,)).fetchone()
+    if not t:
+        conn.close(); raise HTTPException(404, "Not found")
+    s = conn.execute("SELECT * FROM sections WHERE id=?", (t["section_id"],)).fetchone()
+    lessons = conn.execute("SELECT * FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (topic_id,)).fetchall()
+    conn.close()
+    return {**dict(t), "section": dict(s) if s else None, "lessons": [dict(l) for l in lessons]}
+
 # ── Lessons ───────────────────────────────────────────────────────────────────
 
 class LessonIn(BaseModel):
     subject: str
     grade: int = 4
     topic: str
+    topic_id: Optional[int] = None
     context_theme: str = "minecraft"
     explanation: str = ""
     explanation_game: str = ""
@@ -185,11 +312,13 @@ class LessonIn(BaseModel):
     coins_boss: int = 30
 
 @app.get("/api/lessons")
-def list_lessons(subject: Optional[str] = None, role: str = Depends(require_any)):
+def list_lessons(subject: Optional[str] = None, topic_id: Optional[int] = None, role: str = Depends(require_any)):
     conn = get_conn()
     q, params = "SELECT * FROM lessons WHERE active=1", []
     if subject:
         q += " AND subject=?"; params.append(subject)
+    if topic_id:
+        q += " AND topic_id=?"; params.append(topic_id)
     rows = conn.execute(q + " ORDER BY created_at DESC", params).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -208,9 +337,9 @@ def create_lesson(data: LessonIn, role: str = Depends(require_parent)):
     conn = get_conn()
     c = conn.cursor()
     c.execute("""INSERT INTO lessons
-        (subject,grade,topic,context_theme,explanation,explanation_game,questions,boss_task,coins_lesson,coins_boss)
-        VALUES (?,?,?,?,?,?,?,?,?,?)""",
-        (data.subject, data.grade, data.topic, data.context_theme,
+        (subject,grade,topic,topic_id,context_theme,explanation,explanation_game,questions,boss_task,coins_lesson,coins_boss)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (data.subject, data.grade, data.topic, data.topic_id, data.context_theme,
          data.explanation, data.explanation_game,
          data.questions, data.boss_task, data.coins_lesson, data.coins_boss))
     lid = c.lastrowid; conn.commit(); conn.close()
@@ -219,10 +348,10 @@ def create_lesson(data: LessonIn, role: str = Depends(require_parent)):
 @app.put("/api/lessons/{lesson_id}")
 def update_lesson(lesson_id: int, data: LessonIn, role: str = Depends(require_parent)):
     conn = get_conn()
-    conn.execute("""UPDATE lessons SET subject=?,grade=?,topic=?,context_theme=?,
+    conn.execute("""UPDATE lessons SET subject=?,grade=?,topic=?,topic_id=?,context_theme=?,
         explanation=?,explanation_game=?,questions=?,boss_task=?,coins_lesson=?,coins_boss=?
         WHERE id=?""",
-        (data.subject, data.grade, data.topic, data.context_theme,
+        (data.subject, data.grade, data.topic, data.topic_id, data.context_theme,
          data.explanation, data.explanation_game,
          data.questions, data.boss_task, data.coins_lesson, data.coins_boss, lesson_id))
     conn.commit(); conn.close()

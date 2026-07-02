@@ -105,7 +105,7 @@ export default function ChildHome() {
               const subLessons = lessons.filter(l => l.subject === s)
               return (
                 <div key={s} className="card" style={{ cursor: 'pointer' }}
-                     onClick={() => { /* filter tab */ }}>
+                     onClick={() => nav(`/subject/${s}`)}>
                   <div style={{ fontSize: 28, marginBottom: 6 }}>{SUBJ_ICON[s]}</div>
                   <div style={{ fontWeight: 600 }}>{SUBJ[s]}</div>
                   <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{subLessons.length} уроков</div>

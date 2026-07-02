@@ -49,6 +49,10 @@ export default function ParentDashboard() {
           <span style={{ background: '#faeeda', color: '#7a4a00', borderRadius: 20, padding: '4px 12px', fontSize: 13, fontWeight: 600 }}>
             🪙 {balance.balance || 0} монет
           </span>
+          <button onClick={() => nav('/parent/curriculum')}
+                  style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', fontSize: 13, borderRadius: 8, padding: '6px 12px' }}>
+            📖 Программа
+          </button>
           <button onClick={logout} style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 13 }}>Выйти</button>
         </div>
       </div>

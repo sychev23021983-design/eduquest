@@ -25,8 +25,17 @@ async function upload(path, formData, token) {
 
 export const api = {
   login:          (data)            => req('POST', '/login', data),
-  lessons:        (token, subject)  => req('GET', `/lessons${subject ? `?subject=${subject}` : ''}`, null, token),
+  config:         ()                => req('GET', '/config'),
+  lessons:        (token, subject, topicId) => req('GET', `/lessons?${subject ? `subject=${subject}&` : ''}${topicId ? `topic_id=${topicId}` : ''}`, null, token),
   lesson:         (token, id)       => req('GET', `/lessons/${id}`, null, token),
+  curriculum:     (token, grade, subject) => req('GET', `/curriculum?grade=${grade}&subject=${subject}`, null, token),
+  createSection:  (token, data)     => req('POST', '/sections', data, token),
+  updateSection:  (token, id, data) => req('PUT', `/sections/${id}`, data, token),
+  deleteSection:  (token, id)       => req('DELETE', `/sections/${id}`, null, token),
+  createTopic:    (token, data)     => req('POST', '/topics', data, token),
+  updateTopic:    (token, id, data) => req('PUT', `/topics/${id}`, data, token),
+  deleteTopic:    (token, id)       => req('DELETE', `/topics/${id}`, null, token),
+  topic:          (token, id)       => req('GET', `/topics/${id}`, null, token),
   createLesson:   (token, data)     => req('POST', '/lessons', data, token),
   updateLesson:   (token, id, data) => req('PUT', `/lessons/${id}`, data, token),
   deleteLesson:   (token, id)       => req('DELETE', `/lessons/${id}`, null, token),
