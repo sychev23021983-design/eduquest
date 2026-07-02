@@ -8,13 +8,13 @@
   --gh-border: rgba(255,255,255,0.08);
   --gh-text: #f2f3fb;
   --gh-muted: #9aa1c9;
-  --gh-blue: #4da3ff;
-  --gh-green: #22d38b;
+  --gh-blue: var(--gh-blue-user, #4da3ff);
+  --gh-green: var(--gh-green-user, #22d38b);
   --gh-red: #ff5d7a;
   --gh-purple: #b17bff;
   --gh-amber: #ffc94d;
-  --font-fun: 'Nunito', sans-serif;
-  --font-num: 'Baloo 2', 'Nunito', sans-serif;
+  --font-fun: var(--font-body-user, 'Nunito'), sans-serif;
+  --font-num: var(--font-heading-user, 'Baloo 2'), 'Nunito', sans-serif;
 
   min-height: 100vh;
   font-family: var(--font-fun);
@@ -54,6 +54,18 @@
 .gh-logout { background: none; border: none; color: var(--gh-muted); font-size: 0.8rem; cursor: pointer; flex-shrink: 0; }
 
 .gh-wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px; }
+
+/* 3-column responsive shell (боковые узкие панели + широкая центральная колонка) */
+.gh-shell { display: grid; gap: 16px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.gh-side-panel {
+  position: sticky; top: 76px; min-height: 420px; border-radius: 18px; overflow: hidden;
+  background-size: cover; background-position: center; background-color: var(--gh-card);
+  border: 1px solid var(--gh-border); box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+}
+@media (max-width: 1150px) {
+  .gh-shell { grid-template-columns: 1fr !important; }
+  .gh-side-panel { display: none; }
+}
 
 /* Hero */
 .gh-hero {

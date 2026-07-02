@@ -20,6 +20,7 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(f"{UPLOAD_DIR}/audio",  exist_ok=True)
 os.makedirs(f"{UPLOAD_DIR}/images", exist_ok=True)
+os.makedirs(f"{UPLOAD_DIR}/site",   exist_ok=True)
 
 SUBJECT_LABELS = {
     "math":    "Математика",
@@ -27,6 +28,34 @@ SUBJECT_LABELS = {
     "science": "Окружающий мир",
     "history": "История",
 }
+
+DEFAULT_SETTINGS = {
+    "site_name": "EduQuest",
+    "logo_url": None,
+    "favicon_url": None,
+    "bg_main": None,
+    "bg_hero": None,
+    "bg_lesson_of_day": None,
+    "sidebar_left_url": None,
+    "sidebar_right_url": None,
+    "subject_icons": {"math": None, "russian": None, "science": None, "history": None},
+    "font_heading": "Nunito",
+    "font_body": "Nunito",
+    "color_accent": "#4da3ff",
+    "color_accent2": "#22d38b",
+}
+
+FONT_CHOICES = ["Nunito", "Rubik", "Montserrat", "PT Sans", "Comfortaa", "Ubuntu"]
+
+def get_settings(conn):
+    row = conn.execute("SELECT data FROM site_settings WHERE id=1").fetchone()
+    stored = json.loads(row["data"]) if row and row["data"] else {}
+    merged = {**DEFAULT_SETTINGS, **stored}
+    merged["subject_icons"] = {**DEFAULT_SETTINGS["subject_icons"], **(stored.get("subject_icons") or {})}
+    return merged
+
+def save_settings(conn, data: dict):
+    conn.execute("UPDATE site_settings SET data=? WHERE id=1", (json.dumps(data, ensure_ascii=False),))
 
 def parse_curriculum_text(text: str):
     """Разбирает текст вида:
@@ -722,6 +751,11 @@ def init_db():
             last_day TEXT
         );
         INSERT OR IGNORE INTO streak(id, days, last_day) VALUES (1, 0, NULL);
+        CREATE TABLE IF NOT EXISTS site_settings (
+            id   INTEGER PRIMARY KEY CHECK (id = 1),
+            data TEXT NOT NULL DEFAULT '{}'
+        );
+        INSERT OR IGNORE INTO site_settings(id, data) VALUES (1, '{}');
     """)
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
     migrate_add_column(conn, "sections", "intro", "TEXT")
@@ -805,6 +839,69 @@ def config():
         "child_grade": int(os.environ.get("CHILD_GRADE", "5")),
         "subjects": SUBJECT_LABELS,
     }
+
+# ── Settings (тема/оформление интерфейса) ───────────────────────────────────────
+
+@app.get("/api/settings")
+def read_settings():
+    conn = get_conn(); s = get_settings(conn); conn.close()
+    return s
+
+class SettingsIn(BaseModel):
+    site_name: Optional[str] = None
+    logo_url: Optional[str] = None
+    favicon_url: Optional[str] = None
+    bg_main: Optional[str] = None
+    bg_hero: Optional[str] = None
+    bg_lesson_of_day: Optional[str] = None
+    sidebar_left_url: Optional[str] = None
+    sidebar_right_url: Optional[str] = None
+    subject_icons: Optional[dict] = None
+    font_heading: Optional[str] = None
+    font_body: Optional[str] = None
+    color_accent: Optional[str] = None
+    color_accent2: Optional[str] = None
+
+@app.put("/api/settings")
+def update_settings(data: SettingsIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    current = get_settings(conn)
+    updates = {k: v for k, v in data.dict().items() if v is not None}
+    if "subject_icons" in updates:
+        current["subject_icons"] = {**current["subject_icons"], **updates.pop("subject_icons")}
+    current.update(updates)
+    save_settings(conn, current)
+    conn.commit(); conn.close()
+    return current
+
+@app.post("/api/settings/reset")
+def reset_settings(role: str = Depends(require_parent)):
+    conn = get_conn()
+    save_settings(conn, dict(DEFAULT_SETTINGS))
+    conn.commit(); conn.close()
+    return dict(DEFAULT_SETTINGS)
+
+@app.post("/api/settings/upload")
+async def upload_setting_asset(slot: str, file: UploadFile = File(...), role: str = Depends(require_parent)):
+    ext = file.filename.rsplit(".", 1)[-1].lower()
+    if ext not in ("png", "jpg", "jpeg", "gif", "webp", "svg", "ico"):
+        raise HTTPException(400, "Unsupported format")
+    safe_slot = re.sub(r"[^a-z0-9_]", "", slot.lower())
+    if not safe_slot:
+        raise HTTPException(400, "Bad slot")
+    fpath = f"{UPLOAD_DIR}/site/{safe_slot}.{ext}"
+    with open(fpath, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    url = f"/uploads/site/{safe_slot}.{ext}?v={int(datetime.utcnow().timestamp())}"
+    conn = get_conn()
+    current = get_settings(conn)
+    if safe_slot.startswith("subject_"):
+        current["subject_icons"][safe_slot.replace("subject_", "")] = url
+    else:
+        current[safe_slot] = url
+    save_settings(conn, current)
+    conn.commit(); conn.close()
+    return current
 
 # ── Login ─────────────────────────────────────────────────────────────────────
 
