@@ -7,20 +7,21 @@ import '../game-theme.css'
 const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
 const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️' }
 
-// Геометрия змейки: расстояние между узлами по вертикали и позиции по горизонтали (в %)
-const ROW_H   = 148   // px между центрами соседних узлов
-const NODE_D  = 60    // px диаметр кружка
-const TOP_PAD = 50     // px отступ до центра первого узла
-const BOT_PAD = 60     // px отступ под последним узлом (под подпись)
-const X_CENTER = 50
-const X_LEFT   = 24
-const X_RIGHT  = 76
+// Геометрия змейки: расстояние между узлами по горизонтали и позиции по вертикали (в px)
+const COL_W    = 118   // px между центрами соседних узлов по горизонтали
+const NODE_D   = 58    // px диаметр кружка
+const LEFT_PAD = 56     // px отступ до центра первого узла
+const RIGHT_PAD = 56    // px отступ после последнего узла
+const Y_CENTER = 100
+const Y_TOP    = 54
+const Y_BOTTOM = 148
+const WRAP_H   = 202    // px общая высота дорожки (под подписи сверху/снизу)
 
-function xForIndex(i, isFirstIntro) {
-  // Первый узел (Введение) — по центру, дальше — плавный зигзаг лево/право
-  if (isFirstIntro && i === 0) return X_CENTER
+function yForIndex(i, isFirstIntro) {
+  // Первый узел (Введение) — по центру, дальше — плавная волна вверх/вниз
+  if (isFirstIntro && i === 0) return Y_CENTER
   const topicIdx = isFirstIntro ? i - 1 : i
-  return topicIdx % 2 === 0 ? X_RIGHT : X_LEFT
+  return topicIdx % 2 === 0 ? Y_TOP : Y_BOTTOM
 }
 
 function buildSnakePath(points) {
@@ -28,8 +29,8 @@ function buildSnakePath(points) {
   let d = `M ${points[0].x} ${points[0].y}`
   for (let i = 1; i < points.length; i++) {
     const p0 = points[i - 1], p1 = points[i]
-    const dy = (p1.y - p0.y) / 2
-    d += ` C ${p0.x} ${p0.y + dy}, ${p1.x} ${p1.y - dy}, ${p1.x} ${p1.y}`
+    const dx = (p1.x - p0.x) / 2
+    d += ` C ${p0.x + dx} ${p0.y}, ${p1.x - dx} ${p1.y}, ${p1.x} ${p1.y}`
   }
   return d
 }
@@ -115,42 +116,44 @@ export default function SubjectPage() {
               {(() => {
                 const isFirstIntro = hasIntro
                 const points = nodes.map((n, i) => ({
-                  x: xForIndex(i, isFirstIntro),
-                  y: TOP_PAD + i * ROW_H,
+                  x: LEFT_PAD + i * COL_W,
+                  y: yForIndex(i, isFirstIntro),
                 }))
-                const containerH = TOP_PAD + (nodes.length - 1) * ROW_H + BOT_PAD
+                const containerW = LEFT_PAD + (nodes.length - 1) * COL_W + RIGHT_PAD
                 const pathD = buildSnakePath(points)
 
                 return (
-                  <div className="gh-path-wrap" style={{ height: containerH }}>
-                    <svg className="gh-path-svg" viewBox={`0 0 100 ${containerH}`} preserveAspectRatio="none">
-                      <path d={pathD} fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="1.2"
-                            vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-                    </svg>
-                    {nodes.map((n, i) => {
-                      const pt = points[i]
-                      const clickable = n.state === 'available' || n.state === 'completed'
-                      const icon = n.kind === 'intro' ? '📖'
-                        : n.state === 'completed' ? '⭐'
-                        : n.state === 'locked' ? '🔒'
-                        : n.state === 'soon' ? '⏳'
-                        : (n.kind === 'topic' ? n.index + 1 : '•')
-                      const circleClass = n.kind === 'intro' && n.state !== 'completed' ? 'intro' : n.state
-                      const action = n.kind === 'intro'
-                        ? () => nav(`/subject/${subject}/intro/${s.id}`)
-                        : () => nav(`/lesson/${n.topic.lessons[0].id}`)
-                      return (
-                        <div
-                          key={i}
-                          className={`gh-node-abs ${clickable ? 'clickable' : n.state}`}
-                          style={{ left: `${pt.x}%`, top: pt.y - NODE_D / 2 }}
-                          onClick={() => onNodeClick(n.state, action)}
-                        >
-                          <div className={`gh-node-circle ${circleClass}`}>{icon}</div>
-                          <div className="gh-node-label">{n.label}</div>
-                        </div>
-                      )
-                    })}
+                  <div className="gh-path-scroll">
+                    <div className="gh-path-wrap" style={{ width: containerW, height: WRAP_H }}>
+                      <svg className="gh-path-svg" viewBox={`0 0 ${containerW} ${WRAP_H}`}>
+                        <path d={pathD} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2.5"
+                              strokeLinecap="round" />
+                      </svg>
+                      {nodes.map((n, i) => {
+                        const pt = points[i]
+                        const clickable = n.state === 'available' || n.state === 'completed'
+                        const icon = n.kind === 'intro' ? '📖'
+                          : n.state === 'completed' ? '⭐'
+                          : n.state === 'locked' ? '🔒'
+                          : n.state === 'soon' ? '⏳'
+                          : (n.kind === 'topic' ? n.index + 1 : '•')
+                        const circleClass = n.kind === 'intro' && n.state !== 'completed' ? 'intro' : n.state
+                        const action = n.kind === 'intro'
+                          ? () => nav(`/subject/${subject}/intro/${s.id}`)
+                          : () => nav(`/lesson/${n.topic.lessons[0].id}`)
+                        return (
+                          <div
+                            key={i}
+                            className={`gh-node-abs ${clickable ? 'clickable' : n.state}`}
+                            style={{ left: pt.x, top: pt.y }}
+                            onClick={() => onNodeClick(n.state, action)}
+                          >
+                            <div className={`gh-node-circle ${circleClass}`}>{icon}</div>
+                            <div className="gh-node-label">{n.label}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )
               })()}
