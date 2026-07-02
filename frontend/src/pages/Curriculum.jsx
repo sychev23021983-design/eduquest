@@ -23,6 +23,10 @@ export default function Curriculum() {
   const [editingSection, setEditingSection] = useState(null) // id
   const [editingTopic, setEditingTopic] = useState(null) // id
   const [editText, setEditText] = useState('')
+  const [importOpen, setImportOpen] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [importMsg, setImportMsg] = useState('')
+  const [importing, setImporting] = useState(false)
 
   useEffect(() => { load() }, [grade, subject])
 
@@ -80,6 +84,19 @@ export default function Curriculum() {
       api.updateTopic(token, swapWith.id, { section_id: swapWith.section_id, title: swapWith.title, order_index: t.order_index }),
     ])
     load()
+  }
+
+  async function runImport() {
+    if (!importText.trim()) return
+    setImporting(true); setImportMsg('')
+    try {
+      const res = await api.importCurriculum(token, { grade, subject, text: importText })
+      setImportMsg(`✅ Найдено разделов: ${res.sections_found}. Новых разделов: ${res.sections_created}, новых тем: ${res.topics_created}.`)
+      setImportText('')
+      load()
+    } catch (e) {
+      setImportMsg('❌ ' + e.message)
+    } finally { setImporting(false) }
   }
 
   return (
@@ -171,11 +188,33 @@ export default function Curriculum() {
               </div>
             ))}
 
-            <div className="card" style={{ display: 'flex', gap: 8 }}>
+            <div className="card" style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               <input className="input" placeholder="Новый раздел (например: Натуральные числа)" value={newSection}
                      onChange={e => setNewSection(e.target.value)}
                      onKeyDown={e => e.key === 'Enter' && addSection()} />
               <button className="btn btn-primary" onClick={addSection}>+ Раздел</button>
+            </div>
+
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                   onClick={() => setImportOpen(o => !o)}>
+                <h3 style={{ fontWeight: 600, fontSize: 15 }}>📥 Импорт разделов и тем из текста</h3>
+                <span style={{ color: 'var(--blue)' }}>{importOpen ? '▲' : '▼'}</span>
+              </div>
+              {importOpen && (
+                <div style={{ marginTop: 14 }}>
+                  <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+                    Вставь текст программы из учебника в формате: <code>**1. Раздел**</code> и ниже пункты{' '}
+                    <code>- **Тема:** описание</code>. Повторный импорт безопасен — уже добавленные разделы и темы не дублируются.
+                  </p>
+                  <textarea className="input" rows={8} placeholder={'**1. Натуральные числа**\n\n- **Цифры и натуральные числа:** чтение и запись чисел...'}
+                            value={importText} onChange={e => setImportText(e.target.value)} style={{ marginBottom: 10 }} />
+                  {importMsg && <p style={{ fontSize: 13, marginBottom: 10, color: importMsg.startsWith('✅') ? 'var(--green)' : 'var(--red)' }}>{importMsg}</p>}
+                  <button className="btn btn-primary" onClick={runImport} disabled={importing}>
+                    {importing ? 'Импортирую…' : `Импортировать в ${SUBJECTS.find(s => s.value === subject)?.label}, ${grade} класс`}
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}

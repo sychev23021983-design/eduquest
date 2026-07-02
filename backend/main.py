@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-import sqlite3, os, jwt, shutil
+import sqlite3, os, jwt, shutil, re
 from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import BaseModel
@@ -27,6 +27,92 @@ SUBJECT_LABELS = {
     "science": "Окружающий мир",
     "history": "История",
 }
+
+def parse_curriculum_text(text: str):
+    """Разбирает текст вида:
+       **1. Раздел**
+       - **Тема:** описание...
+       в список [{title, topics: [str, ...]}, ...]."""
+    sections = []
+    current = None
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        m_section = re.match(r'^\*{1,2}\s*\d+[\.\)]\s*(.+?)\*{1,2}$', line)
+        if m_section:
+            current = {"title": m_section.group(1).strip(), "topics": []}
+            sections.append(current)
+            continue
+        m_topic = re.match(r'^[-•]\s*\*{1,2}([^*]+?):\*{1,2}', line)
+        if m_topic and current is not None:
+            current["topics"].append(m_topic.group(1).strip())
+            continue
+    return sections
+
+def seed_curriculum_if_empty(conn, grade: int, subject: str, raw_text: str):
+    existing = conn.execute(
+        "SELECT COUNT(*) as n FROM sections WHERE grade=? AND subject=?", (grade, subject)
+    ).fetchone()["n"]
+    if existing > 0:
+        return
+    parsed = parse_curriculum_text(raw_text)
+    for i, sec in enumerate(parsed):
+        c = conn.cursor()
+        c.execute("INSERT INTO sections (grade,subject,title,order_index) VALUES (?,?,?,?)",
+                  (grade, subject, sec["title"], i))
+        sid = c.lastrowid
+        for j, t_title in enumerate(sec["topics"]):
+            conn.execute("INSERT INTO topics (section_id,title,order_index) VALUES (?,?,?)",
+                         (sid, t_title, j))
+
+MATH_5_CURRICULUM = """
+**1. Натуральные числа**
+
+- **Цифры и натуральные числа:** чтение, запись и именование многозначных чисел; натуральный ряд и число нуль.
+- **Сравнение натуральных чисел:** правила сравнения чисел по разрядам.
+- **Округление чисел:** правила округления до заданного разряда.
+- **Делимость чисел:** делители и кратные; признаки делимости на 2, 5, 10, 3 и 9.
+- **Простые и составные числа:** разложение числа на простые множители.
+- **НОД и НОК:** нахождение наибольшего общего делителя и наименьшего общего кратного.
+
+**2. Действия с натуральными числами**
+
+- **Сложение и вычитание:** свойства действий (переместительное, сочетательное) и их применение для упрощения вычислений.
+- **Умножение и деление:** свойства умножения (включая распределительное); деление нацело и деление с остатком.
+- **Степень числа:** понятие степени с натуральным показателем; квадрат и куб числа.
+- **Порядок действий:** правила выполнения операций в числовых выражениях со скобками и без.
+
+**3. Выражения и уравнения**
+
+- **Числовые и буквенные выражения:** составление выражений по условию задачи и нахождение их значений при заданных переменных.
+- **Уравнения:** понятия «уравнение» и «корень уравнения»; решение уравнений на основе зависимостей между компонентами действий.
+- **Формулы:** использование буквенных формул (например, формулы пути s=v⋅t).
+
+**4. Обыкновенные дроби**
+
+- **Понятие дроби:** числитель и знаменатель; изображение дробей на координатном луче.
+- **Виды дробей:** правильные и неправильные дроби; понятие смешанного числа.
+- **Основное свойство дроби:** сокращение дробей и приведение их к новому знаменателю.
+- **Действия с дробями:** сравнение, сложение и вычитание дробей с одинаковыми знаменателями; действия со смешанными числами; умножение и деление дробей.
+- **Задачи на дроби:** нахождение части от числа, нахождение числа по его части и определение дробного отношения двух чисел.
+
+**5. Геометрические фигуры и величины**
+
+- **Основные объекты:** точка, прямая, луч, отрезок, плоскость.
+- **Измерения:** измерение длины отрезка; единицы измерения длины.
+- **Ломаная и многоугольники:** вершины, стороны, понятие периметра многоугольника.
+- **Углы:** виды углов (острый, прямой, тупой, развернутый); измерение и построение углов с помощью транспортира.
+- **Взаимное расположение прямых:** параллельные и перпендикулярные прямые.
+- **Площадь:** формулы площади прямоугольника и квадрата; площадь прямоугольного треугольника; единицы измерения площади (ар, гектар).
+- **Объем:** прямоугольный параллелепипед и куб; площадь поверхности и объем; единицы измерения объема.
+
+**6. Анализ данных и текстовые задачи**
+
+- **Работа с информацией:** представление данных в таблицах и столбчатых диаграммах.
+- **Среднее арифметическое:** нахождение среднего значения нескольких чисел.
+- **Типовые задачи:** задачи на движение (встречное, в противоположных направлениях, по течению и против течения реки); задачи на взвешивание и переливание.
+"""
 
 # ── DB ────────────────────────────────────────────────────────────────────────
 
@@ -109,6 +195,7 @@ def init_db():
         INSERT OR IGNORE INTO streak(id, days, last_day) VALUES (1, 0, NULL);
     """)
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
+    seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
     conn.commit()
     conn.close()
 
@@ -295,6 +382,49 @@ def get_topic(topic_id: int, role: str = Depends(require_any)):
     lessons = conn.execute("SELECT * FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (topic_id,)).fetchall()
     conn.close()
     return {**dict(t), "section": dict(s) if s else None, "lessons": [dict(l) for l in lessons]}
+
+class ImportCurriculumIn(BaseModel):
+    grade: int
+    subject: str
+    text: str
+
+@app.post("/api/curriculum/import")
+def import_curriculum(data: ImportCurriculumIn, role: str = Depends(require_parent)):
+    """Импорт программы из текста в формате:
+       **1. Раздел**
+       - **Тема:** описание...
+       Повторный импорт безопасен — существующие разделы/темы (по совпадению названия) не дублируются."""
+    parsed = parse_curriculum_text(data.text)
+    if not parsed:
+        raise HTTPException(400, "Не удалось распознать структуру. Формат: **1. Раздел** и пункты - **Тема:** описание")
+    conn = get_conn()
+    existing_sections = {r["title"]: r["id"] for r in conn.execute(
+        "SELECT id, title FROM sections WHERE grade=? AND subject=?", (data.grade, data.subject)).fetchall()}
+    base_order = len(existing_sections)
+    sections_created, topics_created = 0, 0
+    for i, sec in enumerate(parsed):
+        if sec["title"] in existing_sections:
+            sid = existing_sections[sec["title"]]
+        else:
+            c = conn.cursor()
+            c.execute("INSERT INTO sections (grade,subject,title,order_index) VALUES (?,?,?,?)",
+                      (data.grade, data.subject, sec["title"], base_order + i))
+            sid = c.lastrowid
+            existing_sections[sec["title"]] = sid
+            sections_created += 1
+        existing_topics = {r["title"] for r in conn.execute(
+            "SELECT title FROM topics WHERE section_id=?", (sid,)).fetchall()}
+        topic_base = conn.execute("SELECT COUNT(*) as n FROM topics WHERE section_id=?", (sid,)).fetchone()["n"]
+        added = 0
+        for t_title in sec["topics"]:
+            if t_title in existing_topics:
+                continue
+            conn.execute("INSERT INTO topics (section_id,title,order_index) VALUES (?,?,?)",
+                         (sid, t_title, topic_base + added))
+            added += 1
+        topics_created += added
+    conn.commit(); conn.close()
+    return {"sections_found": len(parsed), "sections_created": sections_created, "topics_created": topics_created}
 
 # ── Lessons ───────────────────────────────────────────────────────────────────
 

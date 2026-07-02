@@ -36,6 +36,7 @@ export const api = {
   updateTopic:    (token, id, data) => req('PUT', `/topics/${id}`, data, token),
   deleteTopic:    (token, id)       => req('DELETE', `/topics/${id}`, null, token),
   topic:          (token, id)       => req('GET', `/topics/${id}`, null, token),
+  importCurriculum: (token, data)   => req('POST', '/curriculum/import', data, token),
   createLesson:   (token, data)     => req('POST', '/lessons', data, token),
   updateLesson:   (token, id, data) => req('PUT', `/lessons/${id}`, data, token),
   deleteLesson:   (token, id)       => req('DELETE', `/lessons/${id}`, null, token),
