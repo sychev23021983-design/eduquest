@@ -47,7 +47,7 @@
 .dl-dot.done { background: var(--dl-gold); }
 .dl-dot.current { background: #fff; }
 
-.dl-wrap { max-width: 680px; margin: 0 auto; padding: 22px 16px; }
+.dl-wrap { max-width: 1000px; margin: 0 auto; padding: 22px 16px; }
 
 /* Cover (intro) */
 .dl-cover { text-align: center; padding: 20px 6px 6px; }
