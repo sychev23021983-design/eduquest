@@ -26,7 +26,6 @@ export default function App() {
           <Route path="/lesson/:id" element={<Guard><LessonPage /></Guard>} />
           <Route path="/parent" element={<Guard role="parent"><ParentDashboard /></Guard>} />
           <Route path="/parent/curriculum" element={<Guard role="parent"><Curriculum /></Guard>} />
-          <Route path="/parent/lesson/new" element={<Guard role="parent"><LessonEditor /></Guard>} />
           <Route path="/parent/lesson/:id/edit" element={<Guard role="parent"><LessonEditor /></Guard>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

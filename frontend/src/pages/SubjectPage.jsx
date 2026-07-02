@@ -57,6 +57,17 @@ export default function SubjectPage() {
             <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--muted)', marginBottom: 10 }}>
               {si + 1}. {s.title.toUpperCase()}
             </h2>
+            {s.intro && (
+              <div className="card" style={{
+                marginBottom: 14, background: 'var(--blue-light)', borderColor: 'var(--blue)',
+                whiteSpace: 'pre-wrap', lineHeight: 1.7, fontSize: 14.5,
+              }}>
+                <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 8, fontSize: 13, letterSpacing: 0.3 }}>
+                  📘 ВВЕДЕНИЕ
+                </div>
+                {s.intro}
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {s.topics.map((t, ti) => (
                 <div key={t.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>

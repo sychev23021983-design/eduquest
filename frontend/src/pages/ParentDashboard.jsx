@@ -204,7 +204,7 @@ export default function ParentDashboard() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ fontWeight: 600 }}>Все уроки ({lessons.length})</h3>
-              <button className="btn btn-primary" onClick={() => nav('/parent/lesson/new')}>+ Добавить урок</button>
+              <button className="btn" onClick={() => nav('/parent/curriculum')}>📖 К программе</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {lessons.map(l => (
@@ -228,7 +228,8 @@ export default function ParentDashboard() {
                 <div className="card" style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>
                   <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
                   <div style={{ fontWeight: 600, marginBottom: 8 }}>Уроков пока нет</div>
-                  <button className="btn btn-primary" onClick={() => nav('/parent/lesson/new')}>Создать первый урок</button>
+                  <div style={{ fontSize: 13, marginBottom: 14 }}>Попроси Claude сгенерировать первый урок для одной из тем программы</div>
+                  <button className="btn btn-primary" onClick={() => nav('/parent/curriculum')}>📖 Перейти к программе</button>
                 </div>
               )}
             </div>

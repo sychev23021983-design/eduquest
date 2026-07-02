@@ -27,6 +27,9 @@ export default function Curriculum() {
   const [importText, setImportText] = useState('')
   const [importMsg, setImportMsg] = useState('')
   const [importing, setImporting] = useState(false)
+  const [introOpenFor, setIntroOpenFor] = useState(null) // sectionId
+  const [introDrafts, setIntroDrafts] = useState({}) // sectionId -> текст
+  const [introSaving, setIntroSaving] = useState(null)
 
   useEffect(() => { load() }, [grade, subject])
 
@@ -43,7 +46,7 @@ export default function Curriculum() {
     setNewSection(''); load()
   }
   async function renameSection(s) {
-    await api.updateSection(token, s.id, { grade, subject, title: editText.trim(), order_index: s.order_index })
+    await api.updateSection(token, s.id, { grade, subject, title: editText.trim(), order_index: s.order_index, intro: s.intro })
     setEditingSection(null); load()
   }
   async function removeSection(s) {
@@ -55,10 +58,21 @@ export default function Curriculum() {
     const swapWith = tree[idx + dir]
     if (!swapWith) return
     await Promise.all([
-      api.updateSection(token, s.id, { grade, subject, title: s.title, order_index: swapWith.order_index }),
-      api.updateSection(token, swapWith.id, { grade, subject, title: swapWith.title, order_index: s.order_index }),
+      api.updateSection(token, s.id, { grade, subject, title: s.title, order_index: swapWith.order_index, intro: s.intro }),
+      api.updateSection(token, swapWith.id, { grade, subject, title: swapWith.title, order_index: s.order_index, intro: swapWith.intro }),
     ])
     load()
+  }
+  async function saveIntro(s) {
+    const text = introDrafts[s.id] !== undefined ? introDrafts[s.id] : (s.intro || '')
+    setIntroSaving(s.id)
+    await api.updateSection(token, s.id, { grade, subject, title: s.title, order_index: s.order_index, intro: text })
+    setIntroSaving(null)
+    load()
+  }
+  function toggleIntro(s) {
+    setIntroOpenFor(cur => cur === s.id ? null : s.id)
+    setIntroDrafts(d => d[s.id] !== undefined ? d : { ...d, [s.id]: s.intro || '' })
   }
 
   async function addTopic(section) {
@@ -123,8 +137,9 @@ export default function Curriculum() {
         </div>
 
         <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 18 }}>
-          Добавь разделы и темы так, как они идут в учебнике министерства образования. Когда структура готова,
-          можно генерировать уроки на каждую тему — ИИ будет видеть всю программу целиком и выстраивать единый сюжет, не повторяясь.
+          Добавь разделы и темы так, как они идут в учебнике министерства образования, и по желанию — «Введение»
+          к разделу (зачем он нужен ребёнку). Уроки здесь не создаются вручную: попроси Claude сгенерировать
+          урок для темы — он появится тут сам после деплоя, зная всю программу целиком, чтобы не повторяться.
         </p>
 
         {loading ? <p style={{ color: 'var(--muted)' }}>Загрузка…</p> : (
@@ -150,6 +165,27 @@ export default function Curriculum() {
                   <button className="btn btn-sm btn-danger" onClick={() => removeSection(s)}>✕</button>
                 </div>
 
+                <div style={{ marginLeft: 34, marginBottom: 14 }}>
+                  <button className="btn btn-sm" onClick={() => toggleIntro(s)}>
+                    {s.intro ? '📘 Введение' : '📘 Добавить введение'} {introOpenFor === s.id ? '▲' : '▼'}
+                  </button>
+                  {introOpenFor === s.id && (
+                    <div style={{ marginTop: 10, background: 'var(--blue-light)', borderRadius: 10, padding: 14 }}>
+                      <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+                        Мотивационный текст «что это и зачем» — показывается ребёнку перед темами раздела.
+                      </p>
+                      <textarea className="input" rows={7}
+                                placeholder="Например: зачем нужны натуральные числа, как без них не обойтись..."
+                                value={introDrafts[s.id] !== undefined ? introDrafts[s.id] : (s.intro || '')}
+                                onChange={e => setIntroDrafts(d => ({ ...d, [s.id]: e.target.value }))}
+                                style={{ marginBottom: 10 }} />
+                      <button className="btn btn-primary btn-sm" onClick={() => saveIntro(s)} disabled={introSaving === s.id}>
+                        {introSaving === s.id ? 'Сохраняю…' : '💾 Сохранить введение'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 34 }}>
                   {s.topics.map((t, ti) => (
                     <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg)', borderRadius: 8, padding: '8px 10px' }}>
@@ -164,17 +200,18 @@ export default function Curriculum() {
                         <span style={{ flex: 1 }}>{ti + 1}. {t.title}</span>
                       )}
                       <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-                        {t.lesson_count > 0 ? `📚 ${t.lesson_count}` : 'нет уроков'}
+                        {t.lesson_count > 0 ? `📚 ${t.lesson_count}` : '🤖 ждёт урок'}
                       </span>
                       {editingTopic === t.id ? (
                         <button className="btn btn-sm btn-primary" onClick={() => renameTopic(t)}>✓</button>
                       ) : (
                         <button className="btn btn-sm" onClick={() => { setEditingTopic(t.id); setEditText(t.title) }}>✏️</button>
                       )}
-                      <button className="btn btn-sm"
-                              onClick={() => nav(`/parent/lesson/new?topic_id=${t.id}&subject=${subject}&grade=${grade}&topic=${encodeURIComponent(t.title)}`)}>
-                        + Урок
-                      </button>
+                      {t.lessons && t.lessons.length > 0 && (
+                        <button className="btn btn-sm" onClick={() => nav(`/parent/lesson/${t.lessons[0].id}/edit`)}>
+                          Открыть урок
+                        </button>
+                      )}
                       <button className="btn btn-sm btn-danger" onClick={() => removeTopic(t)}>✕</button>
                     </div>
                   ))}

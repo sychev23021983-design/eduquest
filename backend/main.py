@@ -151,6 +151,30 @@ LESSON_NATURAL_DIGITS = {
     "coins_boss": 40,
 }
 
+def seed_section_intro_if_missing(conn, grade: int, subject: str, section_title: str, intro: str):
+    row = conn.execute(
+        "SELECT id, intro FROM sections WHERE grade=? AND subject=? AND title=?",
+        (grade, subject, section_title)
+    ).fetchone()
+    if not row or (row["intro"] and row["intro"].strip()):
+        return
+    conn.execute("UPDATE sections SET intro=? WHERE id=?", (intro, row["id"]))
+
+SECTION_INTRO_NATURAL_NUMBERS = (
+    "Каждый раз, когда ты считаешь шаги до подъезда, смотришь на счёт в игре или спрашиваешь "
+    "«а сколько до 100 уровня» — ты уже пользуешься натуральными числами. Это самый первый и самый "
+    "важный математический инструмент человека — старше письменности, старше денег, старше городов.\n\n"
+    "Что это такое: натуральные числа — это числа, которыми считают предметы: 1, 2, 3, 4... и так без "
+    "конца. Отдельно стоит число 0 — оно означает «ничего», пустоту, и это тоже важное изобретение.\n\n"
+    "Почему без этого не обойтись: все остальные разделы математики — дроби, проценты, уравнения, "
+    "геометрия — построены поверх натуральных чисел, как этажи дома поверх фундамента. Нельзя посчитать "
+    "половину пиццы, если не умеешь считать целые куски. Нельзя решить уравнение, если не понимаешь, что "
+    "значит «прибавить» и «сравнить».\n\n"
+    "Зачем это тебе: без уверенного счёта, чтения больших чисел и понимания разрядов сложно посчитать "
+    "сдачу в магазине, понять, сколько мегабайт весит игра, сравнить цены или разобраться в статистике "
+    "любимой команды. Это не «для школы» — это инструмент на каждый день."
+)
+
 def seed_curriculum_if_empty(conn, grade: int, subject: str, raw_text: str):
     existing = conn.execute(
         "SELECT COUNT(*) as n FROM sections WHERE grade=? AND subject=?", (grade, subject)
@@ -296,7 +320,9 @@ def init_db():
         INSERT OR IGNORE INTO streak(id, days, last_day) VALUES (1, 0, NULL);
     """)
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
+    migrate_add_column(conn, "sections", "intro", "TEXT")
     seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
+    seed_section_intro_if_missing(conn, 5, "math", "Натуральные числа", SECTION_INTRO_NATURAL_NUMBERS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Цифры и натуральные числа", LESSON_NATURAL_DIGITS)
     conn.commit()
     conn.close()
@@ -392,6 +418,7 @@ class SectionIn(BaseModel):
     subject: str
     title: str
     order_index: int = 0
+    intro: Optional[str] = None
 
 class TopicIn(BaseModel):
     section_id: int
@@ -413,10 +440,10 @@ def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
         ).fetchall()
         topic_list = []
         for t in topics:
-            cnt = conn.execute(
-                "SELECT COUNT(*) as n FROM lessons WHERE topic_id=? AND active=1", (t["id"],)
-            ).fetchone()["n"]
-            topic_list.append({**dict(t), "lesson_count": cnt})
+            t_lessons = conn.execute(
+                "SELECT id, topic FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
+            ).fetchall()
+            topic_list.append({**dict(t), "lessons": [dict(l) for l in t_lessons], "lesson_count": len(t_lessons)})
         result.append({**dict(s), "topics": topic_list})
     conn.close()
     return {"grade": grade, "subject": subject, "sections": result}
@@ -425,16 +452,16 @@ def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
 def create_section(data: SectionIn, role: str = Depends(require_parent)):
     conn = get_conn()
     c = conn.cursor()
-    c.execute("INSERT INTO sections (grade,subject,title,order_index) VALUES (?,?,?,?)",
-              (data.grade, data.subject, data.title, data.order_index))
+    c.execute("INSERT INTO sections (grade,subject,title,order_index,intro) VALUES (?,?,?,?,?)",
+              (data.grade, data.subject, data.title, data.order_index, data.intro))
     sid = c.lastrowid; conn.commit(); conn.close()
     return {"id": sid}
 
 @app.put("/api/sections/{section_id}")
 def update_section(section_id: int, data: SectionIn, role: str = Depends(require_parent)):
     conn = get_conn()
-    conn.execute("UPDATE sections SET grade=?,subject=?,title=?,order_index=? WHERE id=?",
-                 (data.grade, data.subject, data.title, data.order_index, section_id))
+    conn.execute("UPDATE sections SET grade=?,subject=?,title=?,order_index=?,intro=? WHERE id=?",
+                 (data.grade, data.subject, data.title, data.order_index, data.intro, section_id))
     conn.commit(); conn.close()
     return {"ok": True}
 
