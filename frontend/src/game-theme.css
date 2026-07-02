@@ -66,14 +66,24 @@
 .gh-img-area { grid-area: img; }
 .gh-stats-area { grid-area: stats; display: flex; flex-direction: column; gap: 16px; }
 .gh-main-area { grid-area: main; }
-.gh-right-area { grid-area: right; }
+.gh-info-area { grid-area: info; }
+.gh-right-area { grid-area: rightimg; }
 .gh-panel-img { width: 100%; height: auto; display: block; object-fit: contain; }
 .gh-right-area.gh-panel-img { position: sticky; top: 76px; }
+
+.gh-today-card { background: var(--gh-card); border: 1px solid var(--gh-border); border-radius: 16px; padding: 16px; }
+.gh-today-card h3 { font-family: var(--font-num); font-size: 0.95rem; font-weight: 800; margin-bottom: 12px; }
+.gh-today-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 0.84rem; }
+.gh-today-check {
+  width: 22px; height: 22px; border-radius: 7px; background: var(--gh-green);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; flex-shrink: 0;
+}
+.gh-today-gift { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 @media (max-width: 1150px) {
   .gh-shell {
     grid-template-columns: 1fr !important;
-    grid-template-rows: auto auto !important;
-    grid-template-areas: "main" "stats" !important;
+    grid-template-rows: auto auto auto !important;
+    grid-template-areas: "main" "stats" "info" !important;
   }
   .gh-img-area, .gh-right-area { display: none; }
   .gh-stats-area { flex-direction: row; flex-wrap: wrap; }

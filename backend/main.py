@@ -1285,7 +1285,7 @@ def get_stats(role: str = Depends(require_any)):
         FROM progress WHERE started_at >= date('now','-7 days')
         GROUP BY date(started_at) ORDER BY day""").fetchall()
     weak    = conn.execute("""SELECT l.id as lesson_id, l.topic, l.subject, AVG(p.score*1.0/p.max_score) as avg, COUNT(*) as attempts
-        FROM progress p JOIN lessons l ON p.lesson_id=l.id WHERE p.finished_at IS NOT NULL
+        FROM progress p JOIN lessons l ON p.lesson_id=l.id WHERE p.finished_at IS NOT NULL AND l.active=1
         GROUP BY l.id HAVING avg < 0.6 AND attempts >= 1 ORDER BY avg ASC LIMIT 5""").fetchall()
     conn.close()
     return {
