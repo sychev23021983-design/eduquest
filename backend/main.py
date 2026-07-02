@@ -1164,6 +1164,13 @@ def delete_lesson(lesson_id: int, role: str = Depends(require_parent)):
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 
+@app.delete("/api/lessons/{lesson_id}/infographic")
+def clear_infographic(lesson_id: int, role: str = Depends(require_parent)):
+    conn = get_conn()
+    conn.execute("UPDATE lessons SET infographic=NULL WHERE id=?", (lesson_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
 @app.post("/api/lessons/{lesson_id}/upload-audio")
 async def upload_audio(lesson_id: int, file: UploadFile = File(...), role: str = Depends(require_parent)):
     ext = file.filename.rsplit(".", 1)[-1].lower()

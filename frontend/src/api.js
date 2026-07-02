@@ -49,6 +49,7 @@ export const api = {
   deleteLesson:   (token, id)       => req('DELETE', `/lessons/${id}`, null, token),
   uploadAudio:    (token, id, form) => upload(`/lessons/${id}/upload-audio`, form, token),
   uploadImage:    (token, id, form) => upload(`/lessons/${id}/upload-image`, form, token),
+  clearInfographic: (token, id)     => req('DELETE', `/lessons/${id}/infographic`, null, token),
   startLesson:    (token, id)       => req('POST', '/progress/start', { lesson_id: id }, token),
   finishLesson:   (token, data)     => req('POST', '/progress/finish', data, token),
   progress:       (token)           => req('GET', '/progress', null, token),

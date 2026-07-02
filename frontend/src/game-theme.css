@@ -66,10 +66,11 @@
 .gh-img-area { grid-area: img; }
 .gh-stats-area { grid-area: stats; display: flex; flex-direction: column; gap: 16px; }
 .gh-main-area { grid-area: main; }
-.gh-info-area { grid-area: info; }
-.gh-right-area { grid-area: rightimg; }
+.gh-right-area {
+  grid-area: right; align-self: center; width: 100%;
+  display: flex; flex-direction: column; gap: 16px;
+}
 .gh-panel-img { width: 100%; height: auto; display: block; object-fit: contain; }
-.gh-right-area.gh-panel-img { position: sticky; top: 76px; }
 
 .gh-today-card { background: var(--gh-card); border: 1px solid var(--gh-border); border-radius: 16px; padding: 16px; }
 .gh-today-card h3 { font-family: var(--font-num); font-size: 0.95rem; font-weight: 800; margin-bottom: 12px; }
@@ -83,9 +84,11 @@
   .gh-shell {
     grid-template-columns: 1fr !important;
     grid-template-rows: auto auto auto !important;
-    grid-template-areas: "main" "stats" "info" !important;
+    grid-template-areas: "main" "stats" "right" !important;
   }
-  .gh-img-area, .gh-right-area { display: none; }
+  .gh-img-area { display: none; }
+  .gh-right-area { align-self: auto; }
+  .gh-right-area .gh-panel-img { display: none; }
   .gh-stats-area { flex-direction: row; flex-wrap: wrap; }
   .gh-stats-area .gh-stat-card { flex: 1 1 150px; }
 }

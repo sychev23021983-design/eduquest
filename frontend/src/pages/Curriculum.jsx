@@ -208,9 +208,14 @@ export default function Curriculum() {
                         <button className="btn btn-sm" onClick={() => { setEditingTopic(t.id); setEditText(t.title) }}>✏️</button>
                       )}
                       {t.lessons && t.lessons.length > 0 && (
-                        <button className="btn btn-sm" onClick={() => window.open(`/lesson/${t.lessons[0].id}`, '_blank')}>
-                          👁 Посмотреть
-                        </button>
+                        <>
+                          <button className="btn btn-sm" onClick={() => window.open(`/lesson/${t.lessons[0].id}`, '_blank')}>
+                            👁 Посмотреть
+                          </button>
+                          <button className="btn btn-sm" onClick={() => nav(`/parent/lesson/${t.lessons[0].id}/edit`)}>
+                            ✏️ Изменить
+                          </button>
+                        </>
                       )}
                       <button className="btn btn-sm btn-danger" onClick={() => removeTopic(t)}>✕</button>
                     </div>

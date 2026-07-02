@@ -224,6 +224,7 @@ export default function ParentDashboard() {
                     </div>
                   </div>
                   <button className="btn btn-sm" onClick={() => window.open(`/lesson/${l.id}`, '_blank')}>👁 Посмотреть</button>
+                  <button className="btn btn-sm" onClick={() => nav(`/parent/lesson/${l.id}/edit`)}>✏️ Изменить</button>
                   <button className="btn btn-sm" style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
                           onClick={() => deleteLesson(l.id)}>🗑️</button>
                 </div>

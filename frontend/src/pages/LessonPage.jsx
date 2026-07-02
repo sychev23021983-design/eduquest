@@ -129,9 +129,16 @@ export default function LessonPage() {
               <h1>{lesson.topic}</h1>
             </div>
 
-            {lesson.infographic && (
-              <img src={lesson.infographic} alt="инфографика" style={{ width: '100%', borderRadius: 10, marginBottom: 16 }} />
+            {lesson.infographic ? (
+              <img src={lesson.infographic} alt="История дела" style={{ width: '100%', borderRadius: 14, marginBottom: 16, boxShadow: '0 10px 20px rgba(0,0,0,0.35)' }} />
+            ) : (
+              <div className="dl-card rot-l">
+                <div className="dl-pin" />
+                <div className="dl-eyebrow">История дела</div>
+                <p>{lesson.explanation_game || lesson.explanation || 'Объяснение скоро появится'}</p>
+              </div>
             )}
+
             {lesson.audio_file && (
               <div className="dl-card rot-l" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div className="dl-pin" />
@@ -142,12 +149,6 @@ export default function LessonPage() {
                 </div>
               </div>
             )}
-
-            <div className="dl-card rot-l">
-              <div className="dl-pin" />
-              <div className="dl-eyebrow">История дела</div>
-              <p>{lesson.explanation_game || lesson.explanation || 'Объяснение скоро появится'}</p>
-            </div>
 
             <div className="dl-coins-note">
               🪙 За расследование: <b>+{lesson.coins_lesson} монет</b> · за финальное задание: <b>+{lesson.coins_boss} монет</b>

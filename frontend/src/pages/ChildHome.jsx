@@ -61,14 +61,10 @@ export default function ChildHome() {
   const hasLeft  = !!settings.sidebar_left_url
   const hasRight = !!settings.sidebar_right_url
   const gridCols = '220px 1fr 220px'
-  const gridAreas = hasLeft && hasRight
-    ? `"img main info" "stats main rightimg"`
-    : hasLeft && !hasRight
-    ? `"img main info" "stats main info"`
-    : !hasLeft && hasRight
-    ? `"stats main info" "stats main rightimg"`
-    : `"stats main info"`
-  const gridRows = (hasLeft || hasRight) ? 'auto auto' : 'auto'
+  const gridAreas = hasLeft
+    ? `"img main right" "stats main right"`
+    : `"stats main right"`
+  const gridRows = hasLeft ? 'auto auto' : 'auto'
 
   const rootStyle = settings.bg_main ? {
     backgroundImage: `url(${settings.bg_main})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
@@ -290,7 +286,7 @@ export default function ChildHome() {
           )}
         </div>
 
-        <div className="gh-info-area">
+        <div className="gh-right-area">
           <div className="gh-today-card">
             <h3>Сегодня ты можешь:</h3>
             <div className="gh-today-item"><span className="gh-today-check">✓</span> Пройти урок дня</div>
@@ -298,8 +294,8 @@ export default function ChildHome() {
             <div className="gh-today-item"><span className="gh-today-check">✓</span> Открыть новое знание</div>
             <div className="gh-today-item"><span className="gh-today-gift">🎁</span> Получить награду</div>
           </div>
+          {hasRight && <img className="gh-panel-img" src={settings.sidebar_right_url} alt="" />}
         </div>
-        {hasRight && <img className="gh-panel-img gh-right-area" src={settings.sidebar_right_url} alt="" />}
       </div>
     </div>
   )
