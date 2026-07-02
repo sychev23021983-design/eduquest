@@ -153,7 +153,7 @@ export default function ChildHome() {
                 const avg = subjAvg(s)
                 return (
                   <div key={s} className={`gh-subject-card ${s}`} onClick={() => nav(`/subject/${s}`)}>
-                    <div className="icon"><SubjectIcon subj={s} icons={settings.subject_icons} size={30} /></div>
+                    <div className="icon"><SubjectIcon subj={s} icons={settings.subject_icons} size={80} /></div>
                     <div className="name">{SUBJ[s]}</div>
                     <div className="count">{subLessons.length} {subLessons.length === 1 ? 'урок' : 'уроков'}{avg !== null ? ` · ${avg}%` : ''}</div>
                   </div>
