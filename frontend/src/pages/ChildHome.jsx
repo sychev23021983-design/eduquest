@@ -60,7 +60,11 @@ export default function ChildHome() {
 
   const hasLeft  = !!settings.sidebar_left_url
   const hasRight = !!settings.sidebar_right_url
-  const gridCols = [hasLeft ? '200px' : null, '1fr', hasRight ? '200px' : null].filter(Boolean).join(' ')
+  const gridCols = ['220px', '1fr', hasRight ? '200px' : null].filter(Boolean).join(' ')
+  const gridAreas = hasLeft
+    ? `"img main${hasRight ? ' right' : ''}" "stats main${hasRight ? ' right' : ''}"`
+    : `"stats main${hasRight ? ' right' : ''}"`
+  const gridRows = hasLeft ? 'auto auto' : 'auto'
 
   const rootStyle = settings.bg_main ? {
     backgroundImage: `url(${settings.bg_main})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
@@ -92,10 +96,31 @@ export default function ChildHome() {
         <button className="gh-logout" onClick={logout}>Выйти</button>
       </div>
 
-      <div className="gh-shell" style={{ gridTemplateColumns: gridCols }}>
-        {hasLeft && <div className="gh-side-panel" style={{ backgroundImage: `url(${settings.sidebar_left_url})` }} />}
+      <div className="gh-shell" style={{ gridTemplateColumns: gridCols, gridTemplateRows: gridRows, gridTemplateAreas: gridAreas }}>
+        {hasLeft && (
+          <div className="gh-side-panel gh-img-area" style={{ backgroundImage: `url(${settings.sidebar_left_url})` }} />
+        )}
 
-        <div className="gh-wrap">
+        <div className="gh-stats-area">
+          <div className="gh-stat-card">
+            <div className="gh-stat-label">Твой уровень</div>
+            <div className="gh-level-badge">{level}</div>
+            <div className="gh-xp-track"><div className="gh-xp-fill" style={{ width: `${(xpInLvl / XP_PER_LEVEL) * 100}%` }} /></div>
+            <div className="gh-xp-label">{xpInLvl} / {XP_PER_LEVEL} XP</div>
+          </div>
+          <div className="gh-stat-card">
+            <div className="gh-stat-label">Серия дней</div>
+            <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-num)', fontWeight: 800 }}>🔥 {streak}</div>
+            <div className="gh-xp-label">дней подряд</div>
+          </div>
+          <div className="gh-stat-card">
+            <div className="gh-stat-label">Пройдено уроков</div>
+            <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-num)', fontWeight: 800 }}>📚 {stats?.total_lessons || 0}</div>
+            <div className="gh-xp-label">всего попыток</div>
+          </div>
+        </div>
+
+        <div className="gh-wrap gh-main-area">
 
           {/* HOME TAB */}
           {tab === 'home' && <>
@@ -119,26 +144,6 @@ export default function ChildHome() {
                 <button className="gh-btn" onClick={() => nav(`/lesson/${lessons[0].id}`)}>Начать урок →</button>
               </div>
             )}
-
-            {/* Level & streak */}
-            <div className="gh-stats-row">
-              <div className="gh-stat-card">
-                <div className="gh-stat-label">Твой уровень</div>
-                <div className="gh-level-badge">{level}</div>
-                <div className="gh-xp-track"><div className="gh-xp-fill" style={{ width: `${(xpInLvl / XP_PER_LEVEL) * 100}%` }} /></div>
-                <div className="gh-xp-label">{xpInLvl} / {XP_PER_LEVEL} XP</div>
-              </div>
-              <div className="gh-stat-card">
-                <div className="gh-stat-label">Серия дней</div>
-                <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-num)', fontWeight: 800 }}>🔥 {streak}</div>
-                <div className="gh-xp-label">дней подряд</div>
-              </div>
-              <div className="gh-stat-card">
-                <div className="gh-stat-label">Пройдено уроков</div>
-                <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-num)', fontWeight: 800 }}>📚 {stats?.total_lessons || 0}</div>
-                <div className="gh-xp-label">всего попыток</div>
-              </div>
-            </div>
 
             {/* Subjects grid */}
             <div className="gh-section-title">Предметы</div>
@@ -281,7 +286,7 @@ export default function ChildHome() {
           )}
         </div>
 
-        {hasRight && <div className="gh-side-panel" style={{ backgroundImage: `url(${settings.sidebar_right_url})` }} />}
+        {hasRight && <div className="gh-side-panel gh-right-area" style={{ backgroundImage: `url(${settings.sidebar_right_url})` }} />}
       </div>
     </div>
   )
