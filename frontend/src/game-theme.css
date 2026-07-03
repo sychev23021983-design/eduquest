@@ -186,6 +186,7 @@
 .gh-subject-card.geography   { background: linear-gradient(150deg, #1f8fb0, #12586e); }
 .gh-subject-card.informatics { background: linear-gradient(150deg, #3a5ac0, #223a80); }
 .gh-subject-card.programming { background: linear-gradient(150deg, #2a2f6a, #171a40); }
+.gh-subject-card.earth       { background: linear-gradient(150deg, #17608f, #0d3555); }
 
 /* Lessons list */
 .gh-lesson-row {
