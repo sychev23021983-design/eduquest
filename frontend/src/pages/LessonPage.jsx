@@ -97,7 +97,7 @@ export default function LessonPage() {
     <div className="detective-lesson">
       {/* Top bar */}
       <div className="dl-topbar">
-        <button className="dl-back" onClick={() => nav('/')}>‹</button>
+        <button className="dl-back" onClick={() => nav(lesson.subject ? `/subject/${lesson.subject}` : '/')}>‹</button>
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <div className="dl-title">🗂 {lesson.topic}</div>
           <div className="dl-sub">
