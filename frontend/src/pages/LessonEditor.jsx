@@ -187,7 +187,11 @@ export default function LessonEditor() {
 
         <div className="card" style={{ marginBottom: 20 }}>
           <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Финальное задание (JSON, можно оставить пустым)</h3>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Объект: text, solution, hint1, hint2.</p>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
+            Объект: text, <b>answer</b> (эталонный ответ — по нему сервер честно проверяет решение ребёнка,
+            число или короткое слово, например "да"), solution, hint1, hint2.
+            Без поля <b>answer</b> монеты за финальное задание начисляться не будут.
+          </p>
           <textarea className="input" rows={8} style={{ fontFamily: 'monospace', fontSize: 13 }}
                     value={bossText} onChange={e => setBossText(e.target.value)} placeholder="{}" />
         </div>

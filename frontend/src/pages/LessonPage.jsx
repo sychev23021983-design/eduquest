@@ -23,6 +23,9 @@ export default function LessonPage() {
   const [bossCheck,  setBossCheck]  = useState(null)
   const [coinsEarned, setCoins]     = useState(0)
   const [bossWasDone, setBossWasDone] = useState(false)
+  const [bossCorrect, setBossCorrect] = useState(null)
+  const [lessonCoinsEarned, setLessonCoinsEarned] = useState(0)
+  const [bossCoinsEarned,   setBossCoinsEarned]   = useState(0)
   const [coinsLost,   setCoinsLost] = useState(0)
   const [bossSubmitting, setBossSubmitting] = useState(false)
 
@@ -61,25 +64,36 @@ export default function LessonPage() {
       setCurrent(next); setSelected(null); setAnswered(false)
     } else {
       setPhase(lesson.boss_task ? 'boss' : 'done')
-      if (!lesson.boss_task) finishLesson(false)
+      if (!lesson.boss_task) finishLessonSimple()
     }
   }
 
-  function checkBoss() {
-    if (!bossInput.trim()) return
-    setBossCheck('submitted')
-    setBossWasDone(true)
-  }
-
-  async function finishAfterBoss() {
+  async function checkBoss() {
+    if (!bossInput.trim() || bossSubmitting) return
     setBossSubmitting(true)
-    await finishLesson(true)
-    setBossSubmitting(false)
+    try {
+      const res = await api.finishLesson(token, {
+        progress_id: progressId, score, boss_done: true, boss_answer: bossInput,
+      })
+      setCoins(res.coins_earned)
+      setLessonCoinsEarned(res.lesson_coins)
+      setBossCoinsEarned(res.boss_coins)
+      setBossCorrect(res.boss_correct)
+      setBossWasDone(true)
+      setBossCheck('submitted')
+    } finally {
+      setBossSubmitting(false)
+    }
   }
 
-  async function finishLesson(boss) {
-    const res = await api.finishLesson(token, { progress_id: progressId, score, boss_done: boss })
+  function closeCase() {
+    setPhase('done')
+  }
+
+  async function finishLessonSimple() {
+    const res = await api.finishLesson(token, { progress_id: progressId, score, boss_done: false })
     setCoins(res.coins_earned)
+    setLessonCoinsEarned(res.lesson_coins)
     setPhase('done')
   }
 
@@ -230,20 +244,22 @@ export default function LessonPage() {
                   </details>
                 )}
                 <button className="dl-btn secondary wide" style={{ marginTop: 14 }}
-                        onClick={checkBoss} disabled={!bossInput.trim()}>
-                  Сдать решение →
+                        onClick={checkBoss} disabled={!bossInput.trim() || bossSubmitting}>
+                  {bossSubmitting ? 'Проверяю…' : 'Сдать решение →'}
                 </button>
               </>
             ) : (
               <div className="dl-card rot-l">
                 <div className="dl-pin" />
-                <div className="dl-eyebrow" style={{ color: 'var(--dl-green)' }}>✅ Решение принято</div>
+                <div className="dl-eyebrow" style={{ color: bossCorrect ? 'var(--dl-green)' : 'var(--dl-red)' }}>
+                  {bossCorrect ? '✅ Разгадано верно!' : '❌ Не совсем так, но вот разгадка:'}
+                </div>
                 {boss.solution && <p><b>Разгадка:</b><br />{boss.solution}</p>}
               </div>
             )}
             {bossCheck === 'submitted' && (
-              <button className="dl-btn wide" onClick={finishAfterBoss} disabled={bossSubmitting}>
-                {bossSubmitting ? 'Закрываю дело…' : 'Понятно, закрыть дело →'}
+              <button className="dl-btn wide" onClick={closeCase}>
+                Понятно, закрыть дело →
               </button>
             )}
           </div>
@@ -259,7 +275,7 @@ export default function LessonPage() {
                       : pct >= 60   ? 'Детектив-стажёр'
                       : pct >= 40   ? 'Дело почти раскрыто — есть над чем поработать'
                       :               'В следующий раз след будет вернее'
-          const lessonCoins = coinsEarned - (bossWasDone && lesson ? lesson.coins_boss : 0)
+          const lessonCoins = lessonCoinsEarned
           return (
             <div className="dl-finale">
               <div className="dl-badge">{emoji}</div>
@@ -295,7 +311,11 @@ export default function LessonPage() {
                 {bossWasDone && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)', fontSize: 14 }}>
                     <span style={{ color: '#8a7a5e' }}>За финальное задание ⚔️</span>
-                    <span style={{ fontWeight: 600, color: 'var(--dl-green)' }}>+{lesson?.coins_boss || 30}</span>
+                    {bossCorrect ? (
+                      <span style={{ fontWeight: 600, color: 'var(--dl-green)' }}>+{bossCoinsEarned}</span>
+                    ) : (
+                      <span style={{ fontWeight: 600, color: 'var(--dl-red)' }}>✗ не засчитано</span>
+                    )}
                   </div>
                 )}
                 {coinsLost > 0 && (

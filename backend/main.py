@@ -187,6 +187,7 @@ LESSON_NATURAL_DIGITS = {
         }
     ],
     "boss_task": {
+        "answer": "987650",
         "text": (
             "Вор оставил зашифрованное послание с кодом от сейфа: «Мой код — самое большое шестизначное число, "
             "в котором все цифры разные и оно заканчивается на 0». Реши, какой код у сейфа."
@@ -270,6 +271,7 @@ LESSON_NATURAL_COMPARE = {
         }
     ],
     "boss_task": {
+        "answer": "5371",
         "text": (
             "Второй сейф откликнется на число, о котором вор оставил подсказку: «Моё число четырёхзначное, "
             "оно меньше, чем 5372, но больше, чем 5290, а все его цифры различны — и это самое большое "
@@ -352,6 +354,7 @@ LESSON_ROUNDING = {
         }
     ],
     "boss_task": {
+        "answer": "4650",
         "text": (
             "Третий сейф откликнется на число, которое обладает двумя свойствами сразу: при округлении до "
             "сотен оно даёт 4700, а при округлении до тысяч — 5000. Найди наименьшее число, которое подходит "
@@ -434,6 +437,7 @@ LESSON_DIVISIBILITY = {
         }
     ],
     "boss_task": {
+        "answer": "4680",
         "text": (
             "Четвёртый сейф откроет число, которое одновременно делится и на 2, и на 3, и на 5, при этом оно "
             "наименьшее из всех чисел, которые больше 4650. Найди этот код."
@@ -512,6 +516,7 @@ LESSON_PRIME_COMPOSITE = {
         }
     ],
     "boss_task": {
+        "answer": "12",
         "text": (
             "Пятый сейф откроет наименьшее составное число, у которого ровно 6 делителей, а в разложении на "
             "простые множители встречаются и 2, и 3 (и никакие другие простые числа). Найди этот код."
@@ -590,6 +595,7 @@ LESSON_GCD_LCM = {
         }
     ],
     "boss_task": {
+        "answer": "72",
         "text": (
             "Финальный сейф связан с той самой сигнализацией: один механизм тикает каждые 18 секунд, другой — "
             "каждые 24 секунды, и оба сработали одновременно в момент поимки вора. Через сколько секунд они "
@@ -694,6 +700,7 @@ LESSON_CONTROL_NATURAL_NUMBERS = {
         }
     ],
     "boss_task": {
+        "answer": "36",
         "text": (
             "Инспектор просит подготовить сувенирные наборы для закрытия дела: на складе музея "
             "108 значков «Детектив чисел» и 144 карточки-подсказки. Собери наибольшее возможное "
@@ -784,6 +791,7 @@ LESSON_ADD_SUBTRACT = {
         }
     ],
     "boss_task": {
+        "answer": "113",
         "text": (
             "Итоговая сумма в колонке гроссбуха — 500. Из слагаемых видно только три числа: 128, 165 и "
             "94, а четвёртое залито чернилами. Найди пропавшее число — это номер страницы, к которой "
@@ -872,6 +880,7 @@ LESSON_MULT_DIVIDE = {
         }
     ],
     "boss_task": {
+        "answer": "6",
         "text": (
             "Отмеченный вором ряд склада найден по формуле: вычисли 45 × 16 удобным способом, разложив "
             "16 на 10 + 6 (распределительное свойство), а затем раздели результат на 120 и найди "
@@ -948,6 +957,7 @@ LESSON_POWER = {
         }
     ],
     "boss_task": {
+        "answer": "58",
         "text": (
             "На обратной стороне плитки выгравирована незаконченная запись: 2³ + 5² × 2. Вору не "
             "хватило времени её вычислить. Помоги закончить: чему равно значение этого выражения?"
@@ -1031,6 +1041,7 @@ LESSON_ORDER_OPERATIONS = {
         }
     ],
     "boss_task": {
+        "answer": "37",
         "text": (
             "Финальный код архива зашифрован в выражении (216 − 81) ÷ 27 + 4 × 2³. Вычисли его "
             "значение, соблюдая правильный порядок действий, — это и есть код последнего тайника."
@@ -1134,6 +1145,7 @@ LESSON_CONTROL_NATURAL_OPERATIONS = {
         }
     ],
     "boss_task": {
+        "answer": "192",
         "text": (
             "На обороте отчёта — приписка не рукой вора: буквы k и m вместо чисел, а рядом план "
             "музейного зала: k рядов по 9 экспонатов в каждом и m рядов по 10 экспонатов в каждом. "
@@ -1215,6 +1227,7 @@ LESSON_EXPRESSIONS = {
         }
     ],
     "boss_task": {
+        "answer": "36",
         "text": (
             "На первой странице блокнота учеников — выражение 3a + 15, а на полях пометка: «a — "
             "сколько будет, если от десяти пальцев на руках отнять три». Вычисли значение "
@@ -1296,6 +1309,7 @@ LESSON_EQUATIONS = {
         }
     ],
     "boss_task": {
+        "answer": "65",
         "text": (
             "На странице 36 записано уравнение x − 18 = 47 с пометкой «здесь будет следующая "
             "встреча». Реши уравнение и узнай номер дома, куда нужно отправиться."
@@ -1371,6 +1385,7 @@ LESSON_FORMULAS = {
         }
     ],
     "boss_task": {
+        "answer": "да",
         "text": (
             "Ученик мчится на самокате к вокзалу: путь 6 км, скорость самоката 15 км/ч, а поезд "
             "отправляется через 24 минуты. Детектив бежит к автобусу, который идёт по той же "
@@ -1492,6 +1507,7 @@ LESSON_CONTROL_EXPRESSIONS_EQUATIONS = {
         }
     ],
     "boss_task": {
+        "answer": "6 и 24",
         "text": (
             "На первой странице нового блокнота — головоломка с двумя псевдонимами. «Тень» "
             "хвастался, что собрал жетонов в 4 раза больше, чем «Эхо». После того как «Тень» "
@@ -2189,10 +2205,32 @@ async def upload_image(lesson_id: int, file: UploadFile = File(...), role: str =
 class StartLessonIn(BaseModel):
     lesson_id: int
 
+def _check_boss_answer(expected: str, given: str) -> bool:
+    """Сверяет ответ ребёнка на финальное задание с эталонным ответом.
+    Числа сверяются как отдельные "слова" (без ложных совпадений внутри
+    других чисел), текстовые ответы — по вхождению как отдельного слова."""
+    if not expected or not given:
+        return False
+    given_norm = given.strip().lower().replace(",", ".")
+    numbers = re.findall(r"-?\d+(?:[.,]\d+)?", expected)
+    if numbers:
+        for num in numbers:
+            num = num.replace(",", ".")
+            pat = r"(?<!\d)" + re.escape(num) + r"(?!\d)"
+            if not re.search(pat, given_norm):
+                return False
+        return True
+    exp_norm = expected.strip().lower()
+    pat = r"(?<!\w)" + re.escape(exp_norm) + r"(?!\w)"
+    return bool(re.search(pat, given_norm, flags=re.UNICODE))
+
 class FinishLessonIn(BaseModel):
     progress_id: int
     score: int
     boss_done: bool = False
+    boss_answer: Optional[str] = None
+
+
 
 @app.post("/api/progress/start")
 async def start_lesson(data: StartLessonIn, role: str = Depends(require_any)):
@@ -2224,10 +2262,21 @@ async def finish_lesson(data: FinishLessonIn, role: str = Depends(require_any)):
     ratio = max(data.score / max_score, 0.1) if max_score > 0 else 0.1
     base_coins = lesson["coins_lesson"] if lesson else 50
     lesson_coins = max(round(base_coins * ratio), 5)  # минимум 5 монет
-    boss_coins = (lesson["coins_boss"] if lesson else 30) if data.boss_done else 0
+    # Финальное задание: ответ ребёнка сверяется с эталонным на сервере —
+    # клиенту нельзя доверять флаг "выполнено правильно"
+    boss_correct = False
+    if data.boss_done and lesson and lesson["boss_task"]:
+        try:
+            boss = json.loads(lesson["boss_task"])
+        except Exception:
+            boss = None
+        expected = (boss or {}).get("answer")
+        if expected:
+            boss_correct = _check_boss_answer(expected, data.boss_answer or "")
+    boss_coins = (lesson["coins_boss"] if lesson else 30) if boss_correct else 0
     coins = lesson_coins + boss_coins
     conn.execute("UPDATE progress SET finished_at=datetime('now'),score=?,boss_done=?,coins_earned=? WHERE id=?",
-                 (data.score, 1 if data.boss_done else 0, coins, data.progress_id))
+                 (data.score, 1 if boss_correct else 0, coins, data.progress_id))
     conn.execute("INSERT INTO coins (amount,type,note) VALUES (?,?,?)",
                  (coins, "earned", f"Урок: {lesson['topic'] if lesson else ''}"))
     _update_streak(conn); conn.commit()
@@ -2240,7 +2289,7 @@ async def finish_lesson(data: FinishLessonIn, role: str = Depends(require_any)):
         f"Результат: {data.score}/5 · +{coins} монет 🪙\n"
         f"Серия: {streak['days'] if streak else 0} дней 🔥"
     ))
-    return {"coins_earned": coins}
+    return {"coins_earned": coins, "boss_correct": boss_correct, "lesson_coins": lesson_coins, "boss_coins": boss_coins}
 
 def _update_streak(conn):
     today     = datetime.now().strftime("%Y-%m-%d")
