@@ -67,7 +67,7 @@
 .gh-stats-area { grid-area: stats; display: flex; flex-direction: column; gap: 16px; }
 .gh-main-area { grid-area: main; }
 .gh-right-area {
-  grid-area: right; align-self: center; width: 100%;
+  grid-area: right; align-self: start; width: 100%;
   display: flex; flex-direction: column; gap: 16px;
 }
 .gh-panel-img { width: 100%; height: auto; display: block; object-fit: contain; }

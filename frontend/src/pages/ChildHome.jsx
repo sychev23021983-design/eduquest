@@ -70,11 +70,11 @@ export default function ChildHome() {
     backgroundImage: `url(${settings.bg_main})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
   } : {}
   const heroStyle = settings.bg_hero ? {
-    backgroundImage: `linear-gradient(120deg, rgba(42,58,143,.72), rgba(138,58,168,.72)), url(${settings.bg_hero})`,
+    backgroundImage: `linear-gradient(120deg, rgba(42,58,143,1), rgba(138,58,168,1)), url(${settings.bg_hero})`,
     backgroundSize: 'cover', backgroundPosition: 'center',
   } : {}
   const lodStyle = settings.bg_lesson_of_day ? {
-    backgroundImage: `linear-gradient(120deg, rgba(26,58,107,.72), rgba(20,122,143,.72)), url(${settings.bg_lesson_of_day})`,
+    backgroundImage: `linear-gradient(120deg, rgba(26,58,107,1), rgba(20,122,143,1)), url(${settings.bg_lesson_of_day})`,
     backgroundSize: 'cover', backgroundPosition: 'center',
   } : {}
 
