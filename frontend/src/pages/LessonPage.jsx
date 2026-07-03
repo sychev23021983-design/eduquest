@@ -4,8 +4,6 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
 import '../detective-theme.css'
 
-const WRONG_ANSWER_PENALTY = 5
-
 export default function LessonPage() {
   const { id } = useParams()
   const { token } = useAuth()
@@ -26,7 +24,7 @@ export default function LessonPage() {
   const [bossCorrect, setBossCorrect] = useState(null)
   const [lessonCoinsEarned, setLessonCoinsEarned] = useState(0)
   const [bossCoinsEarned,   setBossCoinsEarned]   = useState(0)
-  const [coinsLost,   setCoinsLost] = useState(0)
+  const [mistakeCount, setMistakeCount] = useState(0)
   const [bossSubmitting, setBossSubmitting] = useState(false)
 
   useEffect(() => { loadLesson() }, [id])
@@ -47,13 +45,16 @@ export default function LessonPage() {
     if (answered) return
     setSelected(idx)
     setAnswered(true)
-    if (idx === questions[current].correct) {
+    const q = questions[current]
+    if (idx === q.correct) {
       setScore(s => s + 1)
     } else {
-      setCoinsLost(c => c + WRONG_ANSWER_PENALTY)
-      api.coinPenalty(token, {
-        lesson_id: Number(id), amount: WRONG_ANSWER_PENALTY,
-        note: `Неверный ответ: ${lesson.topic}`,
+      setMistakeCount(c => c + 1)
+      api.logMistake(token, {
+        lesson_id: Number(id),
+        question_text: q.text,
+        chosen_text: q.options?.[idx] ?? null,
+        correct_text: q.options?.[q.correct] ?? null,
       }).catch(() => {})
     }
   }
@@ -73,7 +74,7 @@ export default function LessonPage() {
     setBossSubmitting(true)
     try {
       const res = await api.finishLesson(token, {
-        progress_id: progressId, score, boss_done: true, boss_answer: bossInput,
+        progress_id: progressId, score, total: questions.length, boss_done: true, boss_answer: bossInput,
       })
       setCoins(res.coins_earned)
       setLessonCoinsEarned(res.lesson_coins)
@@ -91,7 +92,7 @@ export default function LessonPage() {
   }
 
   async function finishLessonSimple() {
-    const res = await api.finishLesson(token, { progress_id: progressId, score, boss_done: false })
+    const res = await api.finishLesson(token, { progress_id: progressId, score, total: questions.length, boss_done: false })
     setCoins(res.coins_earned)
     setLessonCoinsEarned(res.lesson_coins)
     setPhase('done')
@@ -206,7 +207,8 @@ export default function LessonPage() {
                   <div className="dl-feedback correct">✅ Точно! {q.explanation || ''}</div>
                 ) : (
                   <div className="dl-feedback wrong">
-                    ❌ Мимо, −{WRONG_ANSWER_PENALTY} 🪙. {q.explanation || (q.hint ? `Подсказка: ${q.hint}` : '')}
+                    ❌ Мимо{questions.length > 0 && lesson.coins_lesson ? `, эта улика не принесёт до ${Math.round(lesson.coins_lesson / questions.length)} 🪙 к награде` : ''}.{' '}
+                    {q.explanation || (q.hint ? `Подсказка: ${q.hint}` : '')}
                   </div>
                 )}
                 <button className="dl-btn wide" onClick={nextQuestion}>
@@ -318,21 +320,15 @@ export default function LessonPage() {
                     )}
                   </div>
                 )}
-                {coinsLost > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)', fontSize: 14 }}>
-                    <span style={{ color: '#8a7a5e' }}>Штраф за неверные ответы</span>
-                    <span style={{ fontWeight: 600, color: 'var(--dl-red)' }}>−{coinsLost}</span>
-                  </div>
-                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: 18, fontWeight: 700 }}>
                   <span>Итого</span>
-                  <span style={{ color: 'var(--dl-gold)' }}>+{coinsEarned - coinsLost} 🪙</span>
+                  <span style={{ color: 'var(--dl-gold)' }}>+{coinsEarned} 🪙</span>
                 </div>
               </div>
 
-              {coinsLost > 0 && (
+              {mistakeCount > 0 && (
                 <div className="dl-coins-note" style={{ textAlign: 'left' }}>
-                  🤔 В следующий раз выбирай ответ вдумчивее — за ошибки списываются монеты!
+                  🤔 {mistakeCount} {mistakeCount === 1 ? 'улика уменьшила' : 'улики уменьшили'} награду за расследование — в следующий раз выбирай ответ вдумчивее!
                 </div>
               )}
 

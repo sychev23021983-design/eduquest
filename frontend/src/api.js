@@ -44,6 +44,8 @@ export const api = {
   resetSettings:  (token)           => req('POST', '/settings/reset', {}, token),
   uploadSettingAsset: (token, slot, form) => upload(`/settings/upload?slot=${slot}`, form, token),
   coinPenalty:    (token, data)      => req('POST', '/coins/penalty', data, token),
+  logMistake:     (token, data)      => req('POST', '/mistakes', data, token),
+  mistakes:       (token)            => req('GET', '/mistakes', null, token),
   createLesson:   (token, data)     => req('POST', '/lessons', data, token),
   updateLesson:   (token, id, data) => req('PUT', `/lessons/${id}`, data, token),
   deleteLesson:   (token, id)       => req('DELETE', `/lessons/${id}`, null, token),

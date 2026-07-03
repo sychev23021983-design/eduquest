@@ -15,14 +15,15 @@ export default function ParentDashboard() {
   const [lessons, setLessons] = useState([])
   const [rewards, setRewards] = useState([])
   const [balance, setBalance] = useState({})
+  const [mistakes, setMistakes] = useState([])
 
   useEffect(() => { load() }, [])
 
   async function load() {
-    const [st, ls, rw, bl] = await Promise.all([
-      api.stats(token), api.lessons(token), api.rewards(token), api.balance(token)
+    const [st, ls, rw, bl, ms] = await Promise.all([
+      api.stats(token), api.lessons(token), api.rewards(token), api.balance(token), api.mistakes(token)
     ])
-    setStats(st); setLessons(ls); setRewards(rw); setBalance(bl)
+    setStats(st); setLessons(ls); setRewards(rw); setBalance(bl); setMistakes(ms)
   }
 
   async function approve(id) {
@@ -62,7 +63,7 @@ export default function ParentDashboard() {
       </div>
 
       <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, overflowX: 'auto' }}>
-        {[['stats','📊 Аналитика'],['rewards','🎁 Награды' + (pending.length ? ` (${pending.length})` : '')],['lessons','📚 Уроки']].map(([k, l]) => (
+        {[['stats','📊 Аналитика'],['mistakes','🎯 Ошибки' + (mistakes.length ? ` (${mistakes.length})` : '')],['rewards','🎁 Награды' + (pending.length ? ` (${pending.length})` : '')],['lessons','📚 Уроки']].map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{
             padding: '12px 20px', border: 'none', background: 'none', fontWeight: tab === k ? 600 : 400,
             color: tab === k ? 'var(--blue)' : 'var(--muted)', whiteSpace: 'nowrap',
@@ -139,7 +140,11 @@ export default function ParentDashboard() {
                       <div>
                         <span className={`badge badge-${t.subject}`}>{SUBJ[t.subject]}</span>
                         <div style={{ fontWeight: 500, marginTop: 4 }}>{t.topic}</div>
-                        <div style={{ fontSize: 13, color: 'var(--muted)' }}>{t.attempts} попытки · {Math.round(t.avg * 100)}% точность</div>
+                        <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+                          {t.mistake_count != null
+                            ? `${t.mistake_count} ${t.mistake_count === 1 ? 'ошибка' : 'ошибки'}`
+                            : `${t.attempts} попытки · ${Math.round(t.avg * 100)}% точность`}
+                        </div>
                       </div>
                       <span style={{ fontSize: 24 }}>📉</span>
                     </div>
@@ -149,6 +154,61 @@ export default function ParentDashboard() {
             )}
           </div>
         )}
+
+        {/* MISTAKES */}
+        {tab === 'mistakes' && (() => {
+          const bySubjectTopic = {}
+          mistakes.forEach(m => {
+            const key = `${m.subject}|${m.topic}`
+            if (!bySubjectTopic[key]) bySubjectTopic[key] = { subject: m.subject, topic: m.topic, lesson_id: m.lesson_id, count: 0 }
+            bySubjectTopic[key].count++
+          })
+          const grouped = Object.values(bySubjectTopic).sort((a, b) => b.count - a.count)
+          return (
+            <div>
+              {grouped.length > 0 && (
+                <>
+                  <h3 style={{ fontWeight: 600, marginBottom: 12 }}>По темам — где стоит добавить уроков</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 24 }}>
+                    {grouped.map(g => (
+                      <div key={g.subject + g.topic} className="card" style={{ borderLeft: '3px solid var(--red)' }}>
+                        <span className={`badge badge-${g.subject}`}>{SUBJ[g.subject]}</span>
+                        <div style={{ fontWeight: 600, marginTop: 6 }}>{g.topic}</div>
+                        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{g.count} {g.count === 1 ? 'ошибка' : 'ошибки/ошибок'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <h3 style={{ fontWeight: 600, marginBottom: 12 }}>Последние ошибки</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {mistakes.map(m => (
+                  <div key={m.id} className="card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                      <div>
+                        <span className={`badge badge-${m.subject}`}>{SUBJ[m.subject]}</span>
+                        <span style={{ fontWeight: 500, marginLeft: 8 }}>{m.topic}</span>
+                      </div>
+                      <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{dayjs(m.created_at).format('DD.MM HH:mm')}</span>
+                    </div>
+                    {m.question_text && <div style={{ fontSize: 14, marginBottom: 4 }}>{m.question_text}</div>}
+                    <div style={{ fontSize: 13, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {m.chosen_text && <span style={{ color: 'var(--red)' }}>❌ Ответил: {m.chosen_text}</span>}
+                      {m.correct_text && <span style={{ color: 'var(--green)' }}>✅ Верно: {m.correct_text}</span>}
+                    </div>
+                  </div>
+                ))}
+                {mistakes.length === 0 && (
+                  <div className="card" style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>
+                    <div style={{ fontSize: 40, marginBottom: 12 }}>🎯</div>
+                    <div style={{ fontWeight: 600 }}>Ошибок пока не было</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* REWARDS */}
         {tab === 'rewards' && (

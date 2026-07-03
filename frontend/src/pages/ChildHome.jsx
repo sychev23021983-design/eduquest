@@ -165,7 +165,9 @@ export default function ChildHome() {
                     <span className={`gh-badge ${t.subject}`}>{SUBJ[t.subject]}</span>
                     <div className="title">{t.topic}</div>
                   </div>
-                  <span style={{ fontFamily: 'var(--font-num)', fontWeight: 700, color: 'var(--gh-red)', fontSize: '0.85rem' }}>{Math.round(t.avg * 100)}%</span>
+                  <span style={{ fontFamily: 'var(--font-num)', fontWeight: 700, color: 'var(--gh-red)', fontSize: '0.85rem' }}>
+                    {t.mistake_count != null ? `${t.mistake_count} ${t.mistake_count === 1 ? 'ошибка' : 'ошибки'}` : `${Math.round(t.avg * 100)}%`}
+                  </span>
                   <span style={{ color: 'var(--gh-blue)', fontSize: 20 }}>›</span>
                 </div>
               ))}
@@ -213,7 +215,11 @@ export default function ChildHome() {
                   <div key={t.topic} className="gh-card" style={{ borderLeft: '3px solid var(--gh-amber)', marginBottom: 8 }}>
                     <span className={`gh-badge ${t.subject}`}>{SUBJ[t.subject]}</span>
                     <div style={{ fontWeight: 700, marginTop: 4 }}>{t.topic}</div>
-                    <div className="gh-xp-label">Результат: {Math.round(t.avg * 100)}%</div>
+                    <div className="gh-xp-label">
+                      {t.mistake_count != null
+                        ? `${t.mistake_count} ${t.mistake_count === 1 ? 'ошибка' : 'ошибки'} на этой теме`
+                        : `Результат: ${Math.round(t.avg * 100)}%`}
+                    </div>
                   </div>
                 ))}
               </>}

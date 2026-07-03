@@ -1707,6 +1707,14 @@ def init_db():
             coins_earned INTEGER DEFAULT 0,
             boss_done    INTEGER DEFAULT 0
         );
+        CREATE TABLE IF NOT EXISTS mistakes (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            lesson_id     INTEGER NOT NULL,
+            question_text TEXT,
+            chosen_text   TEXT,
+            correct_text  TEXT,
+            created_at    TEXT DEFAULT (datetime('now'))
+        );
         CREATE TABLE IF NOT EXISTS coins (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             amount     INTEGER NOT NULL,
@@ -2227,6 +2235,7 @@ def _check_boss_answer(expected: str, given: str) -> bool:
 class FinishLessonIn(BaseModel):
     progress_id: int
     score: int
+    total: int = 5
     boss_done: bool = False
     boss_answer: Optional[str] = None
 
@@ -2256,9 +2265,9 @@ async def finish_lesson(data: FinishLessonIn, role: str = Depends(require_any)):
     if not prog:
         conn.close(); raise HTTPException(404)
     lesson = conn.execute("SELECT * FROM lessons WHERE id=?", (prog["lesson_id"],)).fetchone()
-    # Монеты за урок пропорциональны результату
-    # 5/5 = 100%, 4/5 = 80%, ..., 0/5 = 10% (минимум за попытку)
-    max_score = 5
+    # Монеты за урок пропорциональны результату: score/total карточек.
+    # Одна неверная карточка = минус (coins_lesson / total) монет — весомее, чем плоский штраф.
+    max_score = data.total if data.total and data.total > 0 else 5
     ratio = max(data.score / max_score, 0.1) if max_score > 0 else 0.1
     base_coins = lesson["coins_lesson"] if lesson else 50
     lesson_coins = max(round(base_coins * ratio), 5)  # минимум 5 монет
@@ -2275,8 +2284,8 @@ async def finish_lesson(data: FinishLessonIn, role: str = Depends(require_any)):
             boss_correct = _check_boss_answer(expected, data.boss_answer or "")
     boss_coins = (lesson["coins_boss"] if lesson else 30) if boss_correct else 0
     coins = lesson_coins + boss_coins
-    conn.execute("UPDATE progress SET finished_at=datetime('now'),score=?,boss_done=?,coins_earned=? WHERE id=?",
-                 (data.score, 1 if boss_correct else 0, coins, data.progress_id))
+    conn.execute("UPDATE progress SET finished_at=datetime('now'),score=?,max_score=?,boss_done=?,coins_earned=? WHERE id=?",
+                 (data.score, max_score, 1 if boss_correct else 0, coins, data.progress_id))
     conn.execute("INSERT INTO coins (amount,type,note) VALUES (?,?,?)",
                  (coins, "earned", f"Урок: {lesson['topic'] if lesson else ''}"))
     _update_streak(conn); conn.commit()
@@ -2325,9 +2334,33 @@ def get_stats(role: str = Depends(require_any)):
     week    = conn.execute("""SELECT date(started_at) as day, COUNT(*) as cnt
         FROM progress WHERE started_at >= date('now','-7 days')
         GROUP BY date(started_at) ORDER BY day""").fetchall()
-    weak    = conn.execute("""SELECT l.id as lesson_id, l.topic, l.subject, AVG(p.score*1.0/p.max_score) as avg, COUNT(*) as attempts
+    weak_from_mistakes = conn.execute("""
+        SELECT l.id as lesson_id, l.topic, l.subject, COUNT(m.id) as mistake_count, MAX(m.created_at) as last_at
+        FROM mistakes m JOIN lessons l ON m.lesson_id = l.id
+        WHERE l.active=1
+        GROUP BY l.id
+        ORDER BY last_at DESC
+        LIMIT 8
+    """).fetchall()
+    weak_from_score = conn.execute("""SELECT l.id as lesson_id, l.topic, l.subject, AVG(p.score*1.0/p.max_score) as avg, COUNT(*) as attempts
         FROM progress p JOIN lessons l ON p.lesson_id=l.id WHERE p.finished_at IS NOT NULL AND l.active=1
         GROUP BY l.id HAVING avg < 0.6 AND attempts >= 1 ORDER BY avg ASC LIMIT 5""").fetchall()
+    seen, weak_topics = set(), []
+    for r in weak_from_mistakes:
+        if r["lesson_id"] in seen: continue
+        seen.add(r["lesson_id"])
+        weak_topics.append({
+            "lesson_id": r["lesson_id"], "topic": r["topic"], "subject": r["subject"],
+            "mistake_count": r["mistake_count"], "avg": None,
+        })
+    for r in weak_from_score:
+        if r["lesson_id"] in seen: continue
+        seen.add(r["lesson_id"])
+        weak_topics.append({
+            "lesson_id": r["lesson_id"], "topic": r["topic"], "subject": r["subject"],
+            "mistake_count": None, "avg": r["avg"],
+        })
+    weak_topics = weak_topics[:6]
     conn.close()
     return {
         "total_lessons": total, "balance": earned - spent,
@@ -2335,7 +2368,7 @@ def get_stats(role: str = Depends(require_any)):
         "avg_score": round(avg_row["a"] * 100) if avg_row["a"] else 0,
         "by_subject": [dict(r) for r in by_subj],
         "week_activity": [dict(r) for r in week],
-        "weak_topics": [dict(r) for r in weak],
+        "weak_topics": weak_topics,
     }
 
 # ── Coins & Rewards ───────────────────────────────────────────────────────────
@@ -2347,6 +2380,36 @@ def get_balance(role: str = Depends(require_any)):
     spent  = conn.execute("SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'").fetchone()["s"]
     conn.close()
     return {"balance": earned - spent, "earned": earned, "spent": spent}
+
+class MistakeIn(BaseModel):
+    lesson_id: int
+    question_text: Optional[str] = None
+    chosen_text: Optional[str] = None
+    correct_text: Optional[str] = None
+
+@app.post("/api/mistakes")
+def log_mistake(data: MistakeIn, role: str = Depends(require_any)):
+    """Фиксирует неверный ответ на карточке — без начисления/списания монет,
+    только для сбора статистики по проблемным темам (родитель видит, что подтянуть)."""
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO mistakes (lesson_id, question_text, chosen_text, correct_text) VALUES (?,?,?,?)",
+        (data.lesson_id, data.question_text, data.chosen_text, data.correct_text)
+    )
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.get("/api/mistakes")
+def list_mistakes(role: str = Depends(require_parent)):
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT m.id, m.question_text, m.chosen_text, m.correct_text, m.created_at,
+               l.id as lesson_id, l.topic, l.subject
+        FROM mistakes m JOIN lessons l ON m.lesson_id = l.id
+        ORDER BY m.created_at DESC LIMIT 200
+    """).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 class PenaltyIn(BaseModel):
     lesson_id: Optional[int] = None
