@@ -3,10 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
+import SubjectIcon from '../components/SubjectIcon.jsx'
 import '../game-theme.css'
 
 const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
-const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️' }
 
 // Геометрия змейки: расстояние между узлами по горизонтали и позиции по вертикали (в px)
 const COL_W    = 150   // px между центрами соседних узлов по горизонтали
@@ -111,7 +111,9 @@ export default function SubjectPage() {
       <div className="gh-map-topbar">
         <button className="gh-back-btn" onClick={() => nav('/')}>‹</button>
         <div className="gh-map-title">
-          <span className="gh-map-title-text">{SUBJ_ICON[subject]} {(SUBJ[subject] || '').toUpperCase()}</span>
+          <span className="gh-map-title-text" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <SubjectIcon subj={subject} icons={settings?.subject_icons} size={26} /> {(SUBJ[subject] || '').toUpperCase()}
+          </span>
           <span className="gh-map-grade-pill">{grade} КЛАСС</span>
         </div>
         <div className="gh-map-right">

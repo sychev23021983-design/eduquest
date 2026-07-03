@@ -3,18 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
+import SubjectIcon from '../components/SubjectIcon.jsx'
 import '../game-theme.css'
 
 const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
-const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️' }
 const SUBJ_KEY  = ['math', 'russian', 'science', 'history']
 const XP_PER_LEVEL = 300
-
-function SubjectIcon({ subj, icons, size = 28 }) {
-  const custom = icons?.[subj]
-  if (custom) return <img src={custom} alt="" style={{ width: size, height: size, objectFit: 'contain' }} />
-  return <span style={{ fontSize: size }}>{SUBJ_ICON[subj]}</span>
-}
 
 export default function ChildHome() {
   const { logout, token } = useAuth()

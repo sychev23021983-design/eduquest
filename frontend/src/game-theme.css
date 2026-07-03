@@ -146,6 +146,7 @@
 .gh-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .gh-stat-card {
   background: var(--gh-card); border: 1px solid var(--gh-border); border-radius: 14px; padding: 14px 16px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
 }
 .gh-stat-card .gh-stat-label { font-size: 0.75rem; color: var(--gh-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
 .gh-level-badge {
@@ -157,6 +158,7 @@
   margin-bottom: 8px;
 }
 .gh-xp-track { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.gh-stat-card .gh-xp-track { align-self: stretch; width: 100%; }
 .gh-xp-fill { height: 100%; background: linear-gradient(90deg, var(--gh-blue), #8ad2ff); border-radius: 4px; }
 .gh-xp-label { font-size: 0.72rem; color: var(--gh-muted); margin-top: 4px; font-family: var(--font-num); }
 
