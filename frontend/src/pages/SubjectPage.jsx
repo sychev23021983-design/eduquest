@@ -166,7 +166,6 @@ export default function SubjectPage() {
             nodes.push({
               kind: 'topic', topic: t, state,
               badge: `${si + 1}.${ti + 1}`, title: t.title,
-              img: t.lessons?.[0]?.infographic || null,
               stars: t.stars || 0,
             })
             prevDone = t.completed
@@ -204,9 +203,7 @@ export default function SubjectPage() {
                           : n.state === 'locked' ? 'locked'
                           : n.state === 'soon' ? 'soon'
                           : `avail ${colorClass}`
-                        const content = n.img
-                          ? <img src={n.img} alt="" />
-                          : n.kind === 'intro' ? n.badge
+                        const content = n.kind === 'intro' ? n.badge
                           : n.state === 'locked' ? '🔒'
                           : n.state === 'soon' ? '⏳'
                           : n.badge

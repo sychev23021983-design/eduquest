@@ -271,7 +271,7 @@
 
 /* Section bar */
 .gh-map-section-bar {
-  position: relative; display: flex; align-items: center;
+  position: relative; display: inline-flex; align-items: center; width: fit-content;
   height: 50px; border-radius: 26px; padding: 0 22px 0 56px; margin-bottom: 22px;
   font-family: var(--font-num); font-weight: 800; font-size: 1rem; letter-spacing: .8px; color: #fff;
   box-shadow: 0 8px 20px rgba(0,0,0,0.35);
@@ -311,7 +311,7 @@
   width: 66px; height: 66px; flex-shrink: 0; position: relative;
   clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-num); font-weight: 900; font-size: 1.05rem; color: #fff;
+  font-family: var(--font-num); font-weight: 900; font-size: 24px; color: #fff;
   box-shadow: 0 6px 14px rgba(0,0,0,0.35); transition: transform .12s; overflow: hidden;
   border: 3px solid rgba(255,255,255,0.18);
 }
