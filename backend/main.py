@@ -126,6 +126,81 @@ def seed_lesson_if_missing(conn, grade: int, subject: str, section_title: str, t
          json.dumps(lesson["boss_task"], ensure_ascii=False) if lesson.get("boss_task") else None,
          lesson.get("coins_lesson", 50), lesson.get("coins_boss", 30)))
 
+def seed_article_if_missing(conn, subject: str, title: str, article: dict):
+    """Создаёт познавательный материал (статья, без контроля знаний), если статьи с таким названием ещё нет."""
+    existing = conn.execute(
+        "SELECT id FROM articles WHERE subject=? AND title=? AND active=1", (subject, title)
+    ).fetchone()
+    if existing:
+        return
+    conn.execute("""INSERT INTO articles (subject,grade,title,summary,blocks) VALUES (?,?,?,?,?)""",
+        (subject, article.get("grade"), title, article.get("summary", ""),
+         json.dumps(article["blocks"], ensure_ascii=False)))
+
+ARTICLE_WHY_RAIN = {
+    "grade": 5,
+    "summary": "Круговорот воды в природе — куда девается вода из луж и почему она возвращается на землю каплями дождя.",
+    "blocks": [
+        {"type": "heading", "text": "Почему идёт дождь? ☔"},
+        {"type": "paragraph", "text": (
+            "Ты наверняка замечал: после дождя на асфальте остаются лужи, а через день-два они бесследно "
+            "исчезают — как будто вода испарилась в никуда. И это почти правда! Вода действительно "
+            "«испаряется». А потом она же возвращается к нам в виде дождя. Вода на Земле путешествует "
+            "по кругу уже миллиарды лет, и этот бесконечный маршрут называют круговоротом воды в природе. "
+            "Давай пройдём этот путь вместе с одной капелькой воды — от океана до твоего окна."
+        )},
+        {"type": "image", "slot": "material_rain_cycle", "caption": "Круговорот воды в природе"},
+        {"type": "heading", "text": "Шаг 1. Капля отправляется в путешествие"},
+        {"type": "paragraph", "text": (
+            "Всё начинается с солнца. Оно нагревает воду в океанах, реках, озёрах и даже в лужах во дворе. "
+            "Когда вода нагревается, самые «шустрые» молекулы воды отрываются от поверхности и улетают "
+            "вверх невидимым паром — этот процесс называется испарением. Именно поэтому летом лужи "
+            "высыхают быстрее, чем зимой: чем теплее, тем быстрее вода превращается в пар."
+        )},
+        {"type": "callout", "text": (
+            "🌊 Интересный факт: каждую секунду с поверхности океанов испаряется столько воды, что ей "
+            "можно было бы наполнить больше 500 000 олимпийских бассейнов!"
+        )},
+        {"type": "heading", "text": "Шаг 2. Как рождается облако"},
+        {"type": "paragraph", "text": (
+            "Поднимаясь всё выше, водяной пар попадает в холодные слои воздуха. А холод делает с паром "
+            "обратное тому, что делало солнце: вместо того чтобы разлетаться, крошечные частички воды "
+            "начинают «слипаться» друг с другом вокруг пылинок в воздухе. Этот процесс называется "
+            "конденсацией — именно так же запотевает холодное стекло, если на него подышать. Миллиарды "
+            "таких капелек, слипшихся вместе, и образуют то, что мы видим на небе — облако."
+        )},
+        {"type": "image", "slot": "material_rain_clouds", "caption": "Как из пара получаются облака"},
+        {"type": "heading", "text": "Шаг 3. Когда капле становится тяжело"},
+        {"type": "paragraph", "text": (
+            "Капельки в облаке крошечные — легче пылинки, поэтому облако спокойно парит в воздухе. "
+            "Но капельки продолжают сталкиваться и слипаться в более крупные капли. Когда капля "
+            "становится слишком тяжёлой, чтобы воздух мог удерживать её на весу, она падает вниз. "
+            "Если по пути воздух тёплый — долетает дождь. Если очень холодно — капля замерзает и "
+            "долетает до земли снегом или градом."
+        )},
+        {"type": "callout", "text": (
+            "❄️ А ты знал? Одна дождевая капля состоит примерно из миллиона мельчайших капелек, "
+            "из которых было «собрано» облако!"
+        )},
+        {"type": "heading", "text": "Шаг 4. Круг замыкается"},
+        {"type": "paragraph", "text": (
+            "Дождевая вода попадает в реки, озёра и снова в океан — либо сразу, либо просачивается "
+            "в землю и питает подземные источники и растения. А потом солнце снова нагреет эту воду, "
+            "и всё начнётся заново. Та капля, что упала тебе на нос сегодня, миллионы раз до этого "
+            "уже была и облаком, и рекой, и, может быть, даже частью древнего океана, в котором "
+            "плавали динозавры!"
+        )},
+        {"type": "image", "slot": "material_rain_fact", "caption": "Вода путешествует по кругу без остановки"},
+        {"type": "heading", "text": "Зачем нужен дождь?"},
+        {"type": "paragraph", "text": (
+            "Без дождя не могли бы расти растения, наполняться реки и озёра, а значит — не было бы еды "
+            "и питьевой воды ни у людей, ни у животных. Так что дождь — это не просто «мокро и грустно», "
+            "а важнейшая часть жизни на всей планете. В следующий раз, когда пойдёт дождь, ты будешь "
+            "точно знать: это вода вернулась из долгого путешествия, чтобы отправиться в новое!"
+        )},
+    ],
+}
+
 LESSON_NATURAL_DIGITS = {
     "topic": "Цифры и натуральные числа",
     "context_theme": "detective",
@@ -1715,6 +1790,21 @@ def init_db():
             correct_text  TEXT,
             created_at    TEXT DEFAULT (datetime('now'))
         );
+        CREATE TABLE IF NOT EXISTS articles (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject      TEXT NOT NULL,
+            grade        INTEGER,
+            title        TEXT NOT NULL,
+            summary      TEXT,
+            blocks       TEXT NOT NULL,
+            created_at   TEXT DEFAULT (datetime('now')),
+            active       INTEGER DEFAULT 1
+        );
+        CREATE TABLE IF NOT EXISTS article_reads (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            article_id   INTEGER NOT NULL,
+            read_at      TEXT DEFAULT (datetime('now'))
+        );
         CREATE TABLE IF NOT EXISTS coins (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             amount     INTEGER NOT NULL,
@@ -1768,6 +1858,7 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "math", "Выражения и уравнения", "Формулы", LESSON_FORMULAS)
     seed_topic_if_missing(conn, 5, "math", "Выражения и уравнения", "Контрольная работа")
     seed_lesson_if_missing(conn, 5, "math", "Выражения и уравнения", "Контрольная работа", LESSON_CONTROL_EXPRESSIONS_EQUATIONS)
+    seed_article_if_missing(conn, "geography", "Почему идёт дождь?", ARTICLE_WHY_RAIN)
     conn.commit()
     conn.close()
 
@@ -2208,7 +2299,97 @@ async def upload_image(lesson_id: int, file: UploadFile = File(...), role: str =
     conn.commit(); conn.close()
     return {"infographic": f"/uploads/images/lesson_{lesson_id}.{ext}"}
 
-# ── Progress ──────────────────────────────────────────────────────────────────
+# ── Articles (познавательные материалы — без контроля знаний) ────────────────────
+
+MATERIAL_SUBJECTS = {
+    "biology": "Биология", "chemistry": "Химия", "geography": "География",
+    "informatics": "Информатика", "programming": "Программирование",
+}
+
+class ArticleIn(BaseModel):
+    subject: str
+    grade: Optional[int] = None
+    title: str
+    summary: Optional[str] = None
+    blocks: list
+
+@app.get("/api/materials/subjects")
+def material_subjects(role: str = Depends(require_any)):
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT subject, COUNT(*) as cnt FROM articles WHERE active=1 GROUP BY subject"
+    ).fetchall()
+    counts = {r["subject"]: r["cnt"] for r in rows}
+    conn.close()
+    return [{"key": k, "label": v, "count": counts.get(k, 0)} for k, v in MATERIAL_SUBJECTS.items()]
+
+@app.get("/api/articles")
+def list_articles(subject: Optional[str] = None, role: str = Depends(require_any)):
+    conn = get_conn()
+    q = "SELECT id, subject, grade, title, summary, created_at FROM articles WHERE active=1"
+    params = []
+    if subject:
+        q += " AND subject=?"; params.append(subject)
+    rows = conn.execute(q + " ORDER BY created_at DESC", params).fetchall()
+    ids = [r["id"] for r in rows]
+    read_ids = set()
+    if ids:
+        placeholders = ",".join("?" * len(ids))
+        read_ids = {r["article_id"] for r in conn.execute(
+            f"SELECT DISTINCT article_id FROM article_reads WHERE article_id IN ({placeholders})", ids
+        ).fetchall()}
+    conn.close()
+    return [{**dict(r), "read": r["id"] in read_ids} for r in rows]
+
+@app.get("/api/articles/{article_id}")
+def get_article(article_id: int, role: str = Depends(require_any)):
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM articles WHERE id=?", (article_id,)).fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(404, "Not found")
+    d = dict(row)
+    try: d["blocks"] = json.loads(d["blocks"])
+    except Exception: d["blocks"] = []
+    return d
+
+@app.post("/api/articles")
+def create_article(data: ArticleIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("INSERT INTO articles (subject,grade,title,summary,blocks) VALUES (?,?,?,?,?)",
+              (data.subject, data.grade, data.title, data.summary,
+               json.dumps(data.blocks, ensure_ascii=False)))
+    conn.commit(); aid = c.lastrowid; conn.close()
+    return {"id": aid}
+
+@app.put("/api/articles/{article_id}")
+def update_article(article_id: int, data: ArticleIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    conn.execute("UPDATE articles SET subject=?,grade=?,title=?,summary=?,blocks=? WHERE id=?",
+                 (data.subject, data.grade, data.title, data.summary,
+                  json.dumps(data.blocks, ensure_ascii=False), article_id))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.delete("/api/articles/{article_id}")
+def delete_article(article_id: int, role: str = Depends(require_parent)):
+    conn = get_conn()
+    conn.execute("UPDATE articles SET active=0 WHERE id=?", (article_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.post("/api/articles/{article_id}/read")
+def mark_article_read(article_id: int, role: str = Depends(require_any)):
+    conn = get_conn()
+    already = conn.execute("SELECT id FROM article_reads WHERE article_id=?", (article_id,)).fetchone()
+    if not already:
+        conn.execute("INSERT INTO article_reads (article_id) VALUES (?)", (article_id,))
+        conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
 
 class StartLessonIn(BaseModel):
     lesson_id: int

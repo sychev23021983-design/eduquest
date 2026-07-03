@@ -10,6 +10,10 @@ import IntroPage from './pages/IntroPage.jsx'
 import Curriculum from './pages/Curriculum.jsx'
 import Settings from './pages/Settings.jsx'
 import LessonEditor from './pages/LessonEditor.jsx'
+import MaterialsPage from './pages/MaterialsPage.jsx'
+import MaterialSubjectPage from './pages/MaterialSubjectPage.jsx'
+import ArticlePage from './pages/ArticlePage.jsx'
+import ArticleEditor from './pages/ArticleEditor.jsx'
 
 function Guard({ role: need, children }) {
   const { token, role } = useAuth()
@@ -29,10 +33,15 @@ export default function App() {
             <Route path="/subject/:subject" element={<Guard><SubjectPage /></Guard>} />
             <Route path="/subject/:subject/intro/:sectionId" element={<Guard><IntroPage /></Guard>} />
             <Route path="/lesson/:id" element={<Guard><LessonPage /></Guard>} />
+            <Route path="/materials" element={<Guard><MaterialsPage /></Guard>} />
+            <Route path="/materials/:subject" element={<Guard><MaterialSubjectPage /></Guard>} />
+            <Route path="/materials/article/:id" element={<Guard><ArticlePage /></Guard>} />
             <Route path="/parent" element={<Guard role="parent"><ParentDashboard /></Guard>} />
             <Route path="/parent/curriculum" element={<Guard role="parent"><Curriculum /></Guard>} />
             <Route path="/parent/settings" element={<Guard role="parent"><Settings /></Guard>} />
             <Route path="/parent/lesson/:id/edit" element={<Guard role="parent"><LessonEditor /></Guard>} />
+            <Route path="/parent/materials" element={<Guard role="parent"><ArticleEditor /></Guard>} />
+            <Route path="/parent/materials/:id/edit" element={<Guard role="parent"><ArticleEditor /></Guard>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

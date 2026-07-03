@@ -138,6 +138,21 @@ export default function Settings() {
                      currentUrl={form.bg_subject_page} uploading={uploadingSlot === 'bg_subject_page'} onUpload={f => uploadTo('bg_subject_page', f)} />
         </div>
 
+        {/* Познавательные материалы */}
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Материалы — «Почему идёт дождь?»</h3>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
+            Картинки для этого познавательного материала (раздел «География»). Для новых материалов
+            слоты для картинок можно загружать прямо в редакторе материала (Кабинет родителя → Материалы).
+          </p>
+          <UploadRow label="Круговорот воды в природе" hint="Слот: material_rain_cycle"
+                     currentUrl={form.material_rain_cycle} uploading={uploadingSlot === 'material_rain_cycle'} onUpload={f => uploadTo('material_rain_cycle', f)} />
+          <UploadRow label="Как образуются облака" hint="Слот: material_rain_clouds"
+                     currentUrl={form.material_rain_clouds} uploading={uploadingSlot === 'material_rain_clouds'} onUpload={f => uploadTo('material_rain_clouds', f)} />
+          <UploadRow label="Вода путешествует по кругу" hint="Слот: material_rain_fact"
+                     currentUrl={form.material_rain_fact} uploading={uploadingSlot === 'material_rain_fact'} onUpload={f => uploadTo('material_rain_fact', f)} />
+        </div>
+
         {/* Боковые панели */}
         <div className="card" style={{ marginBottom: 20 }}>
           <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Боковые панели</h3>

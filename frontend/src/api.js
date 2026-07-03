@@ -61,4 +61,11 @@ export const api = {
   rewards:        (token)           => req('GET', '/rewards', null, token),
   approveReward:  (token, id)       => req('POST', `/rewards/${id}/approve`, {}, token),
   rejectReward:   (token, id)       => req('POST', `/rewards/${id}/reject`, {}, token),
+  materialSubjects: (token)         => req('GET', '/materials/subjects', null, token),
+  articles:       (token, subject)  => req('GET', `/articles${subject ? `?subject=${subject}` : ''}`, null, token),
+  article:        (token, id)       => req('GET', `/articles/${id}`, null, token),
+  createArticle:  (token, data)     => req('POST', '/articles', data, token),
+  updateArticle:  (token, id, data) => req('PUT', `/articles/${id}`, data, token),
+  deleteArticle:  (token, id)       => req('DELETE', `/articles/${id}`, null, token),
+  markArticleRead: (token, id)      => req('POST', `/articles/${id}/read`, {}, token),
 }

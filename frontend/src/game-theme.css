@@ -181,6 +181,11 @@
 .gh-subject-card.russian { background: linear-gradient(150deg, #9c2a4a, #5e1830); }
 .gh-subject-card.science { background: linear-gradient(150deg, #1c7a4e, #0f4a30); }
 .gh-subject-card.history { background: linear-gradient(150deg, #6a3ab0, #3f1f6e); }
+.gh-subject-card.biology     { background: linear-gradient(150deg, #1c8f5a, #0f4a30); }
+.gh-subject-card.chemistry   { background: linear-gradient(150deg, #c0472a, #7a2515); }
+.gh-subject-card.geography   { background: linear-gradient(150deg, #1f8fb0, #12586e); }
+.gh-subject-card.informatics { background: linear-gradient(150deg, #3a5ac0, #223a80); }
+.gh-subject-card.programming { background: linear-gradient(150deg, #2a2f6a, #171a40); }
 
 /* Lessons list */
 .gh-lesson-row {

@@ -85,6 +85,7 @@ export default function ChildHome() {
           {[['home','🏠 Главная'],['progress','📊 Прогресс'],['shop','🎁 Награды']].map(([k,l]) => (
             <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>
           ))}
+          <button onClick={() => nav('/materials')}>📚 Материалы</button>
         </div>
         <span className="gh-coin-pill">🪙 {balance.balance || 0}</span>
         <button className="gh-logout" onClick={logout}>Выйти</button>
