@@ -134,6 +134,8 @@ export default function Settings() {
                      currentUrl={form.bg_hero} uploading={uploadingSlot === 'bg_hero'} onUpload={f => uploadTo('bg_hero', f)} />
           <UploadRow label="Фон блока «Урок дня»" hint="Крупная карточка с текущим уроком."
                      currentUrl={form.bg_lesson_of_day} uploading={uploadingSlot === 'bg_lesson_of_day'} onUpload={f => uploadTo('bg_lesson_of_day', f)} />
+          <UploadRow label="Фон карты уроков" hint="Фон страницы со списком уроков предмета (карта-путь по темам)."
+                     currentUrl={form.bg_subject_page} uploading={uploadingSlot === 'bg_subject_page'} onUpload={f => uploadTo('bg_subject_page', f)} />
         </div>
 
         {/* Боковые панели */}

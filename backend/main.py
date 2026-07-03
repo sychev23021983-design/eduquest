@@ -37,6 +37,7 @@ DEFAULT_SETTINGS = {
     "bg_main": None,
     "bg_hero": None,
     "bg_lesson_of_day": None,
+    "bg_subject_page": None,
     "sidebar_left_url": None,
     "sidebar_right_url": None,
     "subject_icons": {"math": None, "russian": None, "science": None, "history": None},
@@ -856,6 +857,7 @@ class SettingsIn(BaseModel):
     bg_main: Optional[str] = None
     bg_hero: Optional[str] = None
     bg_lesson_of_day: Optional[str] = None
+    bg_subject_page: Optional[str] = None
     sidebar_left_url: Optional[str] = None
     sidebar_right_url: Optional[str] = None
     subject_icons: Optional[dict] = None
@@ -950,10 +952,11 @@ def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
         topic_list = []
         for t in topics:
             t_lessons = conn.execute(
-                "SELECT id, topic FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
+                "SELECT id, topic, infographic FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
             ).fetchall()
             lesson_ids = [l["id"] for l in t_lessons]
             completed = False
+            stars = 0
             if lesson_ids:
                 placeholders = ",".join("?" * len(lesson_ids))
                 cnt = conn.execute(
@@ -961,11 +964,19 @@ def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
                     lesson_ids
                 ).fetchone()["n"]
                 completed = cnt > 0
+                if completed:
+                    best = conn.execute(
+                        f"SELECT MAX(score*1.0/max_score) as pct FROM progress WHERE lesson_id IN ({placeholders}) AND finished_at IS NOT NULL AND max_score > 0",
+                        lesson_ids
+                    ).fetchone()["pct"]
+                    pct = best or 0
+                    stars = 3 if pct >= 0.9 else 2 if pct >= 0.6 else 1
             topic_list.append({
                 **dict(t),
                 "lessons": [dict(l) for l in t_lessons],
                 "lesson_count": len(t_lessons),
                 "completed": completed,
+                "stars": stars,
             })
         result.append({**dict(s), "intro_done": bool(s["intro_seen_at"]), "topics": topic_list})
     conn.close()

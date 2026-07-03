@@ -208,49 +208,164 @@
 .game-home .input::placeholder { color: #6b729c; }
 .game-home .input:focus { border-color: var(--gh-blue); }
 
-/* Section block (subject page) */
-.gh-section-block { margin-bottom: 34px; }
-.gh-section-head {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
-  font-family: var(--font-num); font-weight: 800; font-size: 1.05rem;
+/* ============ Карта уроков (страница предмета) ============ */
+.gh-section-block { margin-bottom: 8px; }
+
+.gh-map-page { min-height: 100vh; }
+.gh-map-page .gh-wrap { max-width: 1200px; }
+
+.gh-map-topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 18px;
+  background: rgba(13,16,36,0.88);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--gh-border);
 }
-.gh-section-num {
-  width: 30px; height: 30px; border-radius: 50%; background: var(--gh-card-hi);
-  display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;
+.gh-map-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gh-map-title-text { font-family: var(--font-num); font-weight: 800; font-size: 1.15rem; letter-spacing: .5px; }
+.gh-map-grade-pill {
+  background: var(--gh-blue); color: #fff; font-family: var(--font-num); font-weight: 800;
+  font-size: 0.72rem; letter-spacing: .5px; padding: 4px 12px; border-radius: 20px;
 }
+.gh-map-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.gh-map-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--gh-border);
+  color: var(--gh-text); font-family: var(--font-num); font-weight: 800;
+  padding: 7px 13px; border-radius: 20px; font-size: 0.92rem; flex-shrink: 0;
+}
+.gh-map-pill .ic { font-size: 1rem; }
+.gh-map-pill.star { color: var(--gh-amber); border-color: rgba(255,201,77,0.35); }
+.gh-map-pill.coin { color: #ffd76a; border-color: rgba(255,201,77,0.35); }
+.gh-map-avatar { display: flex; align-items: center; gap: 8px; }
+.gh-map-avatar-circle {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: radial-gradient(circle at 35% 30%, #ffb870, #ff8a3d);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-num); font-weight: 800; color: #fff; font-size: 1rem;
+  box-shadow: 0 3px 10px rgba(255,138,61,0.4);
+}
+.gh-map-avatar-info .name { font-weight: 800; font-size: 0.85rem; line-height: 1.15; }
+.gh-map-avatar-info .role { font-size: 0.7rem; color: var(--gh-muted); }
+.gh-map-menu-wrap { position: relative; }
+.gh-map-menu-btn {
+  width: 40px; height: 40px; border-radius: 12px; border: none; cursor: pointer;
+  background: rgba(255,255,255,0.06); color: var(--gh-text); font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.gh-map-menu-dropdown {
+  position: absolute; top: 48px; right: 0; z-index: 50; min-width: 160px;
+  background: var(--gh-card-hi); border: 1px solid var(--gh-border); border-radius: 12px;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.4); overflow: hidden;
+}
+.gh-map-menu-dropdown button {
+  display: block; width: 100%; text-align: left; padding: 11px 14px; background: none; border: none;
+  color: var(--gh-text); font-size: 0.85rem; font-weight: 700; cursor: pointer;
+}
+.gh-map-menu-dropdown button:hover { background: rgba(255,255,255,0.06); }
+@media (max-width: 700px) {
+  .gh-map-avatar-info { display: none; }
+  .gh-map-pill span:not(.ic) { display: inline; }
+}
+
+/* Section bar */
+.gh-map-section-bar {
+  position: relative; display: flex; align-items: center;
+  height: 50px; border-radius: 26px; padding: 0 22px 0 56px; margin-bottom: 22px;
+  font-family: var(--font-num); font-weight: 800; font-size: 1rem; letter-spacing: .8px; color: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+}
+.gh-map-section-num {
+  position: absolute; left: -2px; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 900; color: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.35); border: 3px solid rgba(255,255,255,0.85);
+}
+.gh-map-section-bar.c0, .gh-map-section-num.c0 { background: linear-gradient(135deg, #4da3ff, #2a5fd0); }
+.gh-map-section-bar.c1, .gh-map-section-num.c1 { background: linear-gradient(135deg, #b17bff, #7a3ad0); }
+.gh-map-section-bar.c2, .gh-map-section-num.c2 { background: linear-gradient(135deg, #4de2a0, #17a374); }
+.gh-map-section-bar.c3, .gh-map-section-num.c3 { background: linear-gradient(135deg, #ffcf6a, #e0972a); }
 
 /* Path / node map (LogicLike-style snake path — horizontal chain with smooth curve) */
 .gh-path-scroll {
   overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
-  margin: 0 -16px; padding: 10px 16px 14px;
+  margin: 0 -16px 26px; padding: 6px 16px 14px;
   scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.25) transparent;
 }
 .gh-path-scroll::-webkit-scrollbar { height: 6px; }
 .gh-path-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
 .gh-path-wrap { position: relative; }
 .gh-path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
 .gh-node-abs {
-  position: absolute; transform: translate(-50%, -50%); width: 104px;
+  position: absolute; transform: translate(-50%, -50%); width: 132px;
   display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
   z-index: 1; background: none; border: none;
 }
 .gh-node-abs.clickable { cursor: pointer; }
-.gh-node-abs.locked, .gh-node-abs.soon { cursor: default; opacity: 0.55; }
-.gh-node-circle {
-  width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 1.45rem; border: 3px solid rgba(255,255,255,0.15);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.35); transition: transform .12s; flex-shrink: 0;
+.gh-node-abs.locked, .gh-node-abs.soon { cursor: default; }
+
+.gh-node-hex {
+  width: 66px; height: 66px; flex-shrink: 0; position: relative;
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-num); font-weight: 900; font-size: 1.05rem; color: #fff;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35); transition: transform .12s; overflow: hidden;
+  border: 3px solid rgba(255,255,255,0.18);
 }
-.gh-node-abs.clickable:hover .gh-node-circle { transform: translateY(-3px) scale(1.06); }
-.gh-node-circle.intro     { background: linear-gradient(160deg, #ffe08a, var(--gh-amber)); }
-.gh-node-circle.available { background: linear-gradient(160deg, #74b8ff, var(--gh-blue)); animation: gh-pulse 1.8s ease-in-out infinite; }
-.gh-node-circle.completed { background: linear-gradient(160deg, #57e6ac, var(--gh-green)); }
-.gh-node-circle.locked, .gh-node-circle.soon { background: #262b52; }
-.gh-node-label { font-size: 0.68rem; font-weight: 700; line-height: 1.25; color: var(--gh-text); }
+.gh-node-hex img { width: 100%; height: 100%; object-fit: cover; }
+.gh-node-abs.clickable:hover .gh-node-hex { transform: translateY(-3px) scale(1.06); }
+
+.gh-node-hex.intro { background: linear-gradient(160deg, #6fe6ac, var(--gh-green)); }
+.gh-node-hex.done  { background: linear-gradient(160deg, #ffdb8a, #e0972a); }
+.gh-node-hex.locked { background: #262b52; border-color: rgba(255,255,255,0.06); opacity: .7; }
+.gh-node-hex.soon   { background: #262b52; border-color: rgba(255,255,255,0.06); opacity: .7; }
+.gh-node-hex.avail.c0 { background: linear-gradient(160deg, #74b8ff, var(--gh-blue)); animation: gh-pulse-blue 1.8s ease-in-out infinite; }
+.gh-node-hex.avail.c1 { background: linear-gradient(160deg, #cba8ff, var(--gh-purple)); animation: gh-pulse-purple 1.8s ease-in-out infinite; }
+.gh-node-hex.avail.c2 { background: linear-gradient(160deg, #7cf0bc, var(--gh-green)); animation: gh-pulse-green 1.8s ease-in-out infinite; }
+.gh-node-hex.avail.c3 { background: linear-gradient(160deg, #ffdb8a, var(--gh-amber)); animation: gh-pulse-amber 1.8s ease-in-out infinite; }
+
+.gh-node-label { font-size: 0.74rem; font-weight: 700; line-height: 1.25; color: var(--gh-text); }
 .gh-node-abs.locked .gh-node-label, .gh-node-abs.soon .gh-node-label { color: var(--gh-muted); }
-@keyframes gh-pulse {
+.gh-node-stars { display: flex; gap: 2px; justify-content: center; font-size: 0.78rem; }
+.gh-node-stars .on  { color: var(--gh-amber); }
+.gh-node-stars .off { color: rgba(255,255,255,0.18); }
+
+@keyframes gh-pulse-blue {
   0%, 100% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 0 rgba(77,163,255,0.5); }
   50% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 8px rgba(77,163,255,0); }
+}
+@keyframes gh-pulse-purple {
+  0%, 100% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 0 rgba(177,123,255,0.5); }
+  50% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 8px rgba(177,123,255,0); }
+}
+@keyframes gh-pulse-green {
+  0%, 100% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 0 rgba(34,211,139,0.5); }
+  50% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 8px rgba(34,211,139,0); }
+}
+@keyframes gh-pulse-amber {
+  0%, 100% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,201,77,0.5); }
+  50% { box-shadow: 0 6px 14px rgba(0,0,0,0.35), 0 0 0 8px rgba(255,201,77,0); }
+}
+
+/* Floating progress card */
+.gh-map-progress-card {
+  position: fixed; right: 22px; bottom: 22px; z-index: 30; width: 220px;
+  background: rgba(28,33,72,0.92); backdrop-filter: blur(6px);
+  border: 1px solid var(--gh-border); border-radius: 16px; padding: 16px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+}
+.gh-map-progress-card h4 {
+  font-family: var(--font-num); font-size: 0.72rem; letter-spacing: 1.5px; font-weight: 800;
+  color: var(--gh-muted); text-transform: uppercase; margin-bottom: 12px;
+}
+.gh-map-progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.gh-map-progress-row .gh-xp-track { flex: 1; margin-top: 0; }
+.gh-map-progress-row .pct { font-family: var(--font-num); font-weight: 800; font-size: 0.85rem; }
+@media (max-width: 700px) {
+  .gh-map-progress-card { position: static; width: auto; margin: 0 0 20px; }
 }
 
 /* Intro (mini-lesson) slides */
@@ -269,6 +384,6 @@
 @media (max-width: 560px) {
   .gh-hero h1 { font-size: 1.25rem; }
   .gh-lod h2 { font-size: 1.1rem; }
-  .gh-node-abs { width: 88px; }
-  .gh-node-circle { width: 50px; height: 50px; font-size: 1.25rem; }
+  .gh-node-abs { width: 104px; }
+  .gh-node-hex { width: 54px; height: 54px; font-size: 0.9rem; }
 }
