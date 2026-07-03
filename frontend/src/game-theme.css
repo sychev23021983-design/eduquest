@@ -188,6 +188,12 @@
 .gh-subject-card.programming { background: linear-gradient(150deg, #2a2f6a, #171a40); }
 .gh-subject-card.earth       { background: linear-gradient(150deg, #17608f, #0d3555); }
 .gh-subject-card.space       { background: linear-gradient(150deg, #4a2e8f, #1a0f3d); }
+.gh-subject-card.animals     { background: linear-gradient(150deg, #b0722a, #6b3f14); }
+.gh-subject-card.plants      { background: linear-gradient(150deg, #2e9e4f, #16552a); }
+.gh-subject-card.micro       { background: linear-gradient(150deg, #2ab0a0, #146058); }
+.gh-subject-card.body        { background: linear-gradient(150deg, #d0507a, #7a2740); }
+.gh-subject-card.senses      { background: linear-gradient(150deg, #7a3ab0, #401a5e); }
+.gh-subject-card.health      { background: linear-gradient(150deg, #2a5ab0, #14305e); }
 
 /* Lessons list */
 .gh-lesson-row {
