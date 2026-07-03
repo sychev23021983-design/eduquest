@@ -140,17 +140,12 @@ export default function Settings() {
 
         {/* Познавательные материалы */}
         <div className="card" style={{ marginBottom: 20 }}>
-          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Материалы — «Почему идёт дождь?»</h3>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
-            Картинки для этого познавательного материала (раздел «География»). Для новых материалов
-            слоты для картинок можно загружать прямо в редакторе материала (Кабинет родителя → Материалы).
+          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Познавательные материалы</h3>
+          <p style={{ fontSize: 12, color: 'var(--muted)' }}>
+            Картинка для материала «Почему идёт дождь?» уже встроена в проект и ничего загружать не нужно.
+            Для новых материалов обложку и картинки внутри текста можно загрузить прямо в редакторе
+            материала (Кабинет родителя → 📚 Материалы → редактирование статьи).
           </p>
-          <UploadRow label="Круговорот воды в природе" hint="Слот: material_rain_cycle"
-                     currentUrl={form.material_rain_cycle} uploading={uploadingSlot === 'material_rain_cycle'} onUpload={f => uploadTo('material_rain_cycle', f)} />
-          <UploadRow label="Как образуются облака" hint="Слот: material_rain_clouds"
-                     currentUrl={form.material_rain_clouds} uploading={uploadingSlot === 'material_rain_clouds'} onUpload={f => uploadTo('material_rain_clouds', f)} />
-          <UploadRow label="Вода путешествует по кругу" hint="Слот: material_rain_fact"
-                     currentUrl={form.material_rain_fact} uploading={uploadingSlot === 'material_rain_fact'} onUpload={f => uploadTo('material_rain_fact', f)} />
         </div>
 
         {/* Боковые панели */}

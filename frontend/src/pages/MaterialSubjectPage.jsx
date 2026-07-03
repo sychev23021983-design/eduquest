@@ -47,7 +47,13 @@ export default function MaterialSubjectPage() {
           {articles.map(a => (
             <div key={a.id} className="gh-card" style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}
                  onClick={() => nav(`/materials/article/${a.id}`)}>
-              <span style={{ fontSize: 28, flexShrink: 0 }}>{MATERIAL_SUBJ_ICON[subject]}</span>
+              <span style={{
+                width: 44, height: 44, borderRadius: 10, overflow: 'hidden', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(255,255,255,0.06)', fontSize: 24,
+              }}>
+                {a.cover_image ? <img src={a.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : MATERIAL_SUBJ_ICON[subject]}
+              </span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>{a.title}</div>
                 {a.summary && <div style={{ fontSize: '0.82rem', color: 'var(--gh-muted)' }}>{a.summary}</div>}

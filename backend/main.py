@@ -133,70 +133,133 @@ def seed_article_if_missing(conn, subject: str, title: str, article: dict):
     ).fetchone()
     if existing:
         return
-    conn.execute("""INSERT INTO articles (subject,grade,title,summary,blocks) VALUES (?,?,?,?,?)""",
-        (subject, article.get("grade"), title, article.get("summary", ""),
+    conn.execute("""INSERT INTO articles (subject,grade,title,summary,cover_image,blocks) VALUES (?,?,?,?,?,?)""",
+        (subject, article.get("grade"), title, article.get("summary", ""), article.get("cover_image"),
+         json.dumps(article["blocks"], ensure_ascii=False)))
+
+def seed_article_upsert(conn, subject: str, title: str, article: dict):
+    """Как seed_article_if_missing, но обновляет содержимое, если статья уже есть — для материалов,
+       которые мы дорабатываем итеративно (пока родитель ещё не редактировал их вручную)."""
+    existing = conn.execute(
+        "SELECT id FROM articles WHERE subject=? AND title=? AND active=1", (subject, title)
+    ).fetchone()
+    if existing:
+        conn.execute("UPDATE articles SET summary=?,cover_image=?,blocks=? WHERE id=?",
+            (article.get("summary", ""), article.get("cover_image"),
+             json.dumps(article["blocks"], ensure_ascii=False), existing["id"]))
+        return
+    conn.execute("""INSERT INTO articles (subject,grade,title,summary,cover_image,blocks) VALUES (?,?,?,?,?,?)""",
+        (subject, article.get("grade"), title, article.get("summary", ""), article.get("cover_image"),
          json.dumps(article["blocks"], ensure_ascii=False)))
 
 ARTICLE_WHY_RAIN = {
     "grade": 5,
-    "summary": "Круговорот воды в природе — куда девается вода из луж и почему она возвращается на землю каплями дождя.",
+    "summary": "Путешествие капли воды: испарение, облака, дождь, снег и круговорот воды в природе — с опытом и удивительными фактами.",
+    "cover_image": "/content/rain-infographic.png",
     "blocks": [
-        {"type": "heading", "text": "Почему идёт дождь? ☔"},
+        {"type": "heading", "text": "🌧️ Почему идёт дождь?"},
         {"type": "paragraph", "text": (
-            "Ты наверняка замечал: после дождя на асфальте остаются лужи, а через день-два они бесследно "
-            "исчезают — как будто вода испарилась в никуда. И это почти правда! Вода действительно "
-            "«испаряется». А потом она же возвращается к нам в виде дождя. Вода на Земле путешествует "
-            "по кругу уже миллиарды лет, и этот бесконечный маршрут называют круговоротом воды в природе. "
-            "Давай пройдём этот путь вместе с одной капелькой воды — от океана до твоего окна."
+            "💧 Представь себе... Ты поставил на плиту кастрюлю с водой. Через некоторое время вода "
+            "начинает исчезать. Но куда? Она не пропала. Она превратилась в невидимый водяной пар и "
+            "поднялась вверх. Примерно то же самое происходит каждый день на нашей планете. Именно так "
+            "начинается путешествие каждой дождевой капли."
         )},
-        {"type": "image", "slot": "material_rain_cycle", "caption": "Круговорот воды в природе"},
-        {"type": "heading", "text": "Шаг 1. Капля отправляется в путешествие"},
+
+        {"type": "heading", "text": "☀️ Шаг 1. Солнце нагревает воду"},
+        {"type": "paragraph", "text": "Солнце постоянно согревает:"},
+        {"type": "list", "items": ["🌊 океаны", "🏞️ реки", "🛶 озёра", "🌱 растения", "💧 даже лужи после дождя"]},
         {"type": "paragraph", "text": (
-            "Всё начинается с солнца. Оно нагревает воду в океанах, реках, озёрах и даже в лужах во дворе. "
-            "Когда вода нагревается, самые «шустрые» молекулы воды отрываются от поверхности и улетают "
-            "вверх невидимым паром — этот процесс называется испарением. Именно поэтому летом лужи "
-            "высыхают быстрее, чем зимой: чем теплее, тем быстрее вода превращается в пар."
+            "От тепла вода постепенно превращается в пар. Этот процесс называется испарением. "
+            "Пар невидим, поэтому мы его почти не замечаем."
         )},
-        {"type": "callout", "text": (
-            "🌊 Интересный факт: каждую секунду с поверхности океанов испаряется столько воды, что ей "
-            "можно было бы наполнить больше 500 000 олимпийских бассейнов!"
-        )},
-        {"type": "heading", "text": "Шаг 2. Как рождается облако"},
+        {"type": "callout", "text": "💡 Интересный факт: за один солнечный день с поверхности океанов испаряются миллиарды тонн воды!"},
+
+        {"type": "heading", "text": "☁️ Шаг 2. Пар превращается в облака"},
         {"type": "paragraph", "text": (
-            "Поднимаясь всё выше, водяной пар попадает в холодные слои воздуха. А холод делает с паром "
-            "обратное тому, что делало солнце: вместо того чтобы разлетаться, крошечные частички воды "
-            "начинают «слипаться» друг с другом вокруг пылинок в воздухе. Этот процесс называется "
-            "конденсацией — именно так же запотевает холодное стекло, если на него подышать. Миллиарды "
-            "таких капелек, слипшихся вместе, и образуют то, что мы видим на небе — облако."
+            "Чем выше поднимается водяной пар, тем холоднее становится воздух. Из-за холода пар начинает "
+            "превращаться обратно в крошечные капельки воды. Этот процесс называется конденсацией. "
+            "Миллиарды таких капелек собираются вместе. Так появляются облака."
         )},
-        {"type": "image", "slot": "material_rain_clouds", "caption": "Как из пара получаются облака"},
-        {"type": "heading", "text": "Шаг 3. Когда капле становится тяжело"},
+        {"type": "callout", "text": "🔍 А знаешь ли ты? Одно большое облако может весить сотни тонн! Но капельки настолько маленькие, что воздух легко удерживает их."},
+
+        {"type": "heading", "text": "💦 Шаг 3. Капельки растут"},
         {"type": "paragraph", "text": (
-            "Капельки в облаке крошечные — легче пылинки, поэтому облако спокойно парит в воздухе. "
-            "Но капельки продолжают сталкиваться и слипаться в более крупные капли. Когда капля "
-            "становится слишком тяжёлой, чтобы воздух мог удерживать её на весу, она падает вниз. "
-            "Если по пути воздух тёплый — долетает дождь. Если очень холодно — капля замерзает и "
-            "долетает до земли снегом или градом."
+            "Внутри облака маленькие капельки постоянно сталкиваются друг с другом. Каждый раз они "
+            "становятся чуть больше. Сначала они совсем крошечные. Потом размер увеличивается. "
+            "Постепенно они становятся слишком тяжёлыми."
         )},
-        {"type": "callout", "text": (
-            "❄️ А ты знал? Одна дождевая капля состоит примерно из миллиона мельчайших капелек, "
-            "из которых было «собрано» облако!"
-        )},
-        {"type": "heading", "text": "Шаг 4. Круг замыкается"},
+
+        {"type": "heading", "text": "🌧️ Шаг 4. Начинается дождь"},
         {"type": "paragraph", "text": (
-            "Дождевая вода попадает в реки, озёра и снова в океан — либо сразу, либо просачивается "
-            "в землю и питает подземные источники и растения. А потом солнце снова нагреет эту воду, "
-            "и всё начнётся заново. Та капля, что упала тебе на нос сегодня, миллионы раз до этого "
-            "уже была и облаком, и рекой, и, может быть, даже частью древнего океана, в котором "
-            "плавали динозавры!"
+            "Когда капли становятся достаточно тяжёлыми, воздух уже не может их удерживать. Они начинают "
+            "падать на землю. Это и есть дождь. Пока капли летят вниз, некоторые становятся ещё больше, "
+            "соединяясь с другими."
         )},
-        {"type": "image", "slot": "material_rain_fact", "caption": "Вода путешествует по кругу без остановки"},
-        {"type": "heading", "text": "Зачем нужен дождь?"},
+
+        {"type": "heading", "text": "❄️ Почему иногда идёт снег?"},
         {"type": "paragraph", "text": (
-            "Без дождя не могли бы расти растения, наполняться реки и озёра, а значит — не было бы еды "
-            "и питьевой воды ни у людей, ни у животных. Так что дождь — это не просто «мокро и грустно», "
-            "а важнейшая часть жизни на всей планете. В следующий раз, когда пойдёт дождь, ты будешь "
-            "точно знать: это вода вернулась из долгого путешествия, чтобы отправиться в новое!"
+            "Если высоко в облаках очень холодно, вода превращается в маленькие ледяные кристаллы. "
+            "Если по дороге к земле они не успевают растаять, мы видим снег. Если успевают растаять — "
+            "идёт дождь."
+        )},
+
+        {"type": "heading", "text": "🌦️ Почему дождь бывает разным?"},
+        {"type": "paragraph", "text": "Не каждый дождь одинаковый."},
+        {"type": "subheading", "text": "🌦 Моросящий дождь"},
+        {"type": "paragraph", "text": "Очень маленькие капли. Кажется, будто воздух стал влажным."},
+        {"type": "subheading", "text": "🌧 Ливень"},
+        {"type": "paragraph", "text": "Очень крупные капли падают быстро. Такой дождь может идти всего несколько минут, но воды выпадает очень много."},
+        {"type": "subheading", "text": "⛈ Гроза"},
+        {"type": "paragraph", "text": "Во время сильного дождя в облаках возникает электричество. Появляются молнии и гром."},
+        {"type": "subheading", "text": "🌈 Грибной дождь"},
+        {"type": "paragraph", "text": "Иногда дождь идёт, хотя солнце продолжает светить. После такого дождя часто появляется радуга."},
+
+        {"type": "heading", "text": "🔄 Круговорот воды"},
+        {"type": "paragraph", "text": "Дождь — это часть большого путешествия воды. Вот как оно происходит:"},
+        {"type": "flow", "text": "🌊 Океан → ☀️ Испарение → ☁️ Облако → 🌧️ Дождь → 🏞️ Река → 🌊 Океан"},
+        {"type": "paragraph", "text": (
+            "Этот круговорот повторяется снова и снова уже миллиарды лет. Получается, что вода, которая "
+            "сегодня падает тебе на ладонь, когда-то могла быть частью океана, ледника или даже каплей, "
+            "которую «видели» динозавры!"
+        )},
+
+        {"type": "heading", "text": "🤯 Удивительные факты"},
+        {"type": "list", "items": [
+            "💧 Самая большая известная дождевая капля была почти 8 миллиметров в диаметре.",
+            "☁️ Одно большое облако может содержать миллионы литров воды.",
+            "🌍 В среднем за год на Землю выпадает около 500 тысяч кубических километров осадков.",
+            "🐸 В некоторых местах из-за сильных вихрей вместе с водой иногда падают рыбы или лягушки! Их поднимают смерчи над озёрами и реками.",
+            "🌱 Без дождя на Земле почти не было бы растений, животных и людей.",
+        ]},
+
+        {"type": "heading", "text": "🧠 Запомни самое главное"},
+        {"type": "checklist", "items": [
+            "Солнце нагревает воду.",
+            "Вода испаряется и превращается в пар.",
+            "Пар поднимается вверх и охлаждается.",
+            "Появляются облака.",
+            "Капли становятся всё больше.",
+            "Когда они становятся тяжёлыми, начинается дождь.",
+        ]},
+
+        {"type": "heading", "text": "🧪 Попробуй провести опыт"},
+        {"type": "experiment", "title": "Мини-круговорот воды дома",
+         "materials": ["прозрачный стакан", "горячая вода (с помощью взрослых)", "тарелка", "несколько кубиков льда"],
+         "steps": [
+             "Налей в стакан немного горячей воды.",
+             "Накрой стакан тарелкой.",
+             "Положи на тарелку лёд.",
+             "Подожди 3–5 минут.",
+         ],
+         "result": (
+             "Внутри стакана образуются маленькие капельки, которые начнут стекать вниз, словно настоящий "
+             "дождь. Так ты увидишь своими глазами, как водяной пар превращается в воду!"
+         )},
+
+        {"type": "question", "text": (
+            "Если бы на Земле совсем перестали идти дожди, что произошло бы через неделю, через месяц и "
+            "через год? Как изменилась бы жизнь растений, животных и людей? Попробуй представить и "
+            "объяснить свои мысли."
         )},
     ],
 }
@@ -1796,6 +1859,7 @@ def init_db():
             grade        INTEGER,
             title        TEXT NOT NULL,
             summary      TEXT,
+            cover_image  TEXT,
             blocks       TEXT NOT NULL,
             created_at   TEXT DEFAULT (datetime('now')),
             active       INTEGER DEFAULT 1
@@ -1835,6 +1899,7 @@ def init_db():
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
     migrate_add_column(conn, "sections", "intro", "TEXT")
     migrate_add_column(conn, "sections", "intro_seen_at", "TEXT")
+    migrate_add_column(conn, "articles", "cover_image", "TEXT")
     seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
     seed_section_intro_if_missing(conn, 5, "math", "Натуральные числа", SECTION_INTRO_NATURAL_NUMBERS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Цифры и натуральные числа", LESSON_NATURAL_DIGITS)
@@ -1858,7 +1923,7 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "math", "Выражения и уравнения", "Формулы", LESSON_FORMULAS)
     seed_topic_if_missing(conn, 5, "math", "Выражения и уравнения", "Контрольная работа")
     seed_lesson_if_missing(conn, 5, "math", "Выражения и уравнения", "Контрольная работа", LESSON_CONTROL_EXPRESSIONS_EQUATIONS)
-    seed_article_if_missing(conn, "geography", "Почему идёт дождь?", ARTICLE_WHY_RAIN)
+    seed_article_upsert(conn, "geography", "Почему идёт дождь?", ARTICLE_WHY_RAIN)
     conn.commit()
     conn.close()
 
@@ -2311,6 +2376,7 @@ class ArticleIn(BaseModel):
     grade: Optional[int] = None
     title: str
     summary: Optional[str] = None
+    cover_image: Optional[str] = None
     blocks: list
 
 @app.get("/api/materials/subjects")
@@ -2326,7 +2392,7 @@ def material_subjects(role: str = Depends(require_any)):
 @app.get("/api/articles")
 def list_articles(subject: Optional[str] = None, role: str = Depends(require_any)):
     conn = get_conn()
-    q = "SELECT id, subject, grade, title, summary, created_at FROM articles WHERE active=1"
+    q = "SELECT id, subject, grade, title, summary, cover_image, created_at FROM articles WHERE active=1"
     params = []
     if subject:
         q += " AND subject=?"; params.append(subject)
@@ -2357,8 +2423,8 @@ def get_article(article_id: int, role: str = Depends(require_any)):
 def create_article(data: ArticleIn, role: str = Depends(require_parent)):
     conn = get_conn()
     c = conn.cursor()
-    c.execute("INSERT INTO articles (subject,grade,title,summary,blocks) VALUES (?,?,?,?,?)",
-              (data.subject, data.grade, data.title, data.summary,
+    c.execute("INSERT INTO articles (subject,grade,title,summary,cover_image,blocks) VALUES (?,?,?,?,?,?)",
+              (data.subject, data.grade, data.title, data.summary, data.cover_image,
                json.dumps(data.blocks, ensure_ascii=False)))
     conn.commit(); aid = c.lastrowid; conn.close()
     return {"id": aid}
@@ -2366,8 +2432,8 @@ def create_article(data: ArticleIn, role: str = Depends(require_parent)):
 @app.put("/api/articles/{article_id}")
 def update_article(article_id: int, data: ArticleIn, role: str = Depends(require_parent)):
     conn = get_conn()
-    conn.execute("UPDATE articles SET subject=?,grade=?,title=?,summary=?,blocks=? WHERE id=?",
-                 (data.subject, data.grade, data.title, data.summary,
+    conn.execute("UPDATE articles SET subject=?,grade=?,title=?,summary=?,cover_image=?,blocks=? WHERE id=?",
+                 (data.subject, data.grade, data.title, data.summary, data.cover_image,
                   json.dumps(data.blocks, ensure_ascii=False), article_id))
     conn.commit(); conn.close()
     return {"ok": True}

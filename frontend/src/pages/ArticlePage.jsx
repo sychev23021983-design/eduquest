@@ -6,6 +6,66 @@ import { api } from '../api.js'
 import { MATERIAL_SUBJ_ICON } from '../materialSubjects.js'
 import '../game-theme.css'
 
+function Block({ b, settings }) {
+  switch (b.type) {
+    case 'heading':
+      return <h2 className="art-h">{b.text}</h2>
+    case 'subheading':
+      return <h3 className="art-h3">{b.text}</h3>
+    case 'paragraph':
+      return <p className="art-p">{b.text}</p>
+    case 'callout':
+      return <div className="art-callout">{b.text}</div>
+    case 'flow':
+      return <div className="art-flow">{b.text}</div>
+    case 'list':
+      return <ul className="art-list">{b.items.map((it, i) => <li key={i}>{it}</li>)}</ul>
+    case 'checklist':
+      return (
+        <ul className="art-checklist">
+          {b.items.map((it, i) => <li key={i}><span className="ck">✅</span>{it}</li>)}
+        </ul>
+      )
+    case 'experiment':
+      return (
+        <div className="art-experiment">
+          <div className="art-experiment-title">🧪 {b.title}</div>
+          {b.materials?.length > 0 && (
+            <>
+              <div className="art-experiment-label">Тебе понадобится:</div>
+              <ul className="art-list">{b.materials.map((m, i) => <li key={i}>{m}</li>)}</ul>
+            </>
+          )}
+          {b.steps?.length > 0 && (
+            <>
+              <div className="art-experiment-label">Что делать:</div>
+              <ol className="art-steps">{b.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+            </>
+          )}
+          {b.result && (
+            <div className="art-experiment-result"><b>Что произойдёт?</b> {b.result}</div>
+          )}
+        </div>
+      )
+    case 'question':
+      return <div className="art-question">💭 <b>Подумай:</b> {b.text}</div>
+    case 'image': {
+      const src = b.url || settings?.[b.slot]
+      if (!src) return (
+        <div className="art-image-placeholder">🖼️ Картинка «{b.caption || b.slot}» скоро появится</div>
+      )
+      return (
+        <figure className="art-figure">
+          <img src={src} alt={b.caption || ''} />
+          {b.caption && <figcaption>{b.caption}</figcaption>}
+        </figure>
+      )
+    }
+    default:
+      return null
+  }
+}
+
 export default function ArticlePage() {
   const { id } = useParams()
   const { token } = useAuth()
@@ -31,6 +91,8 @@ export default function ArticlePage() {
     </div>
   )
 
+  const cover = article.cover_image
+
   return (
     <div className="game-home" style={pageStyle}>
       <div className="gh-map-topbar">
@@ -40,42 +102,16 @@ export default function ArticlePage() {
         </div>
       </div>
 
-      <div className="gh-wrap" style={{ maxWidth: 760 }}>
-        <div className="gh-card" style={{ marginTop: 20, padding: '28px 26px' }}>
-          {article.blocks.map((b, i) => {
-            if (b.type === 'heading') {
-              return <h2 key={i} style={{ fontFamily: 'var(--font-fun)', fontSize: '1.3rem', margin: i === 0 ? '0 0 14px' : '26px 0 12px' }}>{b.text}</h2>
-            }
-            if (b.type === 'paragraph') {
-              return <p key={i} style={{ lineHeight: 1.7, color: 'var(--gh-text)', marginBottom: 14, fontSize: '0.98rem' }}>{b.text}</p>
-            }
-            if (b.type === 'callout') {
-              return (
-                <div key={i} style={{
-                  background: 'rgba(255,201,77,0.12)', border: '1px solid rgba(255,201,77,0.35)',
-                  borderRadius: 12, padding: '14px 16px', margin: '4px 0 18px', fontSize: '0.92rem', lineHeight: 1.6,
-                }}>{b.text}</div>
-              )
-            }
-            if (b.type === 'image') {
-              const src = settings?.[b.slot]
-              if (!src) return (
-                <div key={i} style={{
-                  border: '1px dashed var(--gh-border)', borderRadius: 12, padding: '30px 16px',
-                  textAlign: 'center', color: 'var(--gh-muted)', fontSize: '0.82rem', margin: '4px 0 18px',
-                }}>
-                  🖼️ Картинка «{b.caption || b.slot}» скоро появится
-                </div>
-              )
-              return (
-                <figure key={i} style={{ margin: '4px 0 18px' }}>
-                  <img src={src} alt={b.caption || ''} style={{ width: '100%', borderRadius: 12, display: 'block' }} />
-                  {b.caption && <figcaption style={{ fontSize: '0.78rem', color: 'var(--gh-muted)', textAlign: 'center', marginTop: 6 }}>{b.caption}</figcaption>}
-                </figure>
-              )
-            }
-            return null
-          })}
+      <div className="gh-wrap" style={{ maxWidth: 1100 }}>
+        <div className={cover ? 'art-layout with-cover' : 'art-layout'}>
+          <div className="art-text-col">
+            {article.blocks.map((b, i) => <Block key={i} b={b} settings={settings} />)}
+          </div>
+          {cover && (
+            <div className="art-cover-col">
+              <img className="art-cover-img" src={cover} alt={article.title} />
+            </div>
+          )}
         </div>
 
         <button className="gh-btn" style={{ margin: '18px 0 30px' }} onClick={() => nav(`/materials/${article.subject}`)}>

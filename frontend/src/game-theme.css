@@ -399,3 +399,58 @@
   .gh-node-abs { width: 104px; }
   .gh-node-hex { width: 54px; height: 54px; font-size: 0.9rem; }
 }
+
+/* ============ Читалка познавательных материалов ============ */
+
+.art-layout { display: flex; gap: 36px; align-items: flex-start; margin: 20px 0 10px; }
+.art-layout.with-cover .art-text-col { flex: 1 1 55%; min-width: 0; }
+.art-layout:not(.with-cover) .art-text-col { max-width: 720px; margin: 0 auto; }
+.art-cover-col { flex: 0 1 400px; position: sticky; top: 90px; align-self: flex-start; }
+.art-cover-img { width: 100%; border-radius: 18px; display: block; box-shadow: 0 14px 34px rgba(0,0,0,0.45); }
+
+.art-h { font-family: var(--font-fun); font-size: 1.28rem; margin: 28px 0 12px; line-height: 1.3; }
+.art-h:first-child { margin-top: 0; }
+.art-h3 { font-family: var(--font-fun); font-size: 1.02rem; margin: 18px 0 8px; color: var(--gh-amber); }
+.art-p { line-height: 1.75; color: var(--gh-text); margin-bottom: 14px; font-size: 0.98rem; }
+.art-callout {
+  background: rgba(255,201,77,0.12); border: 1px solid rgba(255,201,77,0.35);
+  border-radius: 12px; padding: 14px 16px; margin: 6px 0 18px; font-size: 0.92rem; line-height: 1.6;
+}
+.art-flow {
+  text-align: center; font-weight: 800; font-family: var(--font-num); font-size: 1rem;
+  background: rgba(77,163,255,0.08); border: 1px solid var(--gh-border); border-radius: 12px;
+  padding: 14px; margin: 8px 0 18px; line-height: 1.8;
+}
+.art-list { margin: 0 0 16px; padding-left: 22px; line-height: 1.8; color: var(--gh-text); }
+.art-list li { margin-bottom: 4px; }
+.art-checklist { list-style: none; padding: 0; margin: 0 0 18px; }
+.art-checklist li { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; line-height: 1.5; }
+.art-checklist .ck { flex-shrink: 0; }
+.art-experiment {
+  background: rgba(34,211,139,0.08); border: 1px solid rgba(34,211,139,0.3);
+  border-radius: 14px; padding: 18px 20px; margin: 8px 0 18px;
+}
+.art-experiment-title { font-weight: 800; font-size: 1.05rem; margin-bottom: 10px; }
+.art-experiment-label { font-weight: 700; font-size: 0.85rem; margin: 10px 0 6px; color: var(--gh-green); }
+.art-steps { padding-left: 20px; line-height: 1.8; margin: 0; color: var(--gh-text); }
+.art-experiment-result {
+  margin-top: 12px; font-size: 0.9rem; line-height: 1.6;
+  background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px 12px;
+}
+.art-question {
+  background: rgba(177,123,255,0.1); border: 1px solid rgba(177,123,255,0.3);
+  border-radius: 12px; padding: 14px 16px; margin: 10px 0 6px; font-size: 0.94rem; line-height: 1.6;
+}
+.art-image-placeholder {
+  border: 1px dashed var(--gh-border); border-radius: 12px; padding: 30px 16px;
+  text-align: center; color: var(--gh-muted); font-size: 0.82rem; margin: 4px 0 18px;
+}
+.art-figure { margin: 4px 0 18px; }
+.art-figure img { width: 100%; border-radius: 12px; display: block; }
+.art-figure figcaption { font-size: 0.78rem; color: var(--gh-muted); text-align: center; margin-top: 6px; }
+
+@media (max-width: 860px) {
+  .art-layout { flex-direction: column; }
+  .art-cover-col { position: static; flex: 1 1 auto; width: 100%; max-width: 420px; margin: 0 auto 20px; order: -1; }
+  .art-layout.with-cover .art-text-col { flex: 1 1 auto; width: 100%; }
+}

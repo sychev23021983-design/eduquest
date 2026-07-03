@@ -8,11 +8,18 @@ import { MATERIAL_SUBJ } from '../materialSubjects.js'
 const BLOCKS_HELP = `Массив блоков, например:
 [
   {"type": "heading", "text": "Заголовок"},
+  {"type": "subheading", "text": "Подзаголовок поменьше"},
   {"type": "paragraph", "text": "Текст абзаца..."},
   {"type": "callout", "text": "Интересный факт..."},
+  {"type": "flow", "text": "Океан → Испарение → Облако → Дождь"},
+  {"type": "list", "items": ["Пункт 1", "Пункт 2"]},
+  {"type": "checklist", "items": ["Что усвоили 1", "Что усвоили 2"]},
+  {"type": "experiment", "title": "Название опыта", "materials": ["..."], "steps": ["..."], "result": "Что произойдёт"},
+  {"type": "question", "text": "Вопрос для размышления"},
   {"type": "image", "slot": "material_moya_tema_1", "caption": "Подпись под картинкой"}
 ]
-Типы блоков: heading, paragraph, callout, image (slot — уникальное имя слота для загрузки картинки).`
+Типы блоков: heading, subheading, paragraph, callout, flow, list, checklist, experiment, question, image
+(slot — уникальное имя слота для загрузки картинки внутри текста; для картинки-обложки сбоку статьи используй поле «Обложка» ниже).`
 
 const emptyBlocksText = JSON.stringify([
   { type: 'heading', text: 'Заголовок' },
@@ -28,7 +35,7 @@ export default function ArticleEditor() {
   const fileInputs = useRef({})
 
   const [list, setList] = useState([])
-  const [form, setForm] = useState({ subject: 'biology', grade: 5, title: '', summary: '' })
+  const [form, setForm] = useState({ subject: 'biology', grade: 5, title: '', summary: '', cover_image: '' })
   const [blocksText, setBlocksText] = useState(emptyBlocksText)
   const [jsonErr, setJsonErr] = useState('')
   const [saving, setSaving] = useState(false)
@@ -44,11 +51,26 @@ export default function ArticleEditor() {
 
   async function loadArticle() {
     const a = await api.article(token, id)
-    setForm({ subject: a.subject, grade: a.grade || 5, title: a.title, summary: a.summary || '' })
+    setForm({ subject: a.subject, grade: a.grade || 5, title: a.title, summary: a.summary || '', cover_image: a.cover_image || '' })
     setBlocksText(JSON.stringify(a.blocks, null, 2))
   }
 
   function setF(key, val) { setForm(f => ({ ...f, [key]: val })) }
+
+  const coverSlot = `article_cover_${id}`
+
+  async function uploadCover(file) {
+    setUploadingSlot(coverSlot)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      const res = await api.uploadSettingAsset(token, coverSlot, fd)
+      setF('cover_image', res[coverSlot])
+      await reloadSettings?.()
+      setMsg('✅ Обложка загружена')
+    } catch (e) { setMsg('❌ ' + e.message) }
+    setUploadingSlot(null)
+    setTimeout(() => setMsg(''), 2500)
+  }
 
   function parsedBlocks() {
     try { return JSON.parse(blocksText) } catch { return null }
@@ -79,7 +101,7 @@ export default function ArticleEditor() {
     if (!form.title.trim()) { setJsonErr('Укажи заголовок материала.'); return }
     setSaving(true)
     try {
-      const payload = { subject: form.subject, grade: Number(form.grade) || null, title: form.title.trim(), summary: form.summary, blocks }
+      const payload = { subject: form.subject, grade: Number(form.grade) || null, title: form.title.trim(), summary: form.summary, cover_image: form.cover_image || null, blocks }
       if (isNew) {
         const res = await api.createArticle(token, payload)
         setMsg('✅ Материал создан')
@@ -149,6 +171,42 @@ export default function ArticleEditor() {
           <input className="input" value={form.title} onChange={e => setF('title', e.target.value)} style={{ marginBottom: 12 }} />
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Краткое описание (показывается в списке)</label>
           <input className="input" value={form.summary} onChange={e => setF('summary', e.target.value)} />
+        </div>
+
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Обложка</h3>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
+            Большая картинка, которая «прилипает» справа от текста, пока читаешь статью (как инфографика).
+            Необязательно — без обложки текст просто займёт всю ширину.
+          </p>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <div style={{
+              width: 100, height: 130, borderRadius: 10, background: '#f1f3f7', border: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
+            }}>
+              {form.cover_image
+                ? <img src={form.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ color: 'var(--muted)', fontSize: 11, textAlign: 'center', padding: 6 }}>нет обложки</span>}
+            </div>
+            <div>
+              {!isNew ? (
+                <>
+                  <input ref={el => (fileInputs.current.__cover = el)} type="file" accept="image/*" style={{ display: 'none' }}
+                         onChange={e => { if (e.target.files[0]) uploadCover(e.target.files[0]); e.target.value = '' }} />
+                  <button className="btn btn-sm" disabled={uploadingSlot === coverSlot} onClick={() => fileInputs.current.__cover?.click()}>
+                    {uploadingSlot === coverSlot ? 'Загрузка…' : (form.cover_image ? 'Заменить' : 'Загрузить')}
+                  </button>
+                </>
+              ) : (
+                <p style={{ fontSize: 12, color: 'var(--muted)', maxWidth: 320 }}>Сначала сохрани материал — загрузка обложки станет доступна сразу после этого.</p>
+              )}
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, maxWidth: 320 }}>
+                Или впиши URL картинки вручную (например, если файл уже лежит в проекте):
+              </p>
+              <input className="input" style={{ marginTop: 6, fontSize: 12 }} placeholder="/content/moya-kartinka.png"
+                     value={form.cover_image} onChange={e => setF('cover_image', e.target.value)} />
+            </div>
+          </div>
         </div>
 
         <div className="card" style={{ marginBottom: 20 }}>
