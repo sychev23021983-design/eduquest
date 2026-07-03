@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
@@ -66,35 +66,53 @@ function Block({ b, settings }) {
   }
 }
 
+// Группирует блоки в слайды: каждый heading начинает новый слайд,
+// всё до следующего heading относится к текущему слайду.
+function groupSlides(blocks) {
+  const slides = []
+  let cur = null
+  for (const b of blocks) {
+    if (b.type === 'heading') {
+      cur = { blocks: [b] }
+      slides.push(cur)
+    } else {
+      if (!cur) { cur = { blocks: [] }; slides.push(cur) }
+      cur.blocks.push(b)
+    }
+  }
+  return slides.length > 0 ? slides : [{ blocks: [] }]
+}
+
 export default function ArticlePage() {
   const { id } = useParams()
   const { token } = useAuth()
   const { settings } = useSettings()
   const nav = useNavigate()
   const [article, setArticle] = useState(null)
+  const [slide, setSlide] = useState(0)
 
   useEffect(() => { load() }, [id])
 
   async function load() {
     const a = await api.article(token, id)
     setArticle(a)
+    setSlide(0)
     api.markArticleRead(token, id).catch(() => {})
   }
 
-  const pageStyle = settings?.bg_main ? {
-    backgroundImage: `url(${settings.bg_main})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
-  } : {}
+  const slides = useMemo(() => article ? groupSlides(article.blocks) : [], [article])
 
   if (!article) return (
-    <div className="game-home" style={pageStyle}>
+    <div className="game-home">
       <div className="gh-wrap gh-empty" style={{ paddingTop: 60 }}>🔍 Открываю материал…</div>
     </div>
   )
 
   const cover = article.cover_image
+  const isLast = slide === slides.length - 1
 
   return (
-    <div className="game-home" style={pageStyle}>
+    <div className="game-home">
       <div className="gh-map-topbar">
         <button className="gh-back-btn" onClick={() => nav(`/materials/${article.subject}`)}>‹</button>
         <div className="gh-map-title">
@@ -102,10 +120,31 @@ export default function ArticlePage() {
         </div>
       </div>
 
-      <div className="gh-wrap" style={{ maxWidth: 1100 }}>
+      <div className="gh-wrap" style={{ maxWidth: 1800 }}>
         <div className={cover ? 'art-layout with-cover' : 'art-layout'}>
           <div className="art-text-col">
-            {article.blocks.map((b, i) => <Block key={i} b={b} settings={settings} />)}
+            <div className="gh-slide-dots">
+              {slides.map((_, i) => (
+                <div key={i} className={`gh-slide-dot ${i === slide ? 'active' : ''}`} onClick={() => setSlide(i)} style={{ cursor: 'pointer' }} />
+              ))}
+            </div>
+
+            <div className="art-slide">
+              {slides[slide].blocks.map((b, i) => <Block key={i} b={b} settings={settings} />)}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              {slide > 0 && (
+                <button className="gh-btn sm blue" style={{ flex: 1 }} onClick={() => setSlide(s => s - 1)}>← Назад</button>
+              )}
+              {!isLast ? (
+                <button className="gh-btn" style={{ flex: 2 }} onClick={() => setSlide(s => s + 1)}>Дальше →</button>
+              ) : (
+                <button className="gh-btn" style={{ flex: 2 }} onClick={() => nav(`/materials/${article.subject}`)}>
+                  Готово! К другим материалам →
+                </button>
+              )}
+            </div>
           </div>
           {cover && (
             <div className="art-cover-col">
@@ -113,10 +152,6 @@ export default function ArticlePage() {
             </div>
           )}
         </div>
-
-        <button className="gh-btn" style={{ margin: '18px 0 30px' }} onClick={() => nav(`/materials/${article.subject}`)}>
-          ← К другим материалам
-        </button>
       </div>
     </div>
   )

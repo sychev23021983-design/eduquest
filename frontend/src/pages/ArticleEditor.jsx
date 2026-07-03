@@ -57,7 +57,8 @@ export default function ArticleEditor() {
 
   function setF(key, val) { setForm(f => ({ ...f, [key]: val })) }
 
-  const coverSlot = `article_cover_${id}`
+  const newSlotId = useRef(Math.random().toString(36).slice(2, 10))
+  const coverSlot = id ? `article_cover_${id}` : `article_cover_new_${newSlotId.current}`
 
   async function uploadCover(file) {
     setUploadingSlot(coverSlot)
@@ -179,31 +180,28 @@ export default function ArticleEditor() {
             Большая картинка, которая «прилипает» справа от текста, пока читаешь статью (как инфографика).
             Необязательно — без обложки текст просто займёт всю ширину.
           </p>
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
             <div style={{
-              width: 100, height: 130, borderRadius: 10, background: '#f1f3f7', border: '1px solid var(--border)',
+              width: 160, height: 200, borderRadius: 10, background: '#f1f3f7', border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
             }}>
               {form.cover_image
                 ? <img src={form.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ color: 'var(--muted)', fontSize: 11, textAlign: 'center', padding: 6 }}>нет обложки</span>}
+                : <span style={{ color: 'var(--muted)', fontSize: 12, textAlign: 'center', padding: 8 }}>нет обложки</span>}
             </div>
             <div>
-              {!isNew ? (
-                <>
-                  <input ref={el => (fileInputs.current.__cover = el)} type="file" accept="image/*" style={{ display: 'none' }}
-                         onChange={e => { if (e.target.files[0]) uploadCover(e.target.files[0]); e.target.value = '' }} />
-                  <button className="btn btn-sm" disabled={uploadingSlot === coverSlot} onClick={() => fileInputs.current.__cover?.click()}>
-                    {uploadingSlot === coverSlot ? 'Загрузка…' : (form.cover_image ? 'Заменить' : 'Загрузить')}
-                  </button>
-                </>
-              ) : (
-                <p style={{ fontSize: 12, color: 'var(--muted)', maxWidth: 320 }}>Сначала сохрани материал — загрузка обложки станет доступна сразу после этого.</p>
+              <input ref={el => (fileInputs.current.__cover = el)} type="file" accept="image/*" style={{ display: 'none' }}
+                     onChange={e => { if (e.target.files[0]) uploadCover(e.target.files[0]); e.target.value = '' }} />
+              <button className="btn btn-sm" disabled={uploadingSlot === coverSlot} onClick={() => fileInputs.current.__cover?.click()} style={{ marginRight: 8 }}>
+                {uploadingSlot === coverSlot ? 'Загрузка…' : (form.cover_image ? 'Заменить' : '🖼️ Загрузить картинку')}
+              </button>
+              {form.cover_image && (
+                <button className="btn btn-sm" style={{ color: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => setF('cover_image', '')}>Убрать</button>
               )}
               <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, maxWidth: 320 }}>
                 Или впиши URL картинки вручную (например, если файл уже лежит в проекте):
               </p>
-              <input className="input" style={{ marginTop: 6, fontSize: 12 }} placeholder="/content/moya-kartinka.png"
+              <input className="input" style={{ marginTop: 6, fontSize: 12, maxWidth: 320 }} placeholder="/content/moya-kartinka.png"
                      value={form.cover_image} onChange={e => setF('cover_image', e.target.value)} />
             </div>
           </div>
