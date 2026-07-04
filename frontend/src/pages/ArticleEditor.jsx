@@ -41,6 +41,8 @@ export default function ArticleEditor() {
   const fileInputs = useRef({})
 
   const [list, setList] = useState([])
+  const [deletedList, setDeletedList] = useState([])
+  const [showDeleted, setShowDeleted] = useState(false)
   const [form, setForm] = useState({ subject: DEFAULT_SUBJECT, grade: 5, title: '', summary: '', cover_image: '' })
   const [blocksText, setBlocksText] = useState(emptyBlocksText)
   const [jsonErr, setJsonErr] = useState('')
@@ -78,6 +80,7 @@ export default function ArticleEditor() {
   async function loadList() {
     const all = await Promise.all(Object.keys(MATERIAL_SUBJ).map(s => api.articles(token, s)))
     setList(all.flat())
+    api.deletedArticles(token).then(setDeletedList).catch(() => setDeletedList([]))
   }
 
   async function loadArticle() {
@@ -219,6 +222,17 @@ export default function ArticleEditor() {
     loadList()
   }
 
+  async function restore(articleId) {
+    await api.restoreArticle(token, articleId)
+    loadList()
+  }
+
+  async function purge(articleId) {
+    if (!confirm('Убрать безвозвратно? Это нельзя отменить.')) return
+    await api.purgeArticle(token, articleId)
+    loadList()
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <div style={{ background: '#1a1a2e', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -276,6 +290,45 @@ export default function ArticleEditor() {
                   </div>
                 )
               })}
+            </div>
+
+            <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 28 }}>
+              <div
+                onClick={() => setShowDeleted(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: 20 }}>🗑</span>
+                <span style={{ fontWeight: 700, flex: 1 }}>Удалённые материалы</span>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  {deletedList.length} {deletedList.length === 1 ? 'штука' : 'штук'}
+                </span>
+                <span style={{ transition: 'transform .15s', transform: showDeleted ? 'rotate(180deg)' : 'none', fontSize: 14, color: 'var(--muted)' }}>▾</span>
+              </div>
+              {showDeleted && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 16px' }}>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 4px' }}>
+                    Здесь оказываются материалы после нажатия «🗑️» в списке выше — они помечаются
+                    удалёнными, но не стираются из базы сразу. Если материал всё равно где-то
+                    показывается (например, в слайд-шоу), проверь здесь — если он есть в этом
+                    списке, значит удаление сработало и это какая-то другая запись; если его тут
+                    нет вообще, значит он до сих пор активен.
+                  </p>
+                  {deletedList.length === 0 && (
+                    <div style={{ fontSize: 13, color: 'var(--muted)', padding: '4px 0 8px' }}>Пусто — ничего не удалено.</div>
+                  )}
+                  {deletedList.map(a => (
+                    <div key={a.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <span className="badge">{MATERIAL_SUBJ[a.subject] || a.subject}</span>
+                        <div style={{ fontWeight: 500, marginTop: 2 }}>{a.title} <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(id {a.id})</span></div>
+                        {a.summary && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{a.summary}</div>}
+                      </div>
+                      <button className="btn btn-sm" onClick={() => restore(a.id)}>♻️ Восстановить</button>
+                      <button className="btn btn-sm" style={{ color: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => purge(a.id)}>🗑️ Убрать навсегда</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}

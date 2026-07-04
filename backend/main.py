@@ -3460,6 +3460,33 @@ def delete_article(article_id: int, role: str = Depends(require_parent)):
     conn.commit(); conn.close()
     return {"ok": True}
 
+@app.get("/api/articles/deleted/list")
+def list_deleted_articles(role: str = Depends(require_parent)):
+    """Диагностика: показывает материалы, помеченные как удалённые (active=0), чтобы можно было
+       убедиться, что материал действительно удалён, восстановить его или убрать навсегда."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, subject, grade, title, summary, cover_image, created_at FROM articles WHERE active=0 ORDER BY created_at DESC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.post("/api/articles/{article_id}/restore")
+def restore_article(article_id: int, role: str = Depends(require_parent)):
+    conn = get_conn()
+    conn.execute("UPDATE articles SET active=1 WHERE id=?", (article_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.delete("/api/articles/{article_id}/purge")
+def purge_article(article_id: int, role: str = Depends(require_parent)):
+    """Безвозвратное удаление строки из БД (в отличие от обычного DELETE, который только
+       помечает active=0). Используется, чтобы окончательно убрать дубликаты/мусорные записи."""
+    conn = get_conn()
+    conn.execute("DELETE FROM articles WHERE id=?", (article_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
 @app.post("/api/articles/{article_id}/read")
 def mark_article_read(article_id: int, role: str = Depends(require_any)):
     conn = get_conn()

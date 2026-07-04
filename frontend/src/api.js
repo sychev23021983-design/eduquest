@@ -68,5 +68,8 @@ export const api = {
   createArticle:  (token, data)     => req('POST', '/articles', data, token),
   updateArticle:  (token, id, data) => req('PUT', `/articles/${id}`, data, token),
   deleteArticle:  (token, id)       => req('DELETE', `/articles/${id}`, null, token),
+  deletedArticles: (token)          => req('GET', `/articles/deleted/list`, null, token),
+  restoreArticle: (token, id)       => req('POST', `/articles/${id}/restore`, null, token),
+  purgeArticle:   (token, id)       => req('DELETE', `/articles/${id}/purge`, null, token),
   markArticleRead: (token, id)      => req('POST', `/articles/${id}/read`, {}, token),
 }
