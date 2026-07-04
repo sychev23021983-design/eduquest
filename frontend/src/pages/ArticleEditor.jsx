@@ -65,9 +65,21 @@ export default function ArticleEditor() {
     try {
       const fd = new FormData(); fd.append('file', file)
       const res = await api.uploadSettingAsset(token, coverSlot, fd)
-      setF('cover_image', res[coverSlot])
+      const newCover = res[coverSlot]
+      setF('cover_image', newCover)
       await reloadSettings?.()
-      setMsg('✅ Обложка загружена')
+      if (!isNew) {
+        // Сразу сохраняем обложку в самой статье — иначе она хранится только в настройках-слоте
+        // и «слетает» при перезагрузке страницы до нажатия кнопки «Сохранить».
+        const blocks = parsedBlocks() || []
+        await api.updateArticle(token, id, {
+          subject: form.subject, grade: Number(form.grade) || null,
+          title: form.title.trim(), summary: form.summary, cover_image: newCover, blocks,
+        })
+        setMsg('✅ Обложка загружена и сохранена')
+      } else {
+        setMsg('✅ Обложка загружена (сохранится вместе со статьёй по кнопке ниже)')
+      }
     } catch (e) { setMsg('❌ ' + e.message) }
     setUploadingSlot(null)
     setTimeout(() => setMsg(''), 2500)

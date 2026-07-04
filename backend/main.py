@@ -167,11 +167,15 @@ def seed_article_if_missing(conn, subject: str, title: str, article: dict):
 
 def seed_article_upsert(conn, subject: str, title: str, article: dict):
     """Как seed_article_if_missing, но обновляет содержимое, если статья уже есть — для материалов,
-       которые мы дорабатываем итеративно (пока родитель ещё не редактировал их вручную)."""
+       которые мы дорабатываем итеративно (пока родитель ещё не редактировал их вручную).
+       Если статью уже редактировали через панель (manually_edited=1), НЕ трогаем её контент —
+       иначе правки и загруженные картинки откатывались бы назад при каждом деплое."""
     existing = conn.execute(
-        "SELECT id FROM articles WHERE subject=? AND title=? AND active=1", (subject, title)
+        "SELECT id, manually_edited FROM articles WHERE subject=? AND title=? AND active=1", (subject, title)
     ).fetchone()
     if existing:
+        if existing["manually_edited"]:
+            return  # родитель уже редактировал эту статью — не перезаписываем
         conn.execute("UPDATE articles SET summary=?,cover_image=?,blocks=? WHERE id=?",
             (article.get("summary", ""), article.get("cover_image"),
              json.dumps(article["blocks"], ensure_ascii=False), existing["id"]))
@@ -2892,6 +2896,7 @@ def init_db():
     migrate_add_column(conn, "sections", "intro", "TEXT")
     migrate_add_column(conn, "sections", "intro_seen_at", "TEXT")
     migrate_add_column(conn, "articles", "cover_image", "TEXT")
+    migrate_add_column(conn, "articles", "manually_edited", "INTEGER DEFAULT 0")
     seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
     seed_section_intro_if_missing(conn, 5, "math", "Натуральные числа", SECTION_INTRO_NATURAL_NUMBERS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Цифры и натуральные числа", LESSON_NATURAL_DIGITS)
@@ -3430,7 +3435,7 @@ def get_article(article_id: int, role: str = Depends(require_any)):
 def create_article(data: ArticleIn, role: str = Depends(require_parent)):
     conn = get_conn()
     c = conn.cursor()
-    c.execute("INSERT INTO articles (subject,grade,title,summary,cover_image,blocks) VALUES (?,?,?,?,?,?)",
+    c.execute("INSERT INTO articles (subject,grade,title,summary,cover_image,blocks,manually_edited) VALUES (?,?,?,?,?,?,1)",
               (data.subject, data.grade, data.title, data.summary, data.cover_image,
                json.dumps(data.blocks, ensure_ascii=False)))
     conn.commit(); aid = c.lastrowid; conn.close()
@@ -3439,7 +3444,7 @@ def create_article(data: ArticleIn, role: str = Depends(require_parent)):
 @app.put("/api/articles/{article_id}")
 def update_article(article_id: int, data: ArticleIn, role: str = Depends(require_parent)):
     conn = get_conn()
-    conn.execute("UPDATE articles SET subject=?,grade=?,title=?,summary=?,cover_image=?,blocks=? WHERE id=?",
+    conn.execute("UPDATE articles SET subject=?,grade=?,title=?,summary=?,cover_image=?,blocks=?,manually_edited=1 WHERE id=?",
                  (data.subject, data.grade, data.title, data.summary, data.cover_image,
                   json.dumps(data.blocks, ensure_ascii=False), article_id))
     conn.commit(); conn.close()
