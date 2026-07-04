@@ -2923,11 +2923,13 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "math", "Выражения и уравнения", "Формулы", LESSON_FORMULAS)
     seed_topic_if_missing(conn, 5, "math", "Выражения и уравнения", "Контрольная работа")
     seed_lesson_if_missing(conn, 5, "math", "Выражения и уравнения", "Контрольная работа", LESSON_CONTROL_EXPRESSIONS_EQUATIONS)
-    seed_article_upsert(conn, "geography", "Почему идёт дождь?", ARTICLE_WHY_RAIN)
+    # «Почему идёт дождь?» и «Почему птицы летают» родитель удалил навсегда (purge) — сидинг для
+    # них убран, иначе они пересоздавались бы заново при каждом деплое (для «зашитых» материалов
+    # обычное мягкое удаление respected, но purge стирает строку целиком, и seed-функция не может
+    # отличить «удалено навсегда» от «ещё не создано»).
     seed_article_upsert(conn, "earth", "Как появилась Земля?", ARTICLE_HOW_EARTH_FORMED)
     seed_article_upsert(conn, "geography", "Материки Земли", ARTICLE_CONTINENTS)
     seed_article_upsert(conn, "space", "Что такое Вселенная?", ARTICLE_UNIVERSE)
-    seed_article_upsert(conn, "animals", "Почему птицы летают", ARTICLE_BIRDS_FLY)
     seed_article_upsert(conn, "plants", "Как растут растения", ARTICLE_PLANTS_GROW)
     seed_article_upsert(conn, "micro", "Что такое клетка", ARTICLE_CELL)
     seed_article_upsert(conn, "body", "Из чего состоит человек", ARTICLE_HUMAN_BODY)

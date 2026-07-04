@@ -62,13 +62,26 @@ export default function ArticleEditor() {
     })
   }
 
+  const [search, setSearch] = useState('')
+
   const groups = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const filteredList = q ? list.filter(a => a.title.toLowerCase().includes(q)) : list
     const bySubject = {}
-    for (const a of list) {
+    for (const a of filteredList) {
       (bySubject[a.subject] = bySubject[a.subject] || []).push(a)
     }
+    if (q) {
+      // при поиске показываем только категории, где есть совпадения
+      return Object.keys(MATERIAL_SUBJ).filter(k => bySubject[k]?.length).map(k => ({ key: k, items: bySubject[k] }))
+    }
     return Object.keys(MATERIAL_SUBJ).map(k => ({ key: k, items: bySubject[k] || [] }))
-  }, [list])
+  }, [list, search])
+
+  const filteredDeleted = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return q ? deletedList.filter(a => a.title.toLowerCase().includes(q)) : deletedList
+  }, [deletedList, search])
 
   useEffect(() => {
     if (mode === 'list') loadList()
@@ -245,12 +258,17 @@ export default function ArticleEditor() {
 
         {mode === 'list' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 style={{ fontWeight: 600 }}>Все материалы ({list.length})</h3>
             </div>
+            <input
+              className="input" placeholder="🔍 Поиск по названию — во всех категориях сразу, включая удалённые"
+              value={search} onChange={e => setSearch(e.target.value)}
+              style={{ marginBottom: 16 }}
+            />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
               {groups.map(g => {
-                const isOpen = openGroups.has(g.key)
+                const isOpen = search.trim() ? true : openGroups.has(g.key)
                 return (
                   <div key={g.key} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px' }}>
@@ -300,11 +318,11 @@ export default function ArticleEditor() {
                 <span style={{ fontSize: 20 }}>🗑</span>
                 <span style={{ fontWeight: 700, flex: 1 }}>Удалённые материалы</span>
                 <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  {deletedList.length} {deletedList.length === 1 ? 'штука' : 'штук'}
+                  {filteredDeleted.length} {filteredDeleted.length === 1 ? 'штука' : 'штук'}
                 </span>
-                <span style={{ transition: 'transform .15s', transform: showDeleted ? 'rotate(180deg)' : 'none', fontSize: 14, color: 'var(--muted)' }}>▾</span>
+                <span style={{ transition: 'transform .15s', transform: (showDeleted || search.trim()) ? 'rotate(180deg)' : 'none', fontSize: 14, color: 'var(--muted)' }}>▾</span>
               </div>
-              {showDeleted && (
+              {(showDeleted || search.trim()) && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px 16px' }}>
                   <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 4px' }}>
                     Здесь оказываются материалы после нажатия «🗑️» в списке выше — они помечаются
@@ -313,10 +331,10 @@ export default function ArticleEditor() {
                     списке, значит удаление сработало и это какая-то другая запись; если его тут
                     нет вообще, значит он до сих пор активен.
                   </p>
-                  {deletedList.length === 0 && (
+                  {filteredDeleted.length === 0 && (
                     <div style={{ fontSize: 13, color: 'var(--muted)', padding: '4px 0 8px' }}>Пусто — ничего не удалено.</div>
                   )}
-                  {deletedList.map(a => (
+                  {filteredDeleted.map(a => (
                     <div key={a.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ flex: 1 }}>
                         <span className="badge">{MATERIAL_SUBJ[a.subject] || a.subject}</span>
