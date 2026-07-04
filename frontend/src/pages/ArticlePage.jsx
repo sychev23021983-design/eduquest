@@ -110,6 +110,23 @@ export default function ArticlePage() {
 
   const cover = article.cover_image
   const isLast = slide === slides.length - 1
+  const curBlocks = slides[slide].blocks
+  const isImageOnlySlide = curBlocks.length > 0 && curBlocks.every(b => b.type === 'image')
+
+  const navButtons = (
+    <>
+      {slide > 0 && (
+        <button className="gh-btn sm blue" style={{ flex: 1 }} onClick={() => setSlide(s => s - 1)}>← Назад</button>
+      )}
+      {!isLast ? (
+        <button className="gh-btn" style={{ flex: 2 }} onClick={() => setSlide(s => s + 1)}>Дальше →</button>
+      ) : (
+        <button className="gh-btn" style={{ flex: 2 }} onClick={() => nav(`/materials/${article.subject}`)}>
+          Готово! К другим материалам →
+        </button>
+      )}
+    </>
+  )
 
   return (
     <div className="game-home">
@@ -121,37 +138,38 @@ export default function ArticlePage() {
       </div>
 
       <div className="gh-wrap" style={{ maxWidth: 1800 }}>
-        <div className={cover ? 'art-layout with-cover' : 'art-layout'}>
-          <div className="art-text-col">
+        {isImageOnlySlide ? (
+          <div className="art-image-only">
             <div className="gh-slide-dots">
               {slides.map((_, i) => (
                 <div key={i} className={`gh-slide-dot ${i === slide ? 'active' : ''}`} onClick={() => setSlide(i)} style={{ cursor: 'pointer' }} />
               ))}
             </div>
-
-            <div className="art-slide">
-              {slides[slide].blocks.map((b, i) => <Block key={i} b={b} settings={settings} />)}
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              {slide > 0 && (
-                <button className="gh-btn sm blue" style={{ flex: 1 }} onClick={() => setSlide(s => s - 1)}>← Назад</button>
-              )}
-              {!isLast ? (
-                <button className="gh-btn" style={{ flex: 2 }} onClick={() => setSlide(s => s + 1)}>Дальше →</button>
-              ) : (
-                <button className="gh-btn" style={{ flex: 2 }} onClick={() => nav(`/materials/${article.subject}`)}>
-                  Готово! К другим материалам →
-                </button>
-              )}
-            </div>
+            {curBlocks.map((b, i) => <Block key={i} b={b} settings={settings} />)}
+            <div className="art-image-only-nav">{navButtons}</div>
           </div>
-          {cover && (
-            <div className="art-cover-col">
-              <img className="art-cover-img" src={cover} alt={article.title} />
+        ) : (
+          <div className={cover ? 'art-layout with-cover' : 'art-layout'}>
+            <div className="art-text-col">
+              <div className="gh-slide-dots">
+                {slides.map((_, i) => (
+                  <div key={i} className={`gh-slide-dot ${i === slide ? 'active' : ''}`} onClick={() => setSlide(i)} style={{ cursor: 'pointer' }} />
+                ))}
+              </div>
+
+              <div className="art-slide">
+                {curBlocks.map((b, i) => <Block key={i} b={b} settings={settings} />)}
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>{navButtons}</div>
             </div>
-          )}
-        </div>
+            {cover && (
+              <div className="art-cover-col">
+                <img className="art-cover-img" src={cover} alt={article.title} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

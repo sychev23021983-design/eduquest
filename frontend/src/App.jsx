@@ -11,6 +11,7 @@ import Curriculum from './pages/Curriculum.jsx'
 import Settings from './pages/Settings.jsx'
 import LessonEditor from './pages/LessonEditor.jsx'
 import MaterialsPage from './pages/MaterialsPage.jsx'
+import MaterialsSlideshowPage from './pages/MaterialsSlideshowPage.jsx'
 import MaterialSubjectPage from './pages/MaterialSubjectPage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
 import ArticleEditor from './pages/ArticleEditor.jsx'
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/subject/:subject/intro/:sectionId" element={<Guard><IntroPage /></Guard>} />
             <Route path="/lesson/:id" element={<Guard><LessonPage /></Guard>} />
             <Route path="/materials" element={<Guard><MaterialsPage /></Guard>} />
+            <Route path="/materials/slideshow" element={<Guard><MaterialsSlideshowPage /></Guard>} />
             <Route path="/materials/:subject" element={<Guard><MaterialSubjectPage /></Guard>} />
             <Route path="/materials/article/:id" element={<Guard><ArticlePage /></Guard>} />
             <Route path="/parent" element={<Guard role="parent"><ParentDashboard /></Guard>} />

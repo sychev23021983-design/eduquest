@@ -40,6 +40,10 @@ export default function MaterialsPage() {
           Интересные факты и объяснения на разные темы — без тестов и оценок. Просто читай и узнавай новое!
         </p>
 
+        <button className="gh-btn" style={{ marginBottom: 22 }} onClick={() => nav('/materials/slideshow')}>
+          🎞️ Слайд-шоу картинок
+        </button>
+
         {loading && <div className="gh-empty">🔍 Загружаю темы…</div>}
 
         {!loading && (
