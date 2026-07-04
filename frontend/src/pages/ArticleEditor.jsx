@@ -129,6 +129,41 @@ export default function ArticleEditor() {
     try { return JSON.parse(blocksText) } catch { return null }
   }
 
+  // Группирует блоки в слайды так же, как это делает страница чтения (ArticlePage.jsx):
+  // каждый heading начинает новый слайд.
+  function groupIntoSlides(blocks) {
+    const slides = []
+    let cur = null
+    for (const b of blocks) {
+      if (b.type === 'heading') { cur = [b]; slides.push(cur) }
+      else { if (!cur) { cur = []; slides.push(cur) }; cur.push(b) }
+    }
+    return slides
+  }
+
+  function dedupeSlides() {
+    const blocks = parsedBlocks()
+    if (!Array.isArray(blocks)) { setJsonErr('Ошибка в JSON блоков — проверь синтаксис.'); return }
+    setJsonErr('')
+    const slides = groupIntoSlides(blocks)
+    const seen = new Set()
+    const kept = []
+    let removed = 0
+    for (const slide of slides) {
+      const key = JSON.stringify(slide)
+      if (seen.has(key)) { removed++; continue }
+      seen.add(key)
+      kept.push(slide)
+    }
+    if (removed === 0) {
+      setMsg('✅ Повторяющихся слайдов не найдено')
+    } else {
+      setBlocksText(JSON.stringify(kept.flat(), null, 2))
+      setMsg(`✅ Убрано ${removed} повторяющихся слайдов из ${slides.length} — не забудь нажать «Сохранить»`)
+    }
+    setTimeout(() => setMsg(''), 5000)
+  }
+
   const imageSlots = (() => {
     const blocks = parsedBlocks()
     if (!Array.isArray(blocks)) return []
@@ -295,7 +330,12 @@ export default function ArticleEditor() {
             </div>
 
             <div className="card" style={{ marginBottom: 20 }}>
-              <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Содержание (JSON)</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 6 }}>
+                <h3 style={{ fontWeight: 700 }}>Содержание (JSON)</h3>
+                <button className="btn btn-sm" onClick={dedupeSlides} title="Найти и убрать слайды, которые полностью повторяют предыдущие">
+                  🧹 Убрать повторяющиеся слайды
+                </button>
+              </div>
               <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10, whiteSpace: 'pre-wrap' }}>{BLOCKS_HELP}</p>
               <textarea className="input" rows={18} style={{ fontFamily: 'monospace', fontSize: 13 }}
                         value={blocksText} onChange={e => setBlocksText(e.target.value)} />
