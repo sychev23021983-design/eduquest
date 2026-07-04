@@ -43,6 +43,7 @@ export default function App() {
             <Route path="/parent/settings" element={<Guard role="parent"><Settings /></Guard>} />
             <Route path="/parent/lesson/:id/edit" element={<Guard role="parent"><LessonEditor /></Guard>} />
             <Route path="/parent/materials" element={<Guard role="parent"><ArticleEditor /></Guard>} />
+            <Route path="/parent/materials/new" element={<Guard role="parent"><ArticleEditor /></Guard>} />
             <Route path="/parent/materials/:id/edit" element={<Guard role="parent"><ArticleEditor /></Guard>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
