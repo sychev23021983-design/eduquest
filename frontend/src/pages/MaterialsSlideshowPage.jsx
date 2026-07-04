@@ -17,6 +17,15 @@ export default function MaterialsSlideshowPage() {
   useEffect(() => { load() }, [])
 
   useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     function onKey(e) {
       if (e.key === 'ArrowLeft') prev()
       if (e.key === 'ArrowRight') next()

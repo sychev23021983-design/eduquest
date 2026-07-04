@@ -7,6 +7,7 @@ async function req(method, path, body, token) {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
+    cache: 'no-store',
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
