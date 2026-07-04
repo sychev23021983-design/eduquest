@@ -478,7 +478,7 @@
 
 /* Слайд-шоу картинок из материалов */
 .gh-slideshow-wrap {
-  width: 100%; max-width: 1400px; margin: 0 auto;
+  width: 100%; max-width: 1200px; margin: 0 auto;
   height: calc(100vh - 64px); max-height: calc(100vh - 64px);
   display: flex; align-items: center; justify-content: center;
   position: relative; padding: 16px;

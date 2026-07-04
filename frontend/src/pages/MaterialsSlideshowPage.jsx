@@ -12,6 +12,7 @@ export default function MaterialsSlideshowPage() {
   const [images, setImages] = useState(null) // null = ещё грузим
   const [index, setIndex] = useState(0)
   const [isLong, setIsLong] = useState(false)
+  const [imgReady, setImgReady] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -58,20 +59,31 @@ export default function MaterialsSlideshowPage() {
 
   const current = useMemo(() => (images && images.length > 0 ? images[index] : null), [images, index])
 
+  // Заранее (до показа) выясняем реальные размеры картинки — чтобы применить нужный класс
+  // (обычная/«длинная») сразу, а не после отрисовки, иначе картинка на миг показывается
+  // в неверном размере и «прыгает» при подгрузке.
+  useEffect(() => {
+    if (!current) return
+    let cancelled = false
+    setImgReady(false)
+    const probe = new Image()
+    probe.onload = () => {
+      if (cancelled) return
+      setIsLong(probe.naturalHeight > probe.naturalWidth)
+      setImgReady(true)
+    }
+    probe.onerror = () => { if (!cancelled) setImgReady(true) }
+    probe.src = current.url
+    return () => { cancelled = true }
+  }, [current?.url])
+
   function prev() {
     if (!images || images.length === 0) return
-    setIsLong(false)
     setIndex(i => (i - 1 + images.length) % images.length)
   }
   function next() {
     if (!images || images.length === 0) return
-    setIsLong(false)
     setIndex(i => (i + 1) % images.length)
-  }
-
-  function onImgLoad(e) {
-    const { naturalWidth, naturalHeight } = e.target
-    setIsLong(naturalHeight > naturalWidth)
   }
 
   return (
@@ -92,8 +104,8 @@ export default function MaterialsSlideshowPage() {
       {current && (
         <div className="gh-slideshow-wrap">
           <button className="gh-slideshow-arrow prev" onClick={prev} aria-label="Предыдущая">‹</button>
-          <div className={`gh-slideshow-img-box ${isLong ? 'long' : ''}`}>
-            <img src={current.url} alt={current.caption || ''} onLoad={onImgLoad} />
+          <div className={`gh-slideshow-img-box ${isLong ? 'long' : ''}`} style={{ visibility: imgReady ? 'visible' : 'hidden' }}>
+            <img src={current.url} alt={current.caption || ''} />
           </div>
           <button className="gh-slideshow-arrow next" onClick={next} aria-label="Следующая">›</button>
           <div className="gh-slideshow-counter">{index + 1} / {images.length}</div>
