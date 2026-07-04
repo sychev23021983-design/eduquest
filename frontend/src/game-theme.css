@@ -477,13 +477,32 @@
 .art-image-only-nav { display: flex; gap: 10px; width: 100%; max-width: 420px; }
 
 /* Слайд-шоу картинок из материалов */
-.gh-slideshow-wrap { display: flex; flex-direction: column; align-items: center; min-height: 60vh; justify-content: center; padding: 20px; }
-.gh-slideshow-img-box { width: 100%; max-width: 900px; display: flex; justify-content: center; margin-bottom: 18px; }
-.gh-slideshow-img-box img { max-width: 100%; max-height: 66vh; object-fit: contain; border-radius: 18px; box-shadow: 0 14px 34px rgba(0,0,0,0.45); }
-.gh-slideshow-caption { text-align: center; color: var(--gh-muted); font-size: 0.9rem; margin-bottom: 18px; max-width: 700px; }
-.gh-slideshow-nav { display: flex; gap: 14px; }
-.gh-slideshow-nav .gh-btn { min-width: 140px; }
-.gh-slideshow-counter { margin-top: 12px; font-size: 0.78rem; color: var(--gh-muted); }
+.gh-slideshow-wrap {
+  width: 100%; max-width: 1600px; margin: 0 auto;
+  height: calc(100vh - 64px); max-height: calc(100vh - 64px);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; padding: 16px;
+}
+.gh-slideshow-img-box {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.gh-slideshow-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 14px; display: block; }
+/* Длинная (вытянутая по вертикали) картинка: ширина = ширине блока, высота свободная, со скроллом */
+.gh-slideshow-img-box.long { align-items: flex-start; overflow-y: auto; }
+.gh-slideshow-img-box.long img { width: 100%; height: auto; max-height: none; max-width: 100%; border-radius: 14px; }
+.gh-slideshow-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(20,22,45,0.55); color: #fff; font-size: 1.6rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); transition: background .15s;
+  z-index: 10;
+}
+.gh-slideshow-arrow:hover { background: rgba(20,22,45,0.85); }
+.gh-slideshow-arrow.prev { left: 6px; }
+.gh-slideshow-arrow.next { right: 6px; }
 
 @media (max-width: 860px) {
   .art-layout { flex-direction: column; }

@@ -20,8 +20,19 @@ export default function MaterialsSlideshowPage() {
   const nav = useNavigate()
   const [images, setImages] = useState(null) // null = ещё грузим
   const [index, setIndex] = useState(0)
+  const [isLong, setIsLong] = useState(false)
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'ArrowLeft') prev()
+      if (e.key === 'ArrowRight') next()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images])
 
   async function load() {
     const list = await api.articles(token)
@@ -58,11 +69,18 @@ export default function MaterialsSlideshowPage() {
 
   function prev() {
     if (!images || images.length === 0) return
+    setIsLong(false)
     setIndex(i => (i - 1 + images.length) % images.length)
   }
   function next() {
     if (!images || images.length === 0) return
+    setIsLong(false)
     setIndex(i => (i + 1) % images.length)
+  }
+
+  function onImgLoad(e) {
+    const { naturalWidth, naturalHeight } = e.target
+    setIsLong(naturalHeight > naturalWidth)
   }
 
   return (
@@ -74,29 +92,21 @@ export default function MaterialsSlideshowPage() {
         </div>
       </div>
 
-      <div className="gh-wrap">
+      {images === null && <div className="gh-wrap gh-empty" style={{ paddingTop: 60 }}>🔍 Собираю картинки…</div>}
+
+      {images !== null && images.length === 0 && (
+        <div className="gh-wrap gh-empty" style={{ paddingTop: 60 }}>Пока нет ни одной загруженной картинки в материалах 🖼️</div>
+      )}
+
+      {current && (
         <div className="gh-slideshow-wrap">
-          {images === null && <div className="gh-empty">🔍 Собираю картинки…</div>}
-
-          {images !== null && images.length === 0 && (
-            <div className="gh-empty">Пока нет ни одной загруженной картинки в материалах 🖼️</div>
-          )}
-
-          {current && (
-            <>
-              <div className="gh-slideshow-img-box">
-                <img src={current.url} alt={current.caption || ''} />
-              </div>
-              {current.caption && <div className="gh-slideshow-caption">{current.caption}</div>}
-              <div className="gh-slideshow-nav">
-                <button className="gh-btn sm blue" onClick={prev}>← Предыдущая</button>
-                <button className="gh-btn" onClick={next}>Следующая →</button>
-              </div>
-              <div className="gh-slideshow-counter">{index + 1} / {images.length}</div>
-            </>
-          )}
+          <button className="gh-slideshow-arrow prev" onClick={prev} aria-label="Предыдущая">‹</button>
+          <div className={`gh-slideshow-img-box ${isLong ? 'long' : ''}`}>
+            <img src={current.url} alt={current.caption || ''} onLoad={onImgLoad} />
+          </div>
+          <button className="gh-slideshow-arrow next" onClick={next} aria-label="Следующая">›</button>
         </div>
-      </div>
+      )}
     </div>
   )
 }
