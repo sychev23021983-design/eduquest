@@ -109,6 +109,12 @@ export default function ArticleEditor() {
     setBlocksText(emptyBlocksText)
     setCreatedId(null)
     setJsonErr('')
+    // Важно: сбрасываем временное имя слота обложки. Раньше это делал только createAnother(),
+    // а не initCreate() — если переход между разными категориями («+ Материал») происходил без
+    // полного перемонтирования компонента (тот же путь /parent/materials/new, разный ?subject=),
+    // старое временное имя слота оставалось прежним, и загрузка обложки для новой статьи могла
+    // перезаписать файл, который уже использовался в другой, ещё не сохранённой сессии создания.
+    newSlotId.current = Math.random().toString(36).slice(2, 10)
   }
 
   function setF(key, val) { setForm(f => ({ ...f, [key]: val })) }
@@ -295,7 +301,7 @@ export default function ArticleEditor() {
                         {g.items.map(a => (
                           <div key={a.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 500 }}>{a.title}</div>
+                              <div style={{ fontWeight: 500 }}>{a.title} <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: 12 }}>(id {a.id})</span></div>
                               {a.summary && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{a.summary}</div>}
                             </div>
                             <button className="btn btn-sm" onClick={() => window.open(`/materials/article/${a.id}`, '_blank')}>👁 Посмотреть</button>
