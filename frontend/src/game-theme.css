@@ -478,7 +478,7 @@
 
 /* Слайд-шоу картинок из материалов */
 .gh-slideshow-wrap {
-  width: 100%; max-width: 1600px; margin: 0 auto;
+  width: 100%; max-width: 1400px; margin: 0 auto;
   height: calc(100vh - 64px); max-height: calc(100vh - 64px);
   display: flex; align-items: center; justify-content: center;
   position: relative; padding: 16px;
@@ -503,6 +503,11 @@
 .gh-slideshow-arrow:hover { background: rgba(20,22,45,0.85); }
 .gh-slideshow-arrow.prev { left: 6px; }
 .gh-slideshow-arrow.next { right: 6px; }
+.gh-slideshow-counter {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  font-size: 0.78rem; color: #fff; background: rgba(20,22,45,0.55); backdrop-filter: blur(4px);
+  padding: 4px 12px; border-radius: 20px; z-index: 10;
+}
 
 @media (max-width: 860px) {
   .art-layout { flex-direction: column; }

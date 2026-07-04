@@ -5,15 +5,6 @@ import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
 import '../game-theme.css'
 
-function shuffle(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
 export default function MaterialsSlideshowPage() {
   const { token } = useAuth()
   const { settings } = useSettings()
@@ -61,7 +52,7 @@ export default function MaterialsSlideshowPage() {
       }
     }
 
-    setImages(shuffle(found))
+    setImages(found)
     setIndex(0)
   }
 
@@ -105,6 +96,7 @@ export default function MaterialsSlideshowPage() {
             <img src={current.url} alt={current.caption || ''} onLoad={onImgLoad} />
           </div>
           <button className="gh-slideshow-arrow next" onClick={next} aria-label="Следующая">›</button>
+          <div className="gh-slideshow-counter">{index + 1} / {images.length}</div>
         </div>
       )}
     </div>
