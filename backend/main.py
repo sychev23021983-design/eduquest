@@ -3371,7 +3371,11 @@ MATERIAL_SUBJECTS = {
     "biology": "Биология", "chemistry": "Химия", "geography": "География",
     "informatics": "Информатика", "programming": "Программирование", "earth": "Планета Земля",
     "space": "Космос", "animals": "Животные", "plants": "Растения", "micro": "Микромир",
-    "body": "Организм", "senses": "Органы чувств", "health": "Здоровье",
+    "body": "Человек", "senses": "Органы чувств", "health": "Забота о здоровье",
+    "physics": "Физика", "inventions": "Изобретения", "history": "История цивилизации",
+    "economics": "Экономика детям", "ecology": "Экология", "food": "Еда", "art": "Искусство",
+    "architecture": "Архитектура", "transport": "Транспорт", "why": "Почему?",
+    "facts": "Интересные факты", "life": "Что попробовать в жизни",
 }
 
 class ArticleIn(BaseModel):
