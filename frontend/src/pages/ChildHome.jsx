@@ -127,19 +127,6 @@ export default function ChildHome() {
               )}
             </div>
 
-            {lessons.length > 0 && (
-              <div className="gh-lod" style={lodStyle}>
-                <div className="gh-lod-label">⭐ УРОК ДНЯ</div>
-                <span className={`gh-badge ${lessons[0].subject}`}>{SUBJ[lessons[0].subject]}</span>
-                <h2>{lessons[0].topic}</h2>
-                <div className="gh-lod-meta">
-                  <span className="gh-chip coin">🪙 +{lessons[0].coins_lesson} монет</span>
-                  <span className="gh-chip gem">💎 +{lessons[0].coins_boss} за финал</span>
-                </div>
-                <button className="gh-btn" onClick={() => nav(`/lesson/${lessons[0].id}`)}>Начать урок →</button>
-              </div>
-            )}
-
             {/* Subjects grid */}
             <div className="gh-section-title">Предметы</div>
             <div className="gh-subjects-grid">
@@ -155,6 +142,19 @@ export default function ChildHome() {
                 )
               })}
             </div>
+
+            {lessons.length > 0 && (
+              <div className="gh-lod" style={lodStyle}>
+                <div className="gh-lod-label">⭐ УРОК ДНЯ</div>
+                <span className={`gh-badge ${lessons[0].subject}`}>{SUBJ[lessons[0].subject]}</span>
+                <h2>{lessons[0].topic}</h2>
+                <div className="gh-lod-meta">
+                  <span className="gh-chip coin">🪙 +{lessons[0].coins_lesson} монет</span>
+                  <span className="gh-chip gem">💎 +{lessons[0].coins_boss} за финал</span>
+                </div>
+                <button className="gh-btn" onClick={() => nav(`/lesson/${lessons[0].id}`)}>Начать урок →</button>
+              </div>
+            )}
 
             {/* Нужно повторить */}
             <div className="gh-section-title">⚠️ Нужно повторить</div>
