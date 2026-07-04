@@ -155,9 +155,11 @@ def seed_lesson_regenerate(conn, grade: int, subject: str, section_title: str, t
          existing["id"]))
 
 def seed_article_if_missing(conn, subject: str, title: str, article: dict):
-    """Создаёт познавательный материал (статья, без контроля знаний), если статьи с таким названием ещё нет."""
+    """Создаёт познавательный материал (статья, без контроля знаний), если статьи с таким названием
+       ещё не существует. Проверяем ЛЮБУЮ строку с этим subject+title, включая удалённые
+       (active=0) — если родитель удалил материал, повторный деплой не должен его воскрешать."""
     existing = conn.execute(
-        "SELECT id FROM articles WHERE subject=? AND title=? AND active=1", (subject, title)
+        "SELECT id FROM articles WHERE subject=? AND title=?", (subject, title)
     ).fetchone()
     if existing:
         return
@@ -168,14 +170,15 @@ def seed_article_if_missing(conn, subject: str, title: str, article: dict):
 def seed_article_upsert(conn, subject: str, title: str, article: dict):
     """Как seed_article_if_missing, но обновляет содержимое, если статья уже есть — для материалов,
        которые мы дорабатываем итеративно (пока родитель ещё не редактировал их вручную).
-       Если статью уже редактировали через панель (manually_edited=1), НЕ трогаем её контент —
-       иначе правки и загруженные картинки откатывались бы назад при каждом деплое."""
+       Если статью уже редактировали через панель (manually_edited=1) ИЛИ родитель её удалил
+       (active=0), НЕ трогаем и НЕ пересоздаём её — иначе правки, картинки и сам факт удаления
+       откатывались бы назад при каждом деплое."""
     existing = conn.execute(
-        "SELECT id, manually_edited FROM articles WHERE subject=? AND title=? AND active=1", (subject, title)
+        "SELECT id, active, manually_edited FROM articles WHERE subject=? AND title=?", (subject, title)
     ).fetchone()
     if existing:
-        if existing["manually_edited"]:
-            return  # родитель уже редактировал эту статью — не перезаписываем
+        if not existing["active"] or existing["manually_edited"]:
+            return  # удалено родителем или отредактировано вручную — не трогаем
         conn.execute("UPDATE articles SET summary=?,cover_image=?,blocks=? WHERE id=?",
             (article.get("summary", ""), article.get("cover_image"),
              json.dumps(article["blocks"], ensure_ascii=False), existing["id"]))
