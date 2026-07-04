@@ -1,6 +1,6 @@
 export const MATERIAL_SUBJ = {
   biology: 'Биология', chemistry: 'Химия', geography: 'География',
-  informatics: 'Информатика', programming: 'Программирование', earth: 'Планета Земля',
+  informatics: 'Компьютеры', programming: 'Программирование', earth: 'Планета Земля',
   space: 'Космос', animals: 'Животные', plants: 'Растения', micro: 'Микромир',
   body: 'Человек', senses: 'Органы чувств', health: 'Забота о здоровье',
   physics: 'Физика', inventions: 'Изобретения', history: 'История цивилизации',
