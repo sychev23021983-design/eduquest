@@ -503,11 +503,22 @@
 .gh-slideshow-arrow:hover { background: rgba(20,22,45,0.85); }
 .gh-slideshow-arrow.prev { left: 6px; }
 .gh-slideshow-arrow.next { right: 6px; }
+.gh-slideshow-arrow:disabled { opacity: 0.3; cursor: default; }
+.gh-slideshow-arrow:disabled:hover { background: rgba(20,22,45,0.55); }
 .gh-slideshow-counter {
   position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
   font-size: 0.78rem; color: #fff; background: rgba(20,22,45,0.55); backdrop-filter: blur(4px);
   padding: 4px 12px; border-radius: 20px; z-index: 10;
+  display: flex; align-items: center; gap: 4px;
 }
+.gh-slideshow-jump-input {
+  width: 40px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 10px; color: #fff; font-size: 0.78rem; text-align: center;
+  padding: 2px 4px; -moz-appearance: textfield;
+}
+.gh-slideshow-jump-input::-webkit-outer-spin-button,
+.gh-slideshow-jump-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.gh-slideshow-jump-input:focus { outline: none; border-color: rgba(255,255,255,0.6); }
 
 @media (max-width: 860px) {
   .art-layout { flex-direction: column; }

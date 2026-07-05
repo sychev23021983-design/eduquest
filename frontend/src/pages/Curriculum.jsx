@@ -116,7 +116,7 @@ export default function Curriculum() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <div style={{ background: '#1a1a2e', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <button onClick={() => nav('/parent')} style={{ background: 'none', border: 'none', fontSize: 20, color: '#aaa' }}>‹</button>
+        <button onClick={() => nav('/parent')} style={{ background: 'none', border: 'none', fontSize: 30, lineHeight: 1, color: '#aaa', padding: '6px 14px', margin: '-6px -14px -6px -6px', cursor: 'pointer', minWidth: 44, minHeight: 44 }}>‹</button>
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>📖 Программа предмета</span>
       </div>
 

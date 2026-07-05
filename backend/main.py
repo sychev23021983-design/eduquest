@@ -2910,7 +2910,7 @@ LESSON_FRACTION_TYPES = {
         }
     ],
     "boss_task": {
-        "answer": "5 целых 1/6, код 516",
+        "answer": "516",
         "text": (
             "Внутри первой коробочки — вторая, более крепкая, а на ней тем же почерком выведено "
             "31/6. Переведи эту неправильную дробь в смешанное число и назови три цифры нового кода."
@@ -3386,7 +3386,7 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "math", "Выражения и уравнения", "Контрольная работа", LESSON_CONTROL_EXPRESSIONS_EQUATIONS)
     seed_section_intro_if_missing(conn, 5, "math", "Обыкновенные дроби", SECTION_INTRO_FRACTIONS)
     seed_lesson_if_missing(conn, 5, "math", "Обыкновенные дроби", "Понятие дроби", LESSON_FRACTION_CONCEPT)
-    seed_lesson_if_missing(conn, 5, "math", "Обыкновенные дроби", "Виды дробей", LESSON_FRACTION_TYPES)
+    seed_lesson_regenerate(conn, 5, "math", "Обыкновенные дроби", "Виды дробей", LESSON_FRACTION_TYPES)
     seed_lesson_if_missing(conn, 5, "math", "Обыкновенные дроби", "Основное свойство дроби", LESSON_FRACTION_PROPERTY)
     seed_lesson_if_missing(conn, 5, "math", "Обыкновенные дроби", "Действия с дробями", LESSON_FRACTION_OPERATIONS)
     seed_lesson_if_missing(conn, 5, "math", "Обыкновенные дроби", "Задачи на дроби", LESSON_FRACTION_PROBLEMS)
@@ -3990,15 +3990,32 @@ def _check_boss_answer(expected: str, given: str) -> bool:
     given_norm = given.strip().lower().replace(",", ".")
     numbers = re.findall(r"-?\d+(?:[.,]\d+)?", expected)
     if numbers:
-        for num in numbers:
-            num = num.replace(",", ".")
+        numbers_norm = [n.replace(",", ".") for n in numbers]
+
+        def present(num: str) -> bool:
             pat = r"(?<!\d)" + re.escape(num) + r"(?!\d)"
-            if not re.search(pat, given_norm):
-                return False
-        return True
+            return bool(re.search(pat, given_norm))
+
+        if all(present(n) for n in numbers_norm):
+            return True
+        # Иногда эталон формулируется как "промежуточный результат, итоговый код",
+        # где итоговое число буквально составлено из цифр промежуточного
+        # (например, "5 целых 1/6, код 516" — код 516 включает цифры 5, 1 и 6).
+        # В этом случае ребёнок, назвавший только итоговое число, прав — но
+        # проверка выше не засчитает это, так как цифры 5/1/6 внутри "516" не
+        # являются отдельными "словами". Разрешаем такой ответ отдельно: если
+        # самое длинное число эталона само присутствует в ответе как отдельное
+        # число, а все остальные числа эталона целиком состоят из его цифр
+        # (т.е. являются его частью), засчитываем ответ.
+        longest = max(numbers_norm, key=len)
+        others = [n for n in numbers_norm if n != longest]
+        if others and all(n in longest for n in others) and present(longest):
+            return True
+        return False
     exp_norm = expected.strip().lower()
     pat = r"(?<!\w)" + re.escape(exp_norm) + r"(?!\w)"
     return bool(re.search(pat, given_norm, flags=re.UNICODE))
+
 
 class FinishLessonIn(BaseModel):
     progress_id: int

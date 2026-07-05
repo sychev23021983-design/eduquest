@@ -102,7 +102,7 @@ export default function LessonEditor() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <div style={{ background: '#1a1a2e', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <button onClick={() => nav(-1)} style={{ background: 'none', border: 'none', fontSize: 20, color: '#aaa' }}>‹</button>
+        <button onClick={() => nav(-1)} style={{ background: 'none', border: 'none', fontSize: 30, lineHeight: 1, color: '#aaa', padding: '6px 14px', margin: '-6px -14px -6px -6px', cursor: 'pointer', minWidth: 44, minHeight: 44 }}>‹</button>
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>✏️ Редактировать урок</span>
         {msg && <span style={{ marginLeft: 'auto', color: msg.startsWith('✅') ? '#4ade80' : '#f87171', fontSize: 13 }}>{msg}</span>}
       </div>
