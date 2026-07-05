@@ -3288,12 +3288,22 @@ class LessonIn(BaseModel):
 @app.get("/api/lessons")
 def list_lessons(subject: Optional[str] = None, topic_id: Optional[int] = None, role: str = Depends(require_any)):
     conn = get_conn()
-    q, params = "SELECT * FROM lessons WHERE active=1", []
+    q = """SELECT l.*,
+                  s.id           AS section_id,
+                  s.title        AS section_title,
+                  s.order_index  AS section_order,
+                  t.title        AS topic_title,
+                  t.order_index  AS topic_order
+           FROM lessons l
+           LEFT JOIN topics t   ON t.id = l.topic_id
+           LEFT JOIN sections s ON s.id = t.section_id
+           WHERE l.active=1"""
+    params = []
     if subject:
-        q += " AND subject=?"; params.append(subject)
+        q += " AND l.subject=?"; params.append(subject)
     if topic_id:
-        q += " AND topic_id=?"; params.append(topic_id)
-    rows = conn.execute(q + " ORDER BY created_at DESC", params).fetchall()
+        q += " AND l.topic_id=?"; params.append(topic_id)
+    rows = conn.execute(q + " ORDER BY l.subject, s.order_index, t.order_index, l.created_at", params).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 

@@ -268,31 +268,92 @@ export default function ParentDashboard() {
         )}
 
         {/* LESSONS */}
-        {tab === 'lessons' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontWeight: 600 }}>Все уроки ({lessons.length})</h3>
-              <button className="btn" onClick={() => nav('/parent/curriculum')}>📖 К программе</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {lessons.map(l => (
-                <div key={l.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 22 }}>{SUBJ_ICON[l.subject]}</span>
-                  <div style={{ flex: 1 }}>
-                    <span className={`badge badge-${l.subject}`}>{SUBJ[l.subject]}</span>
-                    <div style={{ fontWeight: 500, marginTop: 2 }}>{l.topic}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', display: 'flex', gap: 12, marginTop: 2 }}>
-                      <span>{l.audio_file ? '🎧 Аудио' : '— Нет аудио'}</span>
-                      <span>{l.infographic ? '🖼️ Инфографика' : '— Нет картинки'}</span>
-                      <span>🪙 {l.coins_lesson}+{l.coins_boss}</span>
-                    </div>
+        {tab === 'lessons' && (() => {
+          // Группируем: Предмет -> Раздел (может отсутствовать) -> Тема (может отсутствовать) -> уроки
+          const bySubject = {}
+          lessons.forEach(l => {
+            const subj = l.subject || 'other'
+            if (!bySubject[subj]) bySubject[subj] = { sections: {}, sectionOrder: [] }
+            const secKey = l.section_id != null ? `s${l.section_id}` : '__none__'
+            if (!bySubject[subj].sections[secKey]) {
+              bySubject[subj].sections[secKey] = {
+                title: l.section_title || 'Без раздела',
+                order: l.section_id != null ? (l.section_order ?? 0) : 999999,
+                topics: {}, topicOrder: []
+              }
+              bySubject[subj].sectionOrder.push(secKey)
+            }
+            const sec = bySubject[subj].sections[secKey]
+            const topKey = l.topic_id != null ? `t${l.topic_id}` : '__none__'
+            if (!sec.topics[topKey]) {
+              sec.topics[topKey] = {
+                title: l.topic_title || l.topic || 'Без темы',
+                order: l.topic_id != null ? (l.topic_order ?? 0) : 999999,
+                lessons: []
+              }
+              sec.topicOrder.push(topKey)
+            }
+            sec.topics[topKey].lessons.push(l)
+          })
+          const subjectKeys = Object.keys(bySubject).sort((a, b) => Object.keys(SUBJ).indexOf(a) - Object.keys(SUBJ).indexOf(b))
+
+          const sortedSections = subj => bySubject[subj].sectionOrder
+            .map(k => ({ key: k, ...bySubject[subj].sections[k] }))
+            .sort((a, b) => a.order - b.order)
+          const sortedTopics = sec => sec.topicOrder
+            .map(k => ({ key: k, ...sec.topics[k] }))
+            .sort((a, b) => a.order - b.order)
+
+          return (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontWeight: 600 }}>Все уроки ({lessons.length})</h3>
+                <button className="btn" onClick={() => nav('/parent/curriculum')}>📖 К программе</button>
+              </div>
+
+              {subjectKeys.map(subj => (
+                <div key={subj} style={{ marginBottom: 28 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 22 }}>{SUBJ_ICON[subj]}</span>
+                    <h3 style={{ fontWeight: 700, margin: 0 }}>{SUBJ[subj] || subj}</h3>
                   </div>
-                  <button className="btn btn-sm" onClick={() => window.open(`/lesson/${l.id}`, '_blank')}>👁 Посмотреть</button>
-                  <button className="btn btn-sm" onClick={() => nav(`/parent/lesson/${l.id}/edit`)}>✏️ Изменить</button>
-                  <button className="btn btn-sm" style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
-                          onClick={() => deleteLesson(l.id)}>🗑️</button>
+
+                  {sortedSections(subj).map((sec, si) => (
+                    <div key={sec.key} style={{ marginBottom: 18, marginLeft: 8 }}>
+                      <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--blue)', marginBottom: 8 }}>
+                        {sec.key === '__none__' ? sec.title : `${si + 1}. ${sec.title}`}
+                      </div>
+
+                      {sortedTopics(sec).map((topic, ti) => (
+                        <div key={topic.key} style={{ marginBottom: 10, marginLeft: 16 }}>
+                          <div style={{ fontWeight: 500, fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>
+                            {topic.key === '__none__' ? topic.title : `${si + 1}.${ti + 1} ${topic.title}`}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {topic.lessons.map(l => (
+                              <div key={l.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 500 }}>{l.topic}</div>
+                                  <div style={{ fontSize: 12, color: 'var(--muted)', display: 'flex', gap: 12, marginTop: 2 }}>
+                                    <span>{l.audio_file ? '🎧 Аудио' : '— Нет аудио'}</span>
+                                    <span>{l.infographic ? '🖼️ Инфографика' : '— Нет картинки'}</span>
+                                    <span>🪙 {l.coins_lesson}+{l.coins_boss}</span>
+                                  </div>
+                                </div>
+                                <button className="btn btn-sm" onClick={() => window.open(`/lesson/${l.id}`, '_blank')}>👁 Посмотреть</button>
+                                <button className="btn btn-sm" onClick={() => nav(`/parent/lesson/${l.id}/edit`)}>✏️ Изменить</button>
+                                <button className="btn btn-sm" style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+                                        onClick={() => deleteLesson(l.id)}>🗑️</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
                 </div>
               ))}
+
               {lessons.length === 0 && (
                 <div className="card" style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>
                   <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
@@ -302,8 +363,8 @@ export default function ParentDashboard() {
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
     </div>
   )
