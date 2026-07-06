@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
 import { MATERIAL_SUBJ, MATERIAL_SUBJ_ICON } from '../materialSubjects.js'
+import { SendAssignmentPanel, AssignmentHistory } from '../components/MaterialAssignmentTools.jsx'
 
 const BLOCKS_HELP = `Массив блоков, например:
 [
@@ -51,6 +52,7 @@ export default function ArticleEditor() {
   const [uploadingSlot, setUploadingSlot] = useState(null)
   const [openGroups, setOpenGroups] = useState(new Set())
   const [createdId, setCreatedId] = useState(null) // id материала, только что созданного в этой сессии редактора
+  const [historyKey, setHistoryKey] = useState(0) // инкремент триггерит обновление истории отправок
   // Блок «Содержание (JSON)» свёрнут по умолчанию и перенесён в самый низ, под кнопки —
   // чтобы кнопки «Сохранить»/«Просмотреть» были сразу видны под Обложкой, без прокрутки
   // мимо большого JSON-редактора. Автоматически раскрывается, если в JSON ошибка.
@@ -268,9 +270,11 @@ export default function ArticleEditor() {
 
         {mode === 'list' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontWeight: 600 }}>Все материалы ({list.length})</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+              <h3 style={{ fontWeight: 600, paddingTop: 8 }}>Все материалы ({list.length})</h3>
+              <SendAssignmentPanel token={token} onSent={() => setHistoryKey(k => k + 1)} />
             </div>
+            <AssignmentHistory token={token} refreshKey={historyKey} />
             <input
               className="input" placeholder="🔍 Поиск по названию — во всех категориях сразу, включая удалённые"
               value={search} onChange={e => setSearch(e.target.value)}
