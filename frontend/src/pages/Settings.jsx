@@ -45,9 +45,39 @@ export default function Settings() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
 
+  const [tg, setTg] = useState(null)
+  const [tgSaving, setTgSaving] = useState(false)
+  const [tgTesting, setTgTesting] = useState(false)
+  const [tgMsg, setTgMsg] = useState('')
+
   useEffect(() => { if (settings) setForm(settings) }, [settings])
+  useEffect(() => { api.telegramConfig(token).then(setTg).catch(() => setTg({ tg_bot_token: '', tg_chat_id: '', site_url: '' })) }, [token])
 
   function setF(key, val) { setForm(f => ({ ...f, [key]: val })) }
+  function setTgF(key, val) { setTg(t => ({ ...t, [key]: val })) }
+
+  async function saveTelegram() {
+    setTgSaving(true)
+    try {
+      const fresh = await api.updateTelegramConfig(token, {
+        tg_bot_token: tg.tg_bot_token, tg_chat_id: tg.tg_chat_id, site_url: tg.site_url,
+      })
+      setTg(fresh)
+      setTgMsg('✅ Сохранено')
+    } catch (e) { setTgMsg('❌ ' + e.message) }
+    setTgSaving(false)
+    setTimeout(() => setTgMsg(''), 2500)
+  }
+
+  async function testTelegram() {
+    setTgTesting(true)
+    try {
+      await api.testTelegram(token)
+      setTgMsg('✅ Тестовое сообщение отправлено — проверь Telegram')
+    } catch (e) { setTgMsg('❌ ' + e.message) }
+    setTgTesting(false)
+    setTimeout(() => setTgMsg(''), 4000)
+  }
 
   async function uploadTo(slot, file) {
     setUploadingSlot(slot)
@@ -108,6 +138,35 @@ export default function Settings() {
           <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Общее</h3>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Название сайта (в топбаре, если нет логотипа)</label>
           <input className="input" value={form.site_name || ''} onChange={e => setF('site_name', e.target.value)} style={{ marginBottom: 4 }} />
+        </div>
+
+        {/* Telegram */}
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Telegram</h3>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
+            Нужен для уведомлений (старт/окончание урока, запрос награды) и для кнопки «Отправить на изучение»
+            в Познавательных материалах. Токен бота получи у <b>@BotFather</b>, chat_id — у <b>@userinfobot</b>
+            (или из апдейтов твоего бота).
+          </p>
+          {!tg && <div style={{ color: 'var(--muted)', fontSize: 13 }}>Загрузка…</div>}
+          {tg && (
+            <>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Токен бота</label>
+              <input className="input" placeholder="123456789:AA..." value={tg.tg_bot_token || ''}
+                     onChange={e => setTgF('tg_bot_token', e.target.value)} style={{ marginBottom: 12, fontFamily: 'monospace', fontSize: 13 }} />
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Chat ID (куда слать сообщения)</label>
+              <input className="input" placeholder="123456789" value={tg.tg_chat_id || ''}
+                     onChange={e => setTgF('tg_chat_id', e.target.value)} style={{ marginBottom: 12, fontFamily: 'monospace', fontSize: 13 }} />
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Адрес сайта (для ссылок в сообщениях)</label>
+              <input className="input" placeholder="http://147.45.42.169:8090" value={tg.site_url || ''}
+                     onChange={e => setTgF('site_url', e.target.value)} style={{ marginBottom: 14, fontFamily: 'monospace', fontSize: 13 }} />
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" onClick={saveTelegram} disabled={tgSaving}>{tgSaving ? 'Сохраняю…' : '💾 Сохранить'}</button>
+                <button className="btn" onClick={testTelegram} disabled={tgTesting}>{tgTesting ? 'Отправляю…' : '🔔 Отправить тест'}</button>
+                {tgMsg && <span style={{ fontSize: 13, color: tgMsg.startsWith('✅') ? '#16a34a' : '#dc2626' }}>{tgMsg}</span>}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Логотип и фавикон */}

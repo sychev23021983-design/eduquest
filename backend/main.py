@@ -59,6 +59,34 @@ def get_settings(conn):
 def save_settings(conn, data: dict):
     conn.execute("UPDATE site_settings SET data=? WHERE id=1", (json.dumps(data, ensure_ascii=False),))
 
+# Интеграции (Telegram и т.п.) хранятся отдельно от site_settings, потому что
+# /api/settings отдаётся без авторизации (используется для оформления интерфейса
+# на странице логина) — токен бота там светить нельзя. Всё, что лежит в
+# integrations, доступно только через parent-эндпоинты.
+DEFAULT_INTEGRATIONS = {
+    "tg_bot_token": "",
+    "tg_chat_id": "",
+    "site_url": "",
+}
+
+def get_integrations(conn):
+    row = conn.execute("SELECT data FROM integrations WHERE id=1").fetchone()
+    stored = json.loads(row["data"]) if row and row["data"] else {}
+    return {**DEFAULT_INTEGRATIONS, **stored}
+
+def save_integrations(conn, data: dict):
+    conn.execute("UPDATE integrations SET data=? WHERE id=1", (json.dumps(data, ensure_ascii=False),))
+
+def get_telegram_config(conn):
+    """Токен/chat_id берутся из настроек (кабинет родителя → Настройки → Telegram),
+    а если там пусто — из переменных окружения (старый способ, для обратной совместимости)."""
+    integ = get_integrations(conn)
+    return {
+        "bot_token": integ.get("tg_bot_token") or os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+        "chat_id":   integ.get("tg_chat_id")   or os.environ.get("TELEGRAM_CHAT_ID", ""),
+        "site_url":  (integ.get("site_url") or os.environ.get("SITE_URL", "") or "http://147.45.42.169:8090").rstrip("/"),
+    }
+
 def parse_curriculum_text(text: str):
     """Разбирает текст вида:
        **1. Раздел**
@@ -3355,6 +3383,24 @@ def init_db():
             data TEXT NOT NULL DEFAULT '{}'
         );
         INSERT OR IGNORE INTO site_settings(id, data) VALUES (1, '{}');
+        CREATE TABLE IF NOT EXISTS integrations (
+            id   INTEGER PRIMARY KEY CHECK (id = 1),
+            data TEXT NOT NULL DEFAULT '{}'
+        );
+        INSERT OR IGNORE INTO integrations(id, data) VALUES (1, '{}');
+        CREATE TABLE IF NOT EXISTS material_assignments (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            article_ids  TEXT NOT NULL,
+            coins_reward INTEGER NOT NULL DEFAULT 0,
+            sent_at      TEXT DEFAULT (datetime('now')),
+            completed_at TEXT,
+            telegram_ok  INTEGER DEFAULT 0,
+            telegram_error TEXT
+        );
+        CREATE TABLE IF NOT EXISTS material_assignment_articles (
+            assignment_id INTEGER NOT NULL,
+            article_id    INTEGER NOT NULL
+        );
     """)
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
     migrate_add_column(conn, "sections", "intro", "TEXT")
@@ -3407,17 +3453,34 @@ def init_db():
 
 # ── Telegram ──────────────────────────────────────────────────────────────────
 
-async def tg_send(text: str):
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat  = os.environ.get("TELEGRAM_CHAT_ID",   "")
+async def tg_send_result(text: str):
+    """Отправляет сообщение и возвращает (ok, error) — используется там, где нужно
+    показать родителю результат сразу (тест интеграции, рассылка материалов)."""
+    conn = get_conn()
+    cfg = get_telegram_config(conn)
+    conn.close()
+    token, chat = cfg["bot_token"], cfg["chat_id"]
     if not token or not chat or token == "YOUR_BOT_TOKEN_HERE":
-        return
+        return False, "Telegram не настроен — заполни токен бота и chat_id в Настройках"
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            await client.post(
+        async with httpx.AsyncClient(timeout=8) as client:
+            resp = await client.post(
                 f"https://api.telegram.org/bot{token}/sendMessage",
                 json={"chat_id": chat, "text": text, "parse_mode": "HTML"},
             )
+        if resp.status_code != 200:
+            detail = None
+            try: detail = resp.json().get("description")
+            except Exception: pass
+            return False, detail or f"Telegram вернул ошибку {resp.status_code}"
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+async def tg_send(text: str):
+    """Отправка «в фоне», без ожидания результата — как и раньше, ошибки просто проглатываются."""
+    try:
+        await tg_send_result(text)
     except Exception:
         pass
 
@@ -3538,6 +3601,43 @@ async def upload_setting_asset(slot: str, file: UploadFile = File(...), role: st
     save_settings(conn, current)
     conn.commit(); conn.close()
     return current
+
+# ── Интеграции (Telegram) ────────────────────────────────────────────────────
+
+class TelegramConfigIn(BaseModel):
+    tg_bot_token: Optional[str] = None
+    tg_chat_id: Optional[str] = None
+    site_url: Optional[str] = None
+
+@app.get("/api/integrations/telegram")
+def get_telegram_settings(role: str = Depends(require_parent)):
+    conn = get_conn()
+    cfg = get_telegram_config(conn)
+    conn.close()
+    return cfg
+
+@app.put("/api/integrations/telegram")
+def update_telegram_settings(data: TelegramConfigIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    current = get_integrations(conn)
+    updates = {k: v for k, v in data.dict().items() if v is not None}
+    current.update(updates)
+    save_integrations(conn, current)
+    conn.commit()
+    cfg = get_telegram_config(conn)
+    conn.close()
+    return cfg
+
+@app.post("/api/integrations/telegram/test")
+async def test_telegram(role: str = Depends(require_parent)):
+    child = os.environ.get("CHILD_NAME", "Тимофей")
+    ok, error = await tg_send_result(
+        f"🔔 Тестовое сообщение от EduQuest.\nЕсли ты это видишь — интеграция с Telegram настроена верно! "
+        f"Уведомления про {child} будут приходить сюда."
+    )
+    if not ok:
+        raise HTTPException(400, error or "Не удалось отправить сообщение")
+    return {"ok": True}
 
 # ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -3977,6 +4077,155 @@ def mark_article_read(article_id: int, role: str = Depends(require_any)):
     return {"ok": True}
 
 
+# ── Рассылка материалов «на изучение» через Telegram ────────────────────────
+
+import random as _random
+
+def pick_next_articles(conn, n: int = 3):
+    """Выбирает следующие n материалов для отправки так, чтобы они не повторялись,
+    пока не будут отправлены все существующие материалы хотя бы по разу. Приоритет:
+    сначала те, что ещё никогда не отправлялись (в случайном порядке), затем —
+    отправленные раньше всех остальных (по дате последней отправки, от старых к новым)."""
+    active_ids = [r["id"] for r in conn.execute("SELECT id FROM articles WHERE active=1").fetchall()]
+    if not active_ids:
+        return []
+    rows = conn.execute("""
+        SELECT maa.article_id as article_id, MAX(a.sent_at) as last_sent
+        FROM material_assignment_articles maa
+        JOIN material_assignments a ON a.id = maa.assignment_id
+        GROUP BY maa.article_id
+    """).fetchall()
+    last_sent = {r["article_id"]: r["last_sent"] for r in rows}
+    never_sent = [a for a in active_ids if a not in last_sent]
+    _random.shuffle(never_sent)
+    already_sent_sorted = sorted(
+        (a for a in active_ids if a in last_sent),
+        key=lambda a: last_sent[a]
+    )
+    ordered = never_sent + already_sent_sorted
+    return ordered[:n]
+
+class MaterialAssignmentIn(BaseModel):
+    coins_reward: int = 30
+    count: int = 3
+
+@app.post("/api/materials/assignments")
+async def create_material_assignment(data: MaterialAssignmentIn, role: str = Depends(require_parent)):
+    conn = get_conn()
+    article_ids = pick_next_articles(conn, max(1, min(data.count, 10)))
+    if not article_ids:
+        conn.close()
+        raise HTTPException(400, "Нет ни одного материала, чтобы отправить")
+    articles = conn.execute(
+        f"SELECT id, title FROM articles WHERE id IN ({','.join('?' * len(article_ids))})", article_ids
+    ).fetchall()
+    titles_by_id = {r["id"]: r["title"] for r in articles}
+    ordered_titles = [titles_by_id[a] for a in article_ids if a in titles_by_id]
+
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO material_assignments (article_ids, coins_reward) VALUES (?,?)",
+        (json.dumps(article_ids), data.coins_reward)
+    )
+    assignment_id = c.lastrowid
+    for aid in article_ids:
+        c.execute("INSERT INTO material_assignment_articles (assignment_id, article_id) VALUES (?,?)", (assignment_id, aid))
+    conn.commit()
+
+    cfg = get_telegram_config(conn)
+    child = os.environ.get("CHILD_NAME", "Тимофей")
+    link = f"{cfg['site_url']}/materials/assignment/{assignment_id}"
+    topics_text = ", ".join(ordered_titles)
+    message = (
+        f"Привет, {child}! 👋\n"
+        f"Сегодня тебе нужно узнать кое-что новое! {topics_text}.\n"
+        f"Ознакомься и перескажи родителям, о чём ты узнал.\n"
+        f"Награда: {data.coins_reward} 🪙 монет.\n"
+        f"Вот ссылка на материалы: {link}"
+    )
+    ok, error = await tg_send_result(message)
+    conn.execute("UPDATE material_assignments SET telegram_ok=?, telegram_error=? WHERE id=?",
+                 (1 if ok else 0, error, assignment_id))
+    conn.commit()
+    conn.close()
+    return {
+        "id": assignment_id, "titles": ordered_titles, "coins_reward": data.coins_reward,
+        "link": link, "telegram_ok": ok, "telegram_error": error,
+    }
+
+@app.get("/api/materials/assignments")
+def list_material_assignments(role: str = Depends(require_parent)):
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM material_assignments ORDER BY sent_at DESC LIMIT 60").fetchall()
+    result = []
+    for r in rows:
+        ids = json.loads(r["article_ids"])
+        titles = []
+        if ids:
+            arts = conn.execute(
+                f"SELECT id, title FROM articles WHERE id IN ({','.join('?' * len(ids))})", ids
+            ).fetchall()
+            by_id = {a["id"]: a["title"] for a in arts}
+            titles = [by_id.get(i, f"(материал {i} удалён)") for i in ids]
+        result.append({
+            "id": r["id"], "titles": titles, "coins_reward": r["coins_reward"],
+            "sent_at": r["sent_at"], "completed_at": r["completed_at"],
+            "telegram_ok": bool(r["telegram_ok"]), "telegram_error": r["telegram_error"],
+        })
+    conn.close()
+    return result
+
+@app.get("/api/materials/assignments/{assignment_id}")
+def get_material_assignment(assignment_id: int, role: str = Depends(require_any)):
+    conn = get_conn()
+    a = conn.execute("SELECT * FROM material_assignments WHERE id=?", (assignment_id,)).fetchone()
+    if not a:
+        conn.close(); raise HTTPException(404, "Задание не найдено")
+    ids = json.loads(a["article_ids"])
+    articles = []
+    for aid in ids:
+        row = conn.execute("SELECT * FROM articles WHERE id=?", (aid,)).fetchone()
+        if not row:
+            continue
+        d = dict(row)
+        try: d["blocks"] = json.loads(d["blocks"])
+        except Exception: d["blocks"] = []
+        articles.append(d)
+    conn.close()
+    return {
+        "id": a["id"], "articles": articles, "coins_reward": a["coins_reward"],
+        "sent_at": a["sent_at"], "completed_at": a["completed_at"],
+    }
+
+@app.post("/api/materials/assignments/{assignment_id}/complete")
+async def complete_material_assignment(assignment_id: int, role: str = Depends(require_any)):
+    conn = get_conn()
+    a = conn.execute("SELECT * FROM material_assignments WHERE id=?", (assignment_id,)).fetchone()
+    if not a:
+        conn.close(); raise HTTPException(404, "Задание не найдено")
+    if a["completed_at"]:
+        conn.close()
+        return {"ok": True, "already_completed": True, "coins_earned": 0}
+    conn.execute("UPDATE material_assignments SET completed_at=datetime('now') WHERE id=?", (assignment_id,))
+    coins = a["coins_reward"] or 0
+    if coins > 0:
+        conn.execute("INSERT INTO coins (amount,type,note) VALUES (?,?,?)",
+                     (coins, "earned", "Изучение познавательных материалов"))
+    conn.commit()
+    ids = json.loads(a["article_ids"])
+    titles = []
+    if ids:
+        arts = conn.execute(f"SELECT title FROM articles WHERE id IN ({','.join('?' * len(ids))})", ids).fetchall()
+        titles = [r["title"] for r in arts]
+    conn.close()
+    child = os.environ.get("CHILD_NAME", "Тимофей")
+    asyncio.create_task(tg_send(
+        f"📚✅ <b>{child} изучил материалы и рассказал о них!</b>\n"
+        f"Темы: {', '.join(titles)}\n+{coins} 🪙 монет"
+    ))
+    return {"ok": True, "already_completed": False, "coins_earned": coins}
+
+
 
 class StartLessonIn(BaseModel):
     lesson_id: int
@@ -4245,12 +4494,14 @@ async def request_reward(data: RewardIn, role: str = Depends(require_any)):
     if earned - spent < data.cost_coins:
         conn.close(); raise HTTPException(400, f"Недостаточно монет")
     conn.execute("INSERT INTO rewards (name,cost_coins) VALUES (?,?)", (data.name, data.cost_coins))
-    conn.commit(); conn.close()
+    conn.commit()
+    cfg = get_telegram_config(conn)
+    conn.close()
     child = os.environ.get("CHILD_NAME", "Тимофей")
     asyncio.create_task(tg_send(
         f"🎁 <b>{child} запрашивает награду!</b>\n"
         f"{data.name} · {data.cost_coins} монет 🪙\n"
-        f"http://147.45.42.169:8090"
+        f"{cfg['site_url']}"
     ))
     return {"ok": True}
 

@@ -72,4 +72,11 @@ export const api = {
   restoreArticle: (token, id)       => req('POST', `/articles/${id}/restore`, null, token),
   purgeArticle:   (token, id)       => req('DELETE', `/articles/${id}/purge`, null, token),
   markArticleRead: (token, id)      => req('POST', `/articles/${id}/read`, {}, token),
+  createMaterialAssignment: (token, data) => req('POST', '/materials/assignments', data, token),
+  materialAssignments:      (token)       => req('GET', '/materials/assignments', null, token),
+  materialAssignment:       (token, id)   => req('GET', `/materials/assignments/${id}`, null, token),
+  completeMaterialAssignment: (token, id) => req('POST', `/materials/assignments/${id}/complete`, {}, token),
+  telegramConfig:       (token)       => req('GET', '/integrations/telegram', null, token),
+  updateTelegramConfig: (token, data) => req('PUT', '/integrations/telegram', data, token),
+  testTelegram:         (token)       => req('POST', '/integrations/telegram/test', {}, token),
 }
