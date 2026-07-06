@@ -3981,6 +3981,25 @@ def mark_article_read(article_id: int, role: str = Depends(require_any)):
 class StartLessonIn(BaseModel):
     lesson_id: int
 
+def _number_group_pattern(digits: str) -> str:
+    """Строит паттерн для целой части числа, где между группами по 3 цифры
+    (справа налево) допускается необязательный пробел — обычный или
+    неразрывный. Это нужно, чтобы «987650» засчитывался и как «987650»,
+    и как «987 650» (привычная запись больших чисел с разделением разрядов
+    пробелом), без чего верные ответы с пробелом ошибочно считались неверными."""
+    rev = digits[::-1]
+    chunks = [rev[i:i + 3][::-1] for i in range(0, len(rev), 3)]
+    chunks = chunks[::-1]
+    return r"[ \u00a0]?".join(re.escape(c) for c in chunks)
+
+
+def _number_pattern(num: str) -> str:
+    if "." in num:
+        int_part, frac_part = num.split(".", 1)
+        return _number_group_pattern(int_part) + r"[.,]" + re.escape(frac_part)
+    return _number_group_pattern(num)
+
+
 def _check_boss_answer(expected: str, given: str) -> bool:
     """Сверяет ответ ребёнка на финальное задание с эталонным ответом.
     Числа сверяются как отдельные "слова" (без ложных совпадений внутри
@@ -3993,7 +4012,7 @@ def _check_boss_answer(expected: str, given: str) -> bool:
         numbers_norm = [n.replace(",", ".") for n in numbers]
 
         def present(num: str) -> bool:
-            pat = r"(?<!\d)" + re.escape(num) + r"(?!\d)"
+            pat = r"(?<!\d)" + _number_pattern(num) + r"(?!\d)"
             return bool(re.search(pat, given_norm))
 
         if all(present(n) for n in numbers_norm):

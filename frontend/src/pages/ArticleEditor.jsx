@@ -51,6 +51,10 @@ export default function ArticleEditor() {
   const [uploadingSlot, setUploadingSlot] = useState(null)
   const [openGroups, setOpenGroups] = useState(new Set())
   const [createdId, setCreatedId] = useState(null) // id материала, только что созданного в этой сессии редактора
+  // Блок «Содержание (JSON)» свёрнут по умолчанию и перенесён в самый низ, под кнопки —
+  // чтобы кнопки «Сохранить»/«Просмотреть» были сразу видны под Обложкой, без прокрутки
+  // мимо большого JSON-редактора. Автоматически раскрывается, если в JSON ошибка.
+  const [blocksOpen, setBlocksOpen] = useState(false)
 
   const effectiveId = id || createdId
 
@@ -207,7 +211,7 @@ export default function ArticleEditor() {
   async function save() {
     setJsonErr('')
     const blocks = parsedBlocks()
-    if (!blocks) { setJsonErr('Ошибка в JSON блоков — проверь синтаксис.'); return }
+    if (!blocks) { setJsonErr('Ошибка в JSON блоков — проверь синтаксис.'); setBlocksOpen(true); return }
     if (!form.title.trim()) { setJsonErr('Укажи заголовок материала.'); return }
     setSaving(true)
     try {
@@ -406,16 +410,14 @@ export default function ArticleEditor() {
               </div>
             </div>
 
-            <div className="card" style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 6 }}>
-                <h3 style={{ fontWeight: 700 }}>Содержание (JSON)</h3>
-                <button className="btn btn-sm" onClick={dedupeSlides} title="Найти и убрать слайды, которые полностью повторяют предыдущие">
-                  🧹 Убрать повторяющиеся слайды
-                </button>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10, whiteSpace: 'pre-wrap' }}>{BLOCKS_HELP}</p>
-              <textarea className="input" rows={18} style={{ fontFamily: 'monospace', fontSize: 13 }}
-                        value={blocksText} onChange={e => setBlocksText(e.target.value)} />
+            {jsonErr && <p style={{ color: 'var(--red)', marginBottom: 14 }}>{jsonErr}</p>}
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginBottom: 20, flexWrap: 'wrap' }}>
+              {effectiveId && <button className="btn" onClick={() => window.open(`/materials/article/${effectiveId}`, '_blank')}>👁 Посмотреть</button>}
+              {mode === 'create' && createdId && (
+                <button className="btn" onClick={createAnother}>+ Создать ещё один материал в этой категории</button>
+              )}
+              <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Сохраняю…' : '💾 Сохранить'}</button>
             </div>
 
             {imageSlots.length > 0 && (
@@ -450,15 +452,28 @@ export default function ArticleEditor() {
               </div>
             )}
 
-            {jsonErr && <p style={{ color: 'var(--red)', marginBottom: 14 }}>{jsonErr}</p>}
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingBottom: 40, flexWrap: 'wrap' }}>
-              {effectiveId && <button className="btn" onClick={() => window.open(`/materials/article/${effectiveId}`, '_blank')}>👁 Посмотреть</button>}
-              {mode === 'create' && createdId && (
-                <button className="btn" onClick={createAnother}>+ Создать ещё один материал в этой категории</button>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div
+                onClick={() => setBlocksOpen(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', cursor: 'pointer' }}
+              >
+                <span style={{ fontWeight: 700, flex: 1 }}>Содержание (JSON)</span>
+                <span style={{ transition: 'transform .15s', transform: blocksOpen ? 'rotate(180deg)' : 'none', fontSize: 14, color: 'var(--muted)' }}>▾</span>
+              </div>
+              {blocksOpen && (
+                <div style={{ padding: '0 16px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                    <button className="btn btn-sm" onClick={dedupeSlides} title="Найти и убрать слайды, которые полностью повторяют предыдущие">
+                      🧹 Убрать повторяющиеся слайды
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10, whiteSpace: 'pre-wrap' }}>{BLOCKS_HELP}</p>
+                  <textarea className="input" rows={18} style={{ fontFamily: 'monospace', fontSize: 13 }}
+                            value={blocksText} onChange={e => setBlocksText(e.target.value)} />
+                </div>
               )}
-              <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Сохраняю…' : '💾 Сохранить'}</button>
             </div>
+            <div style={{ paddingBottom: 40 }} />
           </>
         )}
       </div>
