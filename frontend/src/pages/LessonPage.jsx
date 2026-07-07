@@ -16,13 +16,13 @@ export default function LessonPage() {
   function playCorrectSound() {
     if (settings?.sound_correct && correctAudioRef.current) {
       correctAudioRef.current.currentTime = 0
-      correctAudioRef.current.play().catch(() => {})
+      correctAudioRef.current.play().catch(e => console.warn('Не удалось проиграть звук правильного ответа:', e))
     }
   }
   function playWrongSound() {
     if (settings?.sound_wrong && wrongAudioRef.current) {
       wrongAudioRef.current.currentTime = 0
-      wrongAudioRef.current.play().catch(() => {})
+      wrongAudioRef.current.play().catch(e => console.warn('Не удалось проиграть звук неправильного ответа:', e))
     }
   }
 
@@ -130,8 +130,8 @@ export default function LessonPage() {
 
   return (
     <div className="detective-lesson">
-      {settings?.sound_correct && <audio ref={correctAudioRef} src={settings.sound_correct} preload="auto" />}
-      {settings?.sound_wrong && <audio ref={wrongAudioRef} src={settings.sound_wrong} preload="auto" />}
+      <audio ref={correctAudioRef} src={settings?.sound_correct || undefined} preload="auto" style={{ display: 'none' }} />
+      <audio ref={wrongAudioRef} src={settings?.sound_wrong || undefined} preload="auto" style={{ display: 'none' }} />
       {/* Top bar */}
       <div className="dl-topbar">
         <button className="dl-back" onClick={() => nav(lesson.subject ? `/subject/${lesson.subject}` : '/')}>‹</button>
