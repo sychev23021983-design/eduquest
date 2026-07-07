@@ -184,6 +184,45 @@ def seed_lesson_regenerate(conn, grade: int, subject: str, section_title: str, t
          lesson.get("coins_lesson", 50), lesson.get("coins_boss", 30),
          existing["id"]))
 
+def _lesson_answer_map():
+    """Собирает {topic: answer} из всех LESSON_DICT-констант модуля верхнего уровня, у которых
+    задан boss_task.answer. Используется backfill_missing_boss_answers() как источник истины —
+    "правильный" ответ для темы всегда тот, что сейчас записан в коде."""
+    result = {}
+    for val in globals().values():
+        if isinstance(val, dict) and isinstance(val.get("boss_task"), dict) and val.get("topic"):
+            ans = val["boss_task"].get("answer")
+            if ans:
+                result[val["topic"]] = ans
+    return result
+
+def backfill_missing_boss_answers(conn):
+    """Чинит уроки, у которых boss_task в БД сохранён БЕЗ поля answer — это происходило у тем,
+    засеянных ещё до того, как answer стало обязательной частью схемы boss_task (в текущем коде
+    оно есть у всех уроков). Без этого поля _check_boss_answer() получает expected=None и
+    засчитывает финальное задание как неверное при любом ответе ребёнка, независимо от того,
+    что он ввёл — баг обнаружен и закрыт 2026-07 на уроке «Порядок действий» (ответ 37 не
+    засчитывался). Патчит ТОЛЬКО ключ answer внутри уже существующего boss_task, не трогая
+    text/solution/hint1/hint2 (могли быть намеренно другими) и не меняя id урока/прогресс.
+    Идемпотентно — пропускает уроки, где answer уже есть."""
+    answer_map = _lesson_answer_map()
+    rows = conn.execute("SELECT id, topic, boss_task FROM lessons WHERE active=1 AND boss_task IS NOT NULL").fetchall()
+    fixed = []
+    for r in rows:
+        try:
+            bt = json.loads(r["boss_task"])
+        except Exception:
+            continue
+        if not isinstance(bt, dict) or bt.get("answer"):
+            continue
+        correct = answer_map.get(r["topic"])
+        if not correct:
+            continue
+        bt["answer"] = correct
+        conn.execute("UPDATE lessons SET boss_task=? WHERE id=?", (json.dumps(bt, ensure_ascii=False), r["id"]))
+        fixed.append(r["topic"])
+    return fixed
+
 def seed_article_if_missing(conn, subject: str, title: str, article: dict):
     """Создаёт познавательный материал (статья, без контроля знаний), если статьи с таким названием
        ещё не существует. Проверяем ЛЮБУЮ строку с этим subject+title, включая удалённые
@@ -3450,6 +3489,9 @@ def init_db():
     seed_article_upsert(conn, "body", "Из чего состоит человек", ARTICLE_HUMAN_BODY)
     seed_article_upsert(conn, "senses", "Как работает глаз", ARTICLE_EYE)
     seed_article_upsert(conn, "health", "Почему нужно спать", ARTICLE_SLEEP)
+    fixed_answers = backfill_missing_boss_answers(conn)
+    if fixed_answers:
+        print(f"[init_db] Восстановлено поле answer в boss_task для уроков: {fixed_answers}")
     conn.commit()
     conn.close()
 
