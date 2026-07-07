@@ -67,6 +67,7 @@ export const api = {
   coinPenalty:    (token, data)      => req('POST', '/coins/penalty', data, token),
   logMistake:     (token, data)      => req('POST', '/mistakes', data, token),
   mistakes:       (token)            => req('GET', '/mistakes', null, token),
+  reinforcementPrompt: (token, lessonId) => req('GET', `/lessons/${lessonId}/reinforcement-prompt`, null, token),
   createLesson:   (token, data)     => req('POST', '/lessons', data, token),
   updateLesson:   (token, id, data) => req('PUT', `/lessons/${id}`, data, token),
   deleteLesson:   (token, id)       => req('DELETE', `/lessons/${id}`, null, token),

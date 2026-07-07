@@ -4505,6 +4505,77 @@ def log_mistake(data: MistakeIn, role: str = Depends(require_any)):
     conn.commit(); conn.close()
     return {"ok": True}
 
+def _plural_ru(n: int, one: str, few: str, many: str) -> str:
+    n10, n100 = n % 10, n % 100
+    if n10 == 1 and n100 != 11: return one
+    if 2 <= n10 <= 4 and not (12 <= n100 <= 14): return few
+    return many
+
+@app.get("/api/lessons/{lesson_id}/reinforcement-prompt")
+def reinforcement_prompt(lesson_id: int, role: str = Depends(require_parent)):
+    """Собирает по уроку (тема, где ребёнок ошибается) готовый текстовый запрос, который родитель
+    может скопировать и прислать Claude в чат, чтобы тот написал дополнительный урок-закрепление
+    в код и задеплоил — контент уроков в проекте принципиально не редактируется через UI-формы
+    (см. CONTEXT_FOR_CLAUDE.md), поэтому этот эндпоинт не создаёт урок сам, а только готовит
+    контекст (тему, раздел, конкретные ошибки, статистику) для человека-в-цикле."""
+    conn = get_conn()
+    lesson = conn.execute("SELECT * FROM lessons WHERE id=?", (lesson_id,)).fetchone()
+    if not lesson:
+        conn.close(); raise HTTPException(404, "Урок не найден")
+
+    section_title = None
+    if lesson["topic_id"]:
+        srow = conn.execute("""
+            SELECT s.title as section_title FROM topics t JOIN sections s ON t.section_id = s.id
+            WHERE t.id=?
+        """, (lesson["topic_id"],)).fetchone()
+        if srow:
+            section_title = srow["section_title"]
+
+    prog = conn.execute("""
+        SELECT COUNT(*) as attempts, AVG(score*1.0/max_score) as avg
+        FROM progress WHERE lesson_id=? AND finished_at IS NOT NULL
+    """, (lesson_id,)).fetchone()
+
+    mistakes = conn.execute("""
+        SELECT question_text, chosen_text, correct_text FROM mistakes
+        WHERE lesson_id=? ORDER BY created_at DESC LIMIT 15
+    """, (lesson_id,)).fetchall()
+    conn.close()
+
+    lines = ["Материал для урока закрепления (на основе ошибок ребёнка)", ""]
+    lines.append(f"Предмет: {SUBJECT_LABELS.get(lesson['subject'], lesson['subject'])} ({lesson['grade']} класс)")
+    if section_title:
+        lines.append(f"Раздел: {section_title}")
+    lines.append(f"Тема: {lesson['topic']} (урок id {lesson_id})")
+
+    if prog and prog["attempts"]:
+        att = prog["attempts"]
+        lines.append(f"Точность по теме: {round((prog['avg'] or 0) * 100)}% ({att} {_plural_ru(att, 'попытка', 'попытки', 'попыток')})")
+
+    lines.append("")
+    if mistakes:
+        lines.append(f"Конкретные ошибки ({len(mistakes)}):")
+        for i, m in enumerate(mistakes, 1):
+            parts = []
+            if m["question_text"]: parts.append(f"вопрос «{m['question_text']}»")
+            if m["chosen_text"]:   parts.append(f"ответил «{m['chosen_text']}»")
+            if m["correct_text"]:  parts.append(f"правильно «{m['correct_text']}»")
+            lines.append(f"{i}. " + ", ".join(parts))
+    else:
+        lines.append("Отдельные вопросы с ошибками не зафиксированы — тема попала в слабые по среднему баллу за попытки.")
+
+    lines.append("")
+    lines.append(
+        f"Задача: добавь дополнительный урок «Закрепление: {lesson['topic']}»"
+        + (f" в раздел «{section_title}»" if section_title else "")
+        + ", с другими конкретными числами/примерами, но тем же навыком — так, чтобы закрепить "
+          "именно то, в чём были ошибки выше. Добавь через seed_topic_if_missing + "
+          "seed_lesson_if_missing (в конец раздела), сохрани формат LESSON_DICT, сюжетную линию "
+          "и общий тон уроков проекта (см. docs/CONTEXT_FOR_CLAUDE.md). После — задеплой."
+    )
+    return {"prompt": "\n".join(lines)}
+
 @app.get("/api/mistakes")
 def list_mistakes(role: str = Depends(require_parent)):
     conn = get_conn()

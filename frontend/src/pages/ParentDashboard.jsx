@@ -16,6 +16,7 @@ export default function ParentDashboard() {
   const [rewards, setRewards] = useState([])
   const [balance, setBalance] = useState({})
   const [mistakes, setMistakes] = useState([])
+  const [promptModal, setPromptModal] = useState(null) // { topic, text, loading, error, copied }
 
   useEffect(() => { load() }, [])
 
@@ -38,6 +39,26 @@ export default function ParentDashboard() {
     if (!confirm('Удалить урок?')) return
     await api.deleteLesson(token, id)
     load()
+  }
+
+  async function openReinforcementPrompt(lessonId, topic) {
+    setPromptModal({ topic, text: '', loading: true, error: '', copied: false })
+    try {
+      const res = await api.reinforcementPrompt(token, lessonId)
+      setPromptModal({ topic, text: res.prompt, loading: false, error: '', copied: false })
+    } catch (e) {
+      setPromptModal({ topic, text: '', loading: false, error: e.message, copied: false })
+    }
+  }
+
+  async function copyPromptToClipboard() {
+    try {
+      await navigator.clipboard.writeText(promptModal.text)
+      setPromptModal(m => ({ ...m, copied: true }))
+      setTimeout(() => setPromptModal(m => (m ? { ...m, copied: false } : m)), 2000)
+    } catch {
+      setPromptModal(m => ({ ...m, error: 'Не удалось скопировать автоматически — выделите текст вручную (Ctrl+A в поле ниже).' }))
+    }
   }
 
   const pending = rewards.filter(r => r.status === 'pending')
@@ -140,7 +161,7 @@ export default function ParentDashboard() {
                 <h3 style={{ fontWeight: 600, marginBottom: 12, color: 'var(--red)' }}>⚠️ Слабые места</h3>
                 {stats.weak_topics.map(t => (
                   <div key={t.topic} className="card" style={{ marginBottom: 8, borderLeft: '3px solid var(--amber)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                       <div>
                         <span className={`badge badge-${t.subject}`}>{SUBJ[t.subject]}</span>
                         <div style={{ fontWeight: 500, marginTop: 4 }}>{t.topic}</div>
@@ -150,7 +171,12 @@ export default function ParentDashboard() {
                             : `${t.attempts} попытки · ${Math.round(t.avg * 100)}% точность`}
                         </div>
                       </div>
-                      <span style={{ fontSize: 24 }}>📉</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                        <button className="btn btn-sm" onClick={() => openReinforcementPrompt(t.lesson_id, t.topic)}>
+                          📋 Собрать для Claude
+                        </button>
+                        <span style={{ fontSize: 24 }}>📉</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -178,7 +204,10 @@ export default function ParentDashboard() {
                       <div key={g.subject + g.topic} className="card" style={{ borderLeft: '3px solid var(--red)' }}>
                         <span className={`badge badge-${g.subject}`}>{SUBJ[g.subject]}</span>
                         <div style={{ fontWeight: 600, marginTop: 6 }}>{g.topic}</div>
-                        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{g.count} {g.count === 1 ? 'ошибка' : 'ошибки/ошибок'}</div>
+                        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, marginBottom: 10 }}>{g.count} {g.count === 1 ? 'ошибка' : 'ошибки/ошибок'}</div>
+                        <button className="btn btn-sm" onClick={() => openReinforcementPrompt(g.lesson_id, g.topic)}>
+                          📋 Собрать для Claude
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -366,6 +395,43 @@ export default function ParentDashboard() {
           )
         })()}
       </div>
+
+      {/* Модалка с готовым текстом для Claude (закрепление по слабой теме) */}
+      {promptModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }} onClick={() => setPromptModal(null)}>
+          <div className="card" style={{ maxWidth: 640, width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+               onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <h3 style={{ fontWeight: 700 }}>📋 Запрос для Claude: «{promptModal.topic}»</h3>
+              <button onClick={() => setPromptModal(null)} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--muted)', cursor: 'pointer' }}>✕</button>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+              Скопируйте текст ниже и вставьте его в чат с Claude — он напишет дополнительный урок
+              «Закрепление: {promptModal.topic}» в код и подскажет команду для деплоя.
+            </p>
+            {promptModal.loading && <div style={{ color: 'var(--muted)', padding: 20, textAlign: 'center' }}>Собираю данные…</div>}
+            {promptModal.error && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 10 }}>❌ {promptModal.error}</div>}
+            {!promptModal.loading && promptModal.text && (
+              <>
+                <textarea readOnly value={promptModal.text} onClick={e => e.target.select()}
+                          style={{
+                            flex: 1, minHeight: 260, resize: 'vertical', fontFamily: 'monospace', fontSize: 12.5,
+                            padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)',
+                          }} />
+                <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                  <button className="btn btn-primary" onClick={copyPromptToClipboard}>
+                    {promptModal.copied ? '✅ Скопировано!' : '📋 Скопировать'}
+                  </button>
+                  <button className="btn" onClick={() => setPromptModal(null)}>Закрыть</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
