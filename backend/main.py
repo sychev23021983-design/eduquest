@@ -45,6 +45,8 @@ DEFAULT_SETTINGS = {
     "font_body": "Nunito",
     "color_accent": "#4da3ff",
     "color_accent2": "#22d38b",
+    "sound_correct": None,
+    "sound_wrong": None,
 }
 
 FONT_CHOICES = ["Nunito", "Rubik", "Montserrat", "PT Sans", "Comfortaa", "Ubuntu"]
@@ -3560,6 +3562,8 @@ class SettingsIn(BaseModel):
     font_body: Optional[str] = None
     color_accent: Optional[str] = None
     color_accent2: Optional[str] = None
+    sound_correct: Optional[str] = None
+    sound_wrong: Optional[str] = None
 
 @app.put("/api/settings")
 def update_settings(data: SettingsIn, role: str = Depends(require_parent)):
@@ -3580,14 +3584,20 @@ def reset_settings(role: str = Depends(require_parent)):
     conn.commit(); conn.close()
     return dict(DEFAULT_SETTINGS)
 
+SOUND_SLOTS = ("sound_correct", "sound_wrong")
+
 @app.post("/api/settings/upload")
 async def upload_setting_asset(slot: str, file: UploadFile = File(...), role: str = Depends(require_parent)):
     ext = file.filename.rsplit(".", 1)[-1].lower()
-    if ext not in ("png", "jpg", "jpeg", "gif", "webp", "svg", "ico"):
-        raise HTTPException(400, "Unsupported format")
     safe_slot = re.sub(r"[^a-z0-9_]", "", slot.lower())
     if not safe_slot:
         raise HTTPException(400, "Bad slot")
+    if safe_slot in SOUND_SLOTS:
+        if ext not in ("mp3", "wav", "ogg", "m4a"):
+            raise HTTPException(400, "Unsupported format")
+    else:
+        if ext not in ("png", "jpg", "jpeg", "gif", "webp", "svg", "ico"):
+            raise HTTPException(400, "Unsupported format")
     fpath = f"{UPLOAD_DIR}/site/{safe_slot}.{ext}"
     with open(fpath, "wb") as f:
         shutil.copyfileobj(file.file, f)
@@ -4135,13 +4145,14 @@ async def create_material_assignment(data: MaterialAssignmentIn, role: str = Dep
     cfg = get_telegram_config(conn)
     child = os.environ.get("CHILD_NAME", "Тимофей")
     link = f"{cfg['site_url']}/materials/assignment/{assignment_id}"
-    topics_text = ", ".join(ordered_titles)
+    topics_text = "\n".join(f"🔹 {t}" for t in ordered_titles)
     message = (
-        f"Привет, {child}! 👋\n"
-        f"Сегодня тебе нужно узнать кое-что новое! {topics_text}.\n"
-        f"Ознакомься и перескажи родителям, о чём ты узнал.\n"
-        f"Награда: {data.coins_reward} 🪙 монет.\n"
-        f"Вот ссылка на материалы: {link}"
+        f"Привет, {child}! 👋😊\n\n"
+        f"📚✨ Сегодня тебе нужно узнать кое-что новое!\n"
+        f"{topics_text}\n\n"
+        f"🧐 Ознакомься и перескажи родителям, о чём ты узнал.\n"
+        f"🏆 Награда: {data.coins_reward} 🪙 монет.\n\n"
+        f"🔗 Вот ссылка на материалы: {link}"
     )
     ok, error = await tg_send_result(message)
     conn.execute("UPDATE material_assignments SET telegram_ok=?, telegram_error=? WHERE id=?",

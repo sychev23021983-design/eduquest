@@ -36,6 +36,31 @@ function UploadRow({ label, hint, currentUrl, onUpload, uploading, previewSize =
   )
 }
 
+function SoundUploadRow({ label, hint, currentUrl, onUpload, uploading }) {
+  const inputRef = useRef(null)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 10, background: '#f1f3f7',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        border: '1px solid var(--border)', fontSize: 20,
+      }}>
+        🔊
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, marginBottom: 2 }}>{label}</div>
+        {hint && <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: currentUrl ? 6 : 0 }}>{hint}</div>}
+        {currentUrl && <audio controls src={currentUrl} style={{ height: 32, maxWidth: 260 }} />}
+      </div>
+      <input ref={inputRef} type="file" accept="audio/*" style={{ display: 'none' }}
+             onChange={e => { if (e.target.files[0]) onUpload(e.target.files[0]); e.target.value = '' }} />
+      <button className="btn btn-sm" disabled={uploading} onClick={() => inputRef.current.click()}>
+        {uploading ? 'Загрузка…' : (currentUrl ? 'Заменить' : 'Загрузить')}
+      </button>
+    </div>
+  )
+}
+
 export default function Settings() {
   const { token } = useAuth()
   const { settings, refresh } = useSettings()
@@ -217,6 +242,19 @@ export default function Settings() {
                      uploading={uploadingSlot === 'sidebar_left_url'} onUpload={f => uploadTo('sidebar_left_url', f)} />
           <UploadRow label="Правая панель" currentUrl={form.sidebar_right_url}
                      uploading={uploadingSlot === 'sidebar_right_url'} onUpload={f => uploadTo('sidebar_right_url', f)} />
+        </div>
+
+        {/* Звуки ответов */}
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Звуки ответов</h3>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
+            Проигрываются во время урока сразу после ответа на вопрос — отдельно для правильного и
+            для неправильного варианта. Форматы: MP3, WAV, OGG, M4A. Без загрузки звук не проигрывается.
+          </p>
+          <SoundUploadRow label="Звук правильного ответа" hint="Например, короткий весёлый сигнал."
+                          currentUrl={form.sound_correct} uploading={uploadingSlot === 'sound_correct'} onUpload={f => uploadTo('sound_correct', f)} />
+          <SoundUploadRow label="Звук неправильного ответа" hint="Например, короткий нейтральный сигнал (без ничего обидного/грустного)."
+                          currentUrl={form.sound_wrong} uploading={uploadingSlot === 'sound_wrong'} onUpload={f => uploadTo('sound_wrong', f)} />
         </div>
 
         {/* Иконки предметов */}

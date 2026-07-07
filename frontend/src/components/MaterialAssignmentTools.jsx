@@ -13,13 +13,14 @@ function formatDate(iso) {
 export function SendAssignmentPanel({ token, onSent }) {
   const [open, setOpen] = useState(false)
   const [coins, setCoins] = useState(30)
+  const [count, setCount] = useState(3)
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState(null)
 
   async function send() {
     setSending(true); setResult(null)
     try {
-      const res = await api.createMaterialAssignment(token, { coins_reward: Number(coins) || 0, count: 3 })
+      const res = await api.createMaterialAssignment(token, { coins_reward: Number(coins) || 0, count: Number(count) || 1 })
       setResult({ ok: true, ...res })
       onSent?.()
     } catch (e) {
@@ -40,12 +41,20 @@ export function SendAssignmentPanel({ token, onSent }) {
     <div className="card" style={{ marginBottom: 20, maxWidth: 460 }}>
       <div style={{ fontWeight: 700, marginBottom: 10 }}>📨 Отправить материалы на изучение</div>
       <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-        Ребёнку в Telegram придёт сообщение с 3 темами и ссылкой. Темы выбираются автоматически —
+        Ребёнку в Telegram придёт сообщение с темами и ссылкой. Темы выбираются автоматически —
         сначала те, что ещё ни разу не отправлялись, а когда все побывают в рассылке хотя бы раз,
         цикл начнётся заново с самых давно отправленных.
       </p>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Награда (монет)</label>
-      <input className="input" type="number" min={0} value={coins} onChange={e => setCoins(e.target.value)} style={{ width: 120, marginBottom: 14 }} />
+      <div style={{ display: 'flex', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Количество материалов</label>
+          <input className="input" type="number" min={1} max={10} value={count} onChange={e => setCount(e.target.value)} style={{ width: 120 }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Награда (монет)</label>
+          <input className="input" type="number" min={0} value={coins} onChange={e => setCoins(e.target.value)} style={{ width: 120 }} />
+        </div>
+      </div>
       <div style={{ display: 'flex', gap: 10 }}>
         <button className="btn" onClick={() => setOpen(false)} disabled={sending}>Отмена</button>
         <button className="btn btn-primary" onClick={send} disabled={sending}>{sending ? 'Отправляю…' : 'Отправить →'}</button>

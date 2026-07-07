@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
 
 export default function Login() {
   const { login } = useAuth()
   const nav = useNavigate()
+  const [params] = useSearchParams()
   const [role, setRole] = useState('child')
   const [pass, setPass] = useState('')
   const [err,  setErr]  = useState('')
@@ -17,7 +18,11 @@ export default function Login() {
     try {
       const res = await api.login({ password: pass.trim(), role })
       login(res.token, res.role)
-      nav(res.role === 'parent' ? '/parent' : '/')
+      // Если сюда попали по ссылке из Telegram (например, задание на изучение
+      // материалов) с просроченным/отсутствующим токеном — после входа
+      // возвращаем на ту же страницу, а не на главный экран.
+      const next = params.get('next')
+      nav(next ? next : (res.role === 'parent' ? '/parent' : '/'))
     } catch (e) {
       setErr('Неверный пароль')
     } finally {

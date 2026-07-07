@@ -1,13 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
 import '../detective-theme.css'
 
 export default function LessonPage() {
   const { id } = useParams()
   const { token } = useAuth()
+  const { settings } = useSettings()
   const nav = useNavigate()
+  const correctAudioRef = useRef(null)
+  const wrongAudioRef   = useRef(null)
+
+  function playCorrectSound() {
+    if (settings?.sound_correct && correctAudioRef.current) {
+      correctAudioRef.current.currentTime = 0
+      correctAudioRef.current.play().catch(() => {})
+    }
+  }
+  function playWrongSound() {
+    if (settings?.sound_wrong && wrongAudioRef.current) {
+      wrongAudioRef.current.currentTime = 0
+      wrongAudioRef.current.play().catch(() => {})
+    }
+  }
 
   const [lesson,     setLesson]     = useState(null)
   const [progressId, setProgressId] = useState(null)
@@ -48,8 +65,10 @@ export default function LessonPage() {
     const q = questions[current]
     if (idx === q.correct) {
       setScore(s => s + 1)
+      playCorrectSound()
     } else {
       setMistakeCount(c => c + 1)
+      playWrongSound()
       api.logMistake(token, {
         lesson_id: Number(id),
         question_text: q.text,
@@ -82,6 +101,7 @@ export default function LessonPage() {
       setBossCorrect(res.boss_correct)
       setBossWasDone(true)
       setBossCheck('submitted')
+      if (res.boss_correct) playCorrectSound(); else playWrongSound()
     } finally {
       setBossSubmitting(false)
     }
@@ -110,6 +130,8 @@ export default function LessonPage() {
 
   return (
     <div className="detective-lesson">
+      {settings?.sound_correct && <audio ref={correctAudioRef} src={settings.sound_correct} preload="auto" />}
+      {settings?.sound_wrong && <audio ref={wrongAudioRef} src={settings.sound_wrong} preload="auto" />}
       {/* Top bar */}
       <div className="dl-topbar">
         <button className="dl-back" onClick={() => nav(lesson.subject ? `/subject/${lesson.subject}` : '/')}>‹</button>
