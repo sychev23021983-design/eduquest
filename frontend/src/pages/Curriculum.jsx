@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
+import UploadRow from '../components/UploadRow.jsx'
 
 const SUBJECTS = [
   { value: 'math',    label: '🔢 Математика' },
@@ -13,6 +15,7 @@ const GRADES = Array.from({ length: 11 }, (_, i) => i + 1)
 
 export default function Curriculum() {
   const { token } = useAuth()
+  const { settings, refresh: refreshSettings } = useSettings()
   const nav = useNavigate()
   const [grade, setGrade]     = useState(5)
   const [subject, setSubject] = useState('math')
@@ -30,6 +33,8 @@ export default function Curriculum() {
   const [introOpenFor, setIntroOpenFor] = useState(null) // sectionId
   const [introDrafts, setIntroDrafts] = useState({}) // sectionId -> текст
   const [introSaving, setIntroSaving] = useState(null)
+  const [slidesOpenFor, setSlidesOpenFor] = useState(null) // lessonId
+  const [uploadingSlot, setUploadingSlot] = useState(null)
 
   useEffect(() => { load() }, [grade, subject])
 
@@ -73,6 +78,20 @@ export default function Curriculum() {
   function toggleIntro(s) {
     setIntroOpenFor(cur => cur === s.id ? null : s.id)
     setIntroDrafts(d => d[s.id] !== undefined ? d : { ...d, [s.id]: s.intro || '' })
+  }
+
+  function toggleSlides(lessonId) {
+    setSlidesOpenFor(cur => cur === lessonId ? null : lessonId)
+  }
+  async function uploadSlide(slot, file) {
+    setUploadingSlot(slot)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      await api.uploadSettingAsset(token, slot, fd)
+      await refreshSettings()
+    } finally {
+      setUploadingSlot(null)
+    }
   }
 
   async function addTopic(section) {
@@ -187,8 +206,14 @@ export default function Curriculum() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 34 }}>
-                  {s.topics.map((t, ti) => (
-                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg)', borderRadius: 8, padding: '8px 10px' }}>
+                  {s.topics.map((t, ti) => {
+                    const lesson = t.lessons && t.lessons[0]
+                    const isSlideshow = lesson?.lesson_type === 'slideshow'
+                    const slideSlots = isSlideshow ? (() => { try { return JSON.parse(lesson.slides || '[]') } catch { return [] } })() : []
+                    const filledCount = slideSlots.filter(slot => settings?.[slot]).length
+                    return (
+                    <div key={t.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg)', borderRadius: 8, padding: '8px 10px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <button className="btn btn-sm" disabled={ti === 0} onClick={() => moveTopic(s, t, -1)} style={{ padding: '0 6px', fontSize: 11 }}>↑</button>
                         <button className="btn btn-sm" disabled={ti === s.topics.length - 1} onClick={() => moveTopic(s, t, 1)} style={{ padding: '0 6px', fontSize: 11 }}>↓</button>
@@ -200,26 +225,53 @@ export default function Curriculum() {
                         <span style={{ flex: 1 }}>{ti + 1}. {t.title}</span>
                       )}
                       <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-                        {t.lesson_count > 0 ? `📚 ${t.lesson_count}` : '🤖 ждёт урок'}
+                        {isSlideshow ? `🖼 ${filledCount}/${slideSlots.length}` : t.lesson_count > 0 ? `📚 ${t.lesson_count}` : '🤖 ждёт урок'}
                       </span>
                       {editingTopic === t.id ? (
                         <button className="btn btn-sm btn-primary" onClick={() => renameTopic(t)}>✓</button>
                       ) : (
                         <button className="btn btn-sm" onClick={() => { setEditingTopic(t.id); setEditText(t.title) }}>✏️</button>
                       )}
-                      {t.lessons && t.lessons.length > 0 && (
+                      {lesson && !isSlideshow && (
                         <>
-                          <button className="btn btn-sm" onClick={() => window.open(`/lesson/${t.lessons[0].id}`, '_blank')}>
+                          <button className="btn btn-sm" onClick={() => window.open(`/lesson/${lesson.id}`, '_blank')}>
                             👁 Посмотреть
                           </button>
-                          <button className="btn btn-sm" onClick={() => nav(`/parent/lesson/${t.lessons[0].id}/edit`)}>
+                          <button className="btn btn-sm" onClick={() => nav(`/parent/lesson/${lesson.id}/edit`)}>
                             ✏️ Изменить
+                          </button>
+                        </>
+                      )}
+                      {lesson && isSlideshow && (
+                        <>
+                          <button className="btn btn-sm" onClick={() => window.open(`/lesson/${lesson.id}`, '_blank')}>
+                            👁 Посмотреть
+                          </button>
+                          <button className="btn btn-sm btn-primary" onClick={() => toggleSlides(lesson.id)}>
+                            🖼 Слайды {slidesOpenFor === lesson.id ? '▲' : '▼'}
                           </button>
                         </>
                       )}
                       <button className="btn btn-sm btn-danger" onClick={() => removeTopic(t)}>✕</button>
                     </div>
-                  ))}
+
+                    {isSlideshow && slidesOpenFor === lesson.id && (
+                      <div style={{ marginTop: 8, marginLeft: 24, background: 'var(--blue-light)', borderRadius: 10, padding: 14 }}>
+                        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+                          Этот урок — просто колода картинок с кнопками «вперёд»/«назад», без вопросов
+                          и объяснений. Загрузи картинки по порядку — они появятся в уроке слайд за
+                          слайдом. Незаполненный слайд показывается как плейсхолдер и ничего не ломает
+                          — можно дозагрузить позже.
+                        </p>
+                        {slideSlots.map((slot, i) => (
+                          <UploadRow key={slot} label={`Слайд ${i + 1}`} currentUrl={settings?.[slot]}
+                                     uploading={uploadingSlot === slot} onUpload={f => uploadSlide(slot, f)} previewSize={48} />
+                        ))}
+                      </div>
+                    )}
+                    </div>
+                    )
+                  })}
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input className="input" placeholder="Новая тема..." value={newTopic[s.id] || ''}
                            onChange={e => setNewTopic(nt => ({ ...nt, [s.id]: e.target.value }))}

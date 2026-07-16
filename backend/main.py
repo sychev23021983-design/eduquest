@@ -5666,7 +5666,7 @@ def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
         topic_list = []
         for t in topics:
             t_lessons = conn.execute(
-                "SELECT id, topic, infographic, lesson_type FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
+                "SELECT id, topic, infographic, lesson_type, slides FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
             ).fetchall()
             lesson_ids = [l["id"] for l in t_lessons]
             completed = False

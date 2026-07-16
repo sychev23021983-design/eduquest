@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
+import UploadRow from '../components/UploadRow.jsx'
 
 const FONT_CHOICES = ['Nunito', 'Baloo 2', 'Rubik', 'Montserrat', 'PT Sans', 'Comfortaa', 'Ubuntu']
 const SUBJECTS = [
@@ -11,34 +12,6 @@ const SUBJECTS = [
   { key: 'science', label: '🌿 Окружающий мир' },
   { key: 'history', label: '🏛️ История' },
 ]
-// Слоты картинок для урока-слайдшоу «Архитектура математики» (раздел «Математика, 5 класс»).
-// Число слайдов должно совпадать с длиной lesson["slides"] в LESSON_ARCH_MATH_SLIDESHOW
-// (backend/main.py) — сейчас 15. Если добавите/уберёте слайды в коде, поправьте и здесь.
-const ARCH_MATH_SLIDES = Array.from({ length: 15 }, (_, i) => `archmath_${String(i + 1).padStart(2, '0')}`)
-
-function UploadRow({ label, hint, currentUrl, onUpload, uploading, previewSize = 60 }) {
-  const inputRef = useRef(null)
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-      <div style={{
-        width: previewSize, height: previewSize, borderRadius: 10, background: '#f1f3f7',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
-        border: '1px solid var(--border)',
-      }}>
-        {currentUrl ? <img src={currentUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: 'var(--muted)', fontSize: 11 }}>нет</span>}
-      </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 600, marginBottom: 2 }}>{label}</div>
-        {hint && <div style={{ fontSize: 12, color: 'var(--muted)' }}>{hint}</div>}
-      </div>
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
-             onChange={e => { if (e.target.files[0]) onUpload(e.target.files[0]); e.target.value = '' }} />
-      <button className="btn btn-sm" disabled={uploading} onClick={() => inputRef.current.click()}>
-        {uploading ? 'Загрузка…' : (currentUrl ? 'Заменить' : 'Загрузить')}
-      </button>
-    </div>
-  )
-}
 
 function SoundUploadRow({ label, hint, currentUrl, onUpload, uploading }) {
   const inputRef = useRef(null)
@@ -268,21 +241,6 @@ export default function Settings() {
           {SUBJECTS.map(s => (
             <UploadRow key={s.key} label={s.label} currentUrl={form.subject_icons?.[s.key]}
                        uploading={uploadingSlot === `subject_${s.key}`} onUpload={f => uploadTo(`subject_${s.key}`, f)} previewSize={48} />
-          ))}
-        </div>
-
-        {/* Архитектура математики — слайды */}
-        <div className="card" style={{ marginBottom: 20 }}>
-          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>📐 Архитектура математики — слайды</h3>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
-            Урок «Архитектура математики» (раздел «Математика, 5 класс») — это просто колода
-            картинок с кнопками «вперёд»/«назад», без вопросов и объяснений. Загрузи сюда картинки
-            по порядку — они появятся в уроке в том же порядке, слайд за слайдом. Незаполненные
-            слайды показываются как плейсхолдер и ничего не ломают — можно дозагрузить позже.
-          </p>
-          {ARCH_MATH_SLIDES.map((slot, i) => (
-            <UploadRow key={slot} label={`Слайд ${i + 1}`} currentUrl={form[slot]}
-                       uploading={uploadingSlot === slot} onUpload={f => uploadTo(slot, f)} previewSize={48} />
           ))}
         </div>
 
