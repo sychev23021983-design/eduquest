@@ -111,6 +111,25 @@ def parse_curriculum_text(text: str):
             continue
     return sections
 
+def seed_section_if_missing(conn, grade: int, subject: str, title: str, intro: str = None):
+    """Добавляет совершенно новый раздел в конец уже засеянной программы (когда
+       seed_curriculum_if_empty больше не сработает, т.к. программа не пустая). В отличие от
+       seed_topic_if_missing (добавляет тему в существующий раздел), эта функция создаёт сам
+       раздел. Идемпотентна — если раздел с таким названием уже есть, ничего не делает."""
+    existing = conn.execute(
+        "SELECT id FROM sections WHERE grade=? AND subject=? AND title=?", (grade, subject, title)
+    ).fetchone()
+    if existing:
+        return existing["id"]
+    next_order = conn.execute(
+        "SELECT COALESCE(MAX(order_index), -1) + 1 as n FROM sections WHERE grade=? AND subject=?",
+        (grade, subject)
+    ).fetchone()["n"]
+    c = conn.cursor()
+    c.execute("INSERT INTO sections (grade,subject,title,order_index,intro) VALUES (?,?,?,?,?)",
+              (grade, subject, title, next_order, intro))
+    return c.lastrowid
+
 def seed_topic_if_missing(conn, grade: int, subject: str, section_title: str, topic_title: str):
     """Добавляет тему в конец уже существующего раздела, если такой темы там ещё нет.
        Используется, когда раздел уже засеян (seed_curriculum_if_empty больше не сработает)."""
@@ -133,7 +152,10 @@ def seed_topic_if_missing(conn, grade: int, subject: str, section_title: str, to
                  (section_id, topic_title, next_order))
 
 def seed_lesson_if_missing(conn, grade: int, subject: str, section_title: str, topic_title: str, lesson: dict):
-    """Создаёт урок для темы (по названию раздела+темы), если у темы ещё нет ни одного активного урока."""
+    """Создаёт урок для темы (по названию раздела+темы), если у темы ещё нет ни одного активного урока.
+       lesson["lesson_type"] может быть "quiz" (по умолчанию, с questions/boss_task) или "slideshow"
+       (только lesson["slides"] — упорядоченный список названий слотов картинок, без вопросов и
+       объяснений; questions/boss_task в этом случае не нужны)."""
     row = conn.execute("""
         SELECT t.id as topic_id FROM topics t
         JOIN sections s ON t.section_id = s.id
@@ -148,18 +170,21 @@ def seed_lesson_if_missing(conn, grade: int, subject: str, section_title: str, t
     if existing > 0:
         return
     conn.execute("""INSERT INTO lessons
-        (subject,grade,topic,topic_id,context_theme,explanation,explanation_game,questions,boss_task,coins_lesson,coins_boss)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (subject,grade,topic,topic_id,context_theme,explanation,explanation_game,questions,boss_task,coins_lesson,coins_boss,lesson_type,slides)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (subject, grade, lesson["topic"], topic_id, lesson.get("context_theme", "detective"),
          lesson.get("explanation", ""), lesson.get("explanation_game", ""),
-         json.dumps(lesson["questions"], ensure_ascii=False),
+         json.dumps(lesson.get("questions", []), ensure_ascii=False),
          json.dumps(lesson["boss_task"], ensure_ascii=False) if lesson.get("boss_task") else None,
-         lesson.get("coins_lesson", 50), lesson.get("coins_boss", 30)))
+         lesson.get("coins_lesson", 50), lesson.get("coins_boss", 30),
+         lesson.get("lesson_type", "quiz"),
+         json.dumps(lesson["slides"], ensure_ascii=False) if lesson.get("slides") else None))
 
 def seed_lesson_regenerate(conn, grade: int, subject: str, section_title: str, topic_title: str, lesson: dict):
     """Как seed_lesson_if_missing, но если у темы уже есть активный урок — перезаписывает его содержимое
-       (explanation/explanation_game/questions/boss_task/coins), не трогая id урока и прогресс учеников
-       по нему (progress ссылается на lesson_id). Используется для перегенерации существующего урока."""
+       (explanation/explanation_game/questions/boss_task/coins/lesson_type/slides), не трогая id урока и
+       прогресс учеников по нему (progress ссылается на lesson_id). Используется для перегенерации
+       существующего урока."""
     row = conn.execute("""
         SELECT t.id as topic_id FROM topics t
         JOIN sections s ON t.section_id = s.id
@@ -175,13 +200,16 @@ def seed_lesson_regenerate(conn, grade: int, subject: str, section_title: str, t
         seed_lesson_if_missing(conn, grade, subject, section_title, topic_title, lesson)
         return
     conn.execute("""UPDATE lessons SET
-        context_theme=?, explanation=?, explanation_game=?, questions=?, boss_task=?, coins_lesson=?, coins_boss=?
+        context_theme=?, explanation=?, explanation_game=?, questions=?, boss_task=?, coins_lesson=?, coins_boss=?,
+        lesson_type=?, slides=?
         WHERE id=?""",
         (lesson.get("context_theme", "detective"),
          lesson.get("explanation", ""), lesson.get("explanation_game", ""),
-         json.dumps(lesson["questions"], ensure_ascii=False),
+         json.dumps(lesson.get("questions", []), ensure_ascii=False),
          json.dumps(lesson["boss_task"], ensure_ascii=False) if lesson.get("boss_task") else None,
          lesson.get("coins_lesson", 50), lesson.get("coins_boss", 30),
+         lesson.get("lesson_type", "quiz"),
+         json.dumps(lesson["slides"], ensure_ascii=False) if lesson.get("slides") else None,
          existing["id"]))
 
 def _lesson_answer_map():
@@ -5084,6 +5112,22 @@ LESSON_REINFORCE_TYPICAL_PROBLEMS = {
     "coins_boss": 38,
 }
 
+# Раздел-слайдшоу «Архитектура математики»: не квиз, а просто упорядоченная колода картинок
+# (lesson_type="slideshow"). Никаких вопросов, объяснений или монет — только сами слайды и
+# кнопки «вперёд»/«назад» на фронтенде (см. ветку lesson_type==='slideshow' в LessonPage.jsx).
+# Картинки для слотов "archmath_01".."archmath_15" загружаются родителем в кабинете родителя
+# (Настройки → раздел «Архитектура математики — слайды»), через тот же генерический механизм
+# слотов (POST /api/settings/upload?slot=...), что и остальные картинки интерфейса. Если слот не
+# заполнен — на месте слайда показывается плейсхолдер, ничего не ломается. Число слайдов (15)
+# можно менять: LessonPage.jsx ориентируется на длину lesson["slides"], а не на фиксированное
+# число, но набор слотов на странице настроек (ARCH_MATH_SLIDES в Settings.jsx) нужно
+# синхронизировать при изменении количества.
+LESSON_ARCH_MATH_SLIDESHOW = {
+    "topic": "Архитектура математики",
+    "lesson_type": "slideshow",
+    "slides": [f"archmath_{i:02d}" for i in range(1, 16)],
+}
+
 def seed_curriculum_if_empty(conn, grade: int, subject: str, raw_text: str):
     existing = conn.execute(
         "SELECT COUNT(*) as n FROM sections WHERE grade=? AND subject=?", (grade, subject)
@@ -5159,6 +5203,10 @@ MATH_5_CURRICULUM = """
 - **Контрольная работа:** итоговая проверка знаний по всем темам раздела «Анализ данных и текстовые задачи».
 - **Итоговый экзамен:** финальный обзорный урок по всему курсу «Математика, 5 класс» — по одному-два вопроса из каждого раздела плюс комплексная итоговая задача.
 - **Закрепление: Типовые задачи:** дополнительная практика на движение вдогонку (разность скоростей) в сравнении с движением навстречу (сумма скоростей).
+
+**7. Архитектура математики**
+
+- **Архитектура математики:** слайд-шоу без вопросов — только картинки и кнопки «вперёд»/«назад», кратко обо всех правилах и закономерностях за 5 класс.
 """
 
 # ── DB ────────────────────────────────────────────────────────────────────────
@@ -5289,6 +5337,8 @@ def init_db():
         );
     """)
     migrate_add_column(conn, "lessons", "topic_id", "INTEGER")
+    migrate_add_column(conn, "lessons", "lesson_type", "TEXT DEFAULT 'quiz'")
+    migrate_add_column(conn, "lessons", "slides", "TEXT")
     migrate_add_column(conn, "sections", "intro", "TEXT")
     migrate_add_column(conn, "sections", "intro_seen_at", "TEXT")
     migrate_add_column(conn, "articles", "cover_image", "TEXT")
@@ -5354,6 +5404,9 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "math", "Анализ данных и текстовые задачи", "Итоговый экзамен", LESSON_FINAL_EXAM)
     seed_topic_if_missing(conn, 5, "math", "Анализ данных и текстовые задачи", "Закрепление: Типовые задачи")
     seed_lesson_if_missing(conn, 5, "math", "Анализ данных и текстовые задачи", "Закрепление: Типовые задачи", LESSON_REINFORCE_TYPICAL_PROBLEMS)
+    seed_section_if_missing(conn, 5, "math", "Архитектура математики")
+    seed_topic_if_missing(conn, 5, "math", "Архитектура математики", "Архитектура математики")
+    seed_lesson_if_missing(conn, 5, "math", "Архитектура математики", "Архитектура математики", LESSON_ARCH_MATH_SLIDESHOW)
     # «Почему идёт дождь?» и «Почему птицы летают» родитель удалил навсегда (purge) — сидинг для
     # них убран, иначе они пересоздавались бы заново при каждом деплое (для «зашитых» материалов
     # обычное мягкое удаление respected, но purge стирает строку целиком, и seed-функция не может
@@ -5613,7 +5666,7 @@ def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
         topic_list = []
         for t in topics:
             t_lessons = conn.execute(
-                "SELECT id, topic, infographic FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
+                "SELECT id, topic, infographic, lesson_type FROM lessons WHERE topic_id=? AND active=1 ORDER BY created_at", (t["id"],)
             ).fetchall()
             lesson_ids = [l["id"] for l in t_lessons]
             completed = False

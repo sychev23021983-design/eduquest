@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
 import '../detective-theme.css'
+import '../game-theme.css'
 
 export default function LessonPage() {
   const { id } = useParams()
@@ -43,6 +44,7 @@ export default function LessonPage() {
   const [bossCoinsEarned,   setBossCoinsEarned]   = useState(0)
   const [mistakeCount, setMistakeCount] = useState(0)
   const [bossSubmitting, setBossSubmitting] = useState(false)
+  const [slideIndex, setSlideIndex] = useState(0)
 
   useEffect(() => { loadLesson() }, [id])
 
@@ -123,6 +125,53 @@ export default function LessonPage() {
       <div className="dl-wrap" style={{ paddingTop: 60, textAlign: 'center', color: 'var(--paper)' }}>🔍 Открываю дело…</div>
     </div>
   )
+
+  // Урок-слайдшоу (lesson_type='slideshow'): никаких вопросов, объяснений, монет — только
+  // упорядоченная колода картинок и кнопки «вперёд»/«назад». Картинки берутся из настроек сайта
+  // по названиям слотов, перечисленным в lesson.slides (см. Settings.jsx, раздел
+  // «Архитектура математики — слайды»); если слот ещё не заполнен — показывается плейсхолдер.
+  if (lesson.lesson_type === 'slideshow') {
+    const slides = (() => { try { return JSON.parse(lesson.slides || '[]') } catch { return [] } })()
+    const total = slides.length
+    const clamped = Math.min(Math.max(slideIndex, 0), Math.max(total - 1, 0))
+    const slot = slides[clamped]
+    const url = slot ? settings?.[slot] : null
+    return (
+      <div className="game-home">
+        <div className="gh-map-topbar">
+          <button className="gh-back-btn" onClick={() => nav(lesson.subject ? `/subject/${lesson.subject}` : '/')}>‹</button>
+          <div className="gh-map-title">
+            <span className="gh-map-title-text">📐 {lesson.topic}</span>
+          </div>
+        </div>
+
+        {total === 0 && (
+          <div className="gh-wrap gh-empty" style={{ paddingTop: 60 }}>Слайды ещё не добавлены 🖼️</div>
+        )}
+
+        {total > 0 && (
+          <div className="gh-slideshow-wrap">
+            <button className="gh-slideshow-arrow prev" onClick={() => setSlideIndex(i => Math.max(0, i - 1))} disabled={clamped === 0} aria-label="Предыдущий">‹</button>
+            <div className="gh-slideshow-img-box">
+              {url ? (
+                <img src={url} alt="" />
+              ) : (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '100%', height: '100%', color: 'var(--gh-muted)',
+                  fontSize: '0.9rem', textAlign: 'center', padding: 20,
+                }}>
+                  Слайд {clamped + 1} ещё не загружен 🖼️
+                </div>
+              )}
+            </div>
+            <button className="gh-slideshow-arrow next" onClick={() => setSlideIndex(i => Math.min(total - 1, i + 1))} disabled={clamped === total - 1} aria-label="Следующий">›</button>
+            <div className="gh-slideshow-counter" style={{ justifyContent: 'center' }}>{clamped + 1} / {total}</div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const q = questions[current]
   const boss = (() => { try { return JSON.parse(lesson.boss_task || 'null') } catch { return null } })()

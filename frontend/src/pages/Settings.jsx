@@ -11,6 +11,10 @@ const SUBJECTS = [
   { key: 'science', label: '🌿 Окружающий мир' },
   { key: 'history', label: '🏛️ История' },
 ]
+// Слоты картинок для урока-слайдшоу «Архитектура математики» (раздел «Математика, 5 класс»).
+// Число слайдов должно совпадать с длиной lesson["slides"] в LESSON_ARCH_MATH_SLIDESHOW
+// (backend/main.py) — сейчас 15. Если добавите/уберёте слайды в коде, поправьте и здесь.
+const ARCH_MATH_SLIDES = Array.from({ length: 15 }, (_, i) => `archmath_${String(i + 1).padStart(2, '0')}`)
 
 function UploadRow({ label, hint, currentUrl, onUpload, uploading, previewSize = 60 }) {
   const inputRef = useRef(null)
@@ -264,6 +268,21 @@ export default function Settings() {
           {SUBJECTS.map(s => (
             <UploadRow key={s.key} label={s.label} currentUrl={form.subject_icons?.[s.key]}
                        uploading={uploadingSlot === `subject_${s.key}`} onUpload={f => uploadTo(`subject_${s.key}`, f)} previewSize={48} />
+          ))}
+        </div>
+
+        {/* Архитектура математики — слайды */}
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>📐 Архитектура математики — слайды</h3>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
+            Урок «Архитектура математики» (раздел «Математика, 5 класс») — это просто колода
+            картинок с кнопками «вперёд»/«назад», без вопросов и объяснений. Загрузи сюда картинки
+            по порядку — они появятся в уроке в том же порядке, слайд за слайдом. Незаполненные
+            слайды показываются как плейсхолдер и ничего не ломают — можно дозагрузить позже.
+          </p>
+          {ARCH_MATH_SLIDES.map((slot, i) => (
+            <UploadRow key={slot} label={`Слайд ${i + 1}`} currentUrl={form[slot]}
+                       uploading={uploadingSlot === slot} onUpload={f => uploadTo(slot, f)} previewSize={48} />
           ))}
         </div>
 
