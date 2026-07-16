@@ -6,6 +6,91 @@ import { api } from '../api.js'
 import '../detective-theme.css'
 import '../game-theme.css'
 
+// Тексты интерфейса урока зависят от lesson.context_theme — так один и тот же компонент/CSS
+// (cork-board вёрстка detective-theme.css) можно переиспользовать для разных сюжетов предмета,
+// не показывая, например, «Дело раскрыто» в уроке про редакцию газеты. Модель данных не меняется
+// (по-прежнему lesson_id, questions, boss_task и т.п.) — темизируются только подписи и иконки.
+// Неизвестный/отсутствующий context_theme -> 'detective' (старое поведение, ничего не ломает).
+const THEMES = {
+  detective: {
+    icon: '🔍',
+    loading: '🔍 Открываю дело…',
+    stamp: id => `ДЕЛО №${id}`,
+    coverEyebrow: 'История дела',
+    audioEyebrow: 'Аудио-улика',
+    coinsNoteLabel: 'За расследование',
+    startBtn: n => n > 0 ? `Открыть дело — ${n} улик ›` : 'Открыть дело ›',
+    subIntro: 'Дело открыто',
+    subQuestions: (cur, total) => `Улика ${cur} из ${total}`,
+    subBoss: 'Финальное задание',
+    subDone: 'Дело раскрыто',
+    questionEyebrow: n => `Улика №${n}`,
+    wrongExtra: perQ => `, эта улика не принесёт до ${perQ} 🪙 к награде`,
+    nextQuestionBtn: 'Следующая улика →',
+    toBossBtn: 'Финальное задание →',
+    toDoneBtn: 'Закрыть дело →',
+    bossEyebrow: '⚔️ Финальное задание',
+    bossTitle: 'Разгадай последнюю улику',
+    bossReward: n => `Награда: +${n} монет за раскрытие!`,
+    bossSubmitBtn: 'Сдать решение →',
+    bossCorrect: '✅ Разгадано верно!',
+    bossWrong: '❌ Не совсем так, но вот разгадка:',
+    bossSolutionLabel: 'Разгадка:',
+    bossCloseBtn: 'Понятно, закрыть дело →',
+    finaleTitle: 'Дело раскрыто!',
+    rank: pct => pct === 100 ? 'Детектив — высшая категория!'
+               : pct >= 80  ? 'Детектив I уровня'
+               : pct >= 60  ? 'Детектив-стажёр'
+               : pct >= 40  ? 'Дело почти раскрыто — есть над чем поработать'
+               :              'В следующий раз след будет вернее',
+    scoreLabel: 'Разгаданных улик',
+    coinsForQuestions: (score, total) => `За улики (${score}/${total})`,
+    coinsForBoss: 'За финальное задание ⚔️',
+    mistakeNote: n => `${n} ${n === 1 ? 'улика уменьшила' : 'улики уменьшили'} награду за расследование — в следующий раз выбирай ответ вдумчивее!`,
+    retryNote: '💡 Пройди дело ещё раз, чтобы собрать больше улик и монет!',
+  },
+  newsroom: {
+    icon: '📰',
+    loading: '📰 Открываю папку архива…',
+    stamp: id => `ВЫПУСК №${id}`,
+    coverEyebrow: 'Из архива редакции',
+    audioEyebrow: 'Аудиозапись',
+    coinsNoteLabel: 'За материал',
+    startBtn: n => n > 0 ? `Открыть папку — ${n} материалов ›` : 'Открыть папку ›',
+    subIntro: 'Папка открыта',
+    subQuestions: (cur, total) => `Материал ${cur} из ${total}`,
+    subBoss: 'Финальная полоса',
+    subDone: 'Номер подписан в печать',
+    questionEyebrow: n => `Материал №${n}`,
+    wrongExtra: perQ => `, эта правка не принесёт до ${perQ} 🪙 к награде`,
+    nextQuestionBtn: 'Следующий материал →',
+    toBossBtn: 'Финальная полоса →',
+    toDoneBtn: 'Сдать номер →',
+    bossEyebrow: '🖋️ Финальная полоса',
+    bossTitle: 'Подготовь последнюю полосу',
+    bossReward: n => `Награда: +${n} монет за сдачу номера!`,
+    bossSubmitBtn: 'Сдать в печать →',
+    bossCorrect: '✅ Готово к печати!',
+    bossWrong: '❌ Не совсем так — вот как правильно:',
+    bossSolutionLabel: 'Правильный вариант:',
+    bossCloseBtn: 'Понятно, сдать номер →',
+    finaleTitle: 'Номер подписан в печать!',
+    rank: pct => pct === 100 ? 'Главный редактор — высшая категория!'
+               : pct >= 80  ? 'Редактор I категории'
+               : pct >= 60  ? 'Редактор-стажёр'
+               : pct >= 40  ? 'Номер почти готов — есть над чем поработать'
+               :              'В следующий раз вычитка будет вернее',
+    scoreLabel: 'Выверенных материалов',
+    coinsForQuestions: (score, total) => `За материалы (${score}/${total})`,
+    coinsForBoss: 'За финальную полосу 🖋️',
+    mistakeNote: n => `${n} ${n === 1 ? 'материал потребовал' : 'материала потребовали'} правку — в следующий раз выбирай ответ вдумчивее!`,
+    retryNote: '💡 Пройди номер ещё раз, чтобы собрать больше монет!',
+  },
+}
+function themeFor(lesson) {
+  return THEMES[lesson?.context_theme] || THEMES.detective
+}
+
 export default function LessonPage() {
   const { id } = useParams()
   const { token } = useAuth()
@@ -122,7 +207,7 @@ export default function LessonPage() {
 
   if (!lesson) return (
     <div className="detective-lesson">
-      <div className="dl-wrap" style={{ paddingTop: 60, textAlign: 'center', color: 'var(--paper)' }}>🔍 Открываю дело…</div>
+      <div className="dl-wrap" style={{ paddingTop: 60, textAlign: 'center', color: 'var(--paper)' }}>🔍 Открываю…</div>
     </div>
   )
 
@@ -176,6 +261,7 @@ export default function LessonPage() {
   const q = questions[current]
   const boss = (() => { try { return JSON.parse(lesson.boss_task || 'null') } catch { return null } })()
   const stars = score
+  const theme = themeFor(lesson)
 
   return (
     <div className="detective-lesson">
@@ -187,9 +273,9 @@ export default function LessonPage() {
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <div className="dl-title">🗂 {lesson.topic}</div>
           <div className="dl-sub">
-            {phase === 'questions' ? `Улика ${current + 1} из ${questions.length}` :
-             phase === 'boss' ? 'Финальное задание' :
-             phase === 'done' ? 'Дело раскрыто' : 'Дело открыто'}
+            {phase === 'questions' ? theme.subQuestions(current + 1, questions.length) :
+             phase === 'boss' ? theme.subBoss :
+             phase === 'done' ? theme.subDone : theme.subIntro}
           </div>
         </div>
         {phase === 'questions' && (
@@ -211,18 +297,18 @@ export default function LessonPage() {
           <div>
             {!lesson.infographic && (
               <div className="dl-cover">
-                <div className="dl-stamp">ДЕЛО №{lesson.id}</div>
-                <span className="dl-magnifier">🔍</span>
+                <div className="dl-stamp">{theme.stamp(lesson.id)}</div>
+                <span className="dl-magnifier">{theme.icon}</span>
                 <h1>{lesson.topic}</h1>
               </div>
             )}
 
             {lesson.infographic ? (
-              <img src={lesson.infographic} alt="История дела" style={{ width: '100%', borderRadius: 14, marginBottom: 16, boxShadow: '0 10px 20px rgba(0,0,0,0.35)' }} />
+              <img src={lesson.infographic} alt={theme.coverEyebrow} style={{ width: '100%', borderRadius: 14, marginBottom: 16, boxShadow: '0 10px 20px rgba(0,0,0,0.35)' }} />
             ) : (
               <div className="dl-card rot-l">
                 <div className="dl-pin" />
-                <div className="dl-eyebrow">История дела</div>
+                <div className="dl-eyebrow">{theme.coverEyebrow}</div>
                 <p>{lesson.explanation_game || lesson.explanation || 'Объяснение скоро появится'}</p>
               </div>
             )}
@@ -232,18 +318,18 @@ export default function LessonPage() {
                 <div className="dl-pin" />
                 <span style={{ fontSize: 22 }}>🎧</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Аудио-улика</div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>{theme.audioEyebrow}</div>
                   <audio controls src={lesson.audio_file} style={{ width: '100%' }} />
                 </div>
               </div>
             )}
 
             <div className="dl-coins-note">
-              🪙 За расследование: <b>+{lesson.coins_lesson} монет</b> · за финальное задание: <b>+{lesson.coins_boss} монет</b>
+              🪙 {theme.coinsNoteLabel}: <b>+{lesson.coins_lesson} монет</b> · за финальное задание: <b>+{lesson.coins_boss} монет</b>
             </div>
 
             <button className="dl-btn wide" onClick={startLesson}>
-              {questions.length > 0 ? `Открыть дело — ${questions.length} улик ›` : 'Открыть дело ›'}
+              {theme.startBtn(questions.length)}
             </button>
           </div>
         )}
@@ -253,7 +339,7 @@ export default function LessonPage() {
           <div>
             <div className="dl-card rot-l">
               <div className="dl-pin" />
-              <div className="dl-eyebrow">Улика №{current + 1}</div>
+              <div className="dl-eyebrow">{theme.questionEyebrow(current + 1)}</div>
               <h2 style={{ fontSize: '1.1rem' }}>{q.text}</h2>
             </div>
 
@@ -278,12 +364,12 @@ export default function LessonPage() {
                   <div className="dl-feedback correct">✅ Точно! {q.explanation || ''}</div>
                 ) : (
                   <div className="dl-feedback wrong">
-                    ❌ Мимо{questions.length > 0 && lesson.coins_lesson ? `, эта улика не принесёт до ${Math.round(lesson.coins_lesson / questions.length)} 🪙 к награде` : ''}.{' '}
+                    ❌ Мимо{questions.length > 0 && lesson.coins_lesson ? theme.wrongExtra(Math.round(lesson.coins_lesson / questions.length)) : ''}.{' '}
                     {q.explanation || (q.hint ? `Подсказка: ${q.hint}` : '')}
                   </div>
                 )}
                 <button className="dl-btn wide" onClick={nextQuestion}>
-                  {current + 1 < questions.length ? 'Следующая улика →' : lesson.boss_task ? 'Финальное задание →' : 'Закрыть дело →'}
+                  {current + 1 < questions.length ? theme.nextQuestionBtn : lesson.boss_task ? theme.toBossBtn : theme.toDoneBtn}
                 </button>
               </div>
             )}
@@ -294,10 +380,10 @@ export default function LessonPage() {
         {phase === 'boss' && boss && (
           <div>
             <div className="dl-boss-header">
-              <div className="dl-eyebrow">⚔️ Финальное задание</div>
-              <h2>Разгадай последнюю улику</h2>
+              <div className="dl-eyebrow">{theme.bossEyebrow}</div>
+              <h2>{theme.bossTitle}</h2>
               <p>{boss.text}</p>
-              <div className="dl-reward">Награда: +{lesson.coins_boss} монет за раскрытие!</div>
+              <div className="dl-reward">{theme.bossReward(lesson.coins_boss)}</div>
             </div>
 
             {bossCheck !== 'submitted' ? (
@@ -318,21 +404,21 @@ export default function LessonPage() {
                 )}
                 <button className="dl-btn secondary wide" style={{ marginTop: 14 }}
                         onClick={checkBoss} disabled={!bossInput.trim() || bossSubmitting}>
-                  {bossSubmitting ? 'Проверяю…' : 'Сдать решение →'}
+                  {bossSubmitting ? 'Проверяю…' : theme.bossSubmitBtn}
                 </button>
               </>
             ) : (
               <div className="dl-card rot-l">
                 <div className="dl-pin" />
                 <div className="dl-eyebrow" style={{ color: bossCorrect ? 'var(--dl-green)' : 'var(--dl-red)' }}>
-                  {bossCorrect ? '✅ Разгадано верно!' : '❌ Не совсем так, но вот разгадка:'}
+                  {bossCorrect ? theme.bossCorrect : theme.bossWrong}
                 </div>
-                {boss.solution && <p><b>Разгадка:</b><br />{boss.solution}</p>}
+                {boss.solution && <p><b>{theme.bossSolutionLabel}</b><br />{boss.solution}</p>}
               </div>
             )}
             {bossCheck === 'submitted' && (
               <button className="dl-btn wide" onClick={closeCase}>
-                Понятно, закрыть дело →
+                {theme.bossCloseBtn}
               </button>
             )}
           </div>
@@ -343,24 +429,20 @@ export default function LessonPage() {
           const total = questions.length || 1
           const pct   = Math.round((score / total) * 100)
           const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🥇' : pct >= 60 ? '🥈' : pct >= 40 ? '🥉' : '📚'
-          const rank  = pct === 100 ? 'Детектив чисел — высшая категория!'
-                      : pct >= 80   ? 'Детектив чисел I уровня'
-                      : pct >= 60   ? 'Детектив-стажёр'
-                      : pct >= 40   ? 'Дело почти раскрыто — есть над чем поработать'
-                      :               'В следующий раз след будет вернее'
+          const rank  = theme.rank(pct)
           const lessonCoins = lessonCoinsEarned
           return (
             <div className="dl-finale">
               <div className="dl-badge">{emoji}</div>
               <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--paper)', fontSize: '1.3rem', marginBottom: 6 }}>
-                Дело раскрыто!
+                {theme.finaleTitle}
               </h2>
               <p style={{ color: '#cfcfe6', marginBottom: 20 }}>{rank}</p>
 
               <div className="dl-card rot-l" style={{ textAlign: 'left' }}>
                 <div className="dl-pin" />
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontWeight: 600 }}>Разгаданных улик</span>
+                  <span style={{ fontWeight: 600 }}>{theme.scoreLabel}</span>
                   <span style={{ fontWeight: 700, color: pct >= 60 ? 'var(--dl-green)' : 'var(--dl-red)' }}>
                     {score} / {questions.length}
                   </span>
@@ -378,12 +460,12 @@ export default function LessonPage() {
                 <div className="dl-pin" />
                 <div style={{ fontWeight: 600, marginBottom: 12 }}>🪙 Заработано монет</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)', fontSize: 14 }}>
-                  <span style={{ color: '#8a7a5e' }}>За улики ({score}/{questions.length})</span>
+                  <span style={{ color: '#8a7a5e' }}>{theme.coinsForQuestions(score, questions.length)}</span>
                   <span style={{ fontWeight: 600 }}>+{lessonCoins}</span>
                 </div>
                 {bossWasDone && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)', fontSize: 14 }}>
-                    <span style={{ color: '#8a7a5e' }}>За финальное задание ⚔️</span>
+                    <span style={{ color: '#8a7a5e' }}>{theme.coinsForBoss}</span>
                     {bossCorrect ? (
                       <span style={{ fontWeight: 600, color: 'var(--dl-green)' }}>+{bossCoinsEarned}</span>
                     ) : (
@@ -399,13 +481,13 @@ export default function LessonPage() {
 
               {mistakeCount > 0 && (
                 <div className="dl-coins-note" style={{ textAlign: 'left' }}>
-                  🤔 {mistakeCount} {mistakeCount === 1 ? 'улика уменьшила' : 'улики уменьшили'} награду за расследование — в следующий раз выбирай ответ вдумчивее!
+                  🤔 {theme.mistakeNote(mistakeCount)}
                 </div>
               )}
 
               {pct < 80 && questions.length > 0 && (
                 <div className="dl-coins-note" style={{ textAlign: 'left' }}>
-                  💡 Пройди дело ещё раз, чтобы собрать больше улик и монет!
+                  {theme.retryNote}
                 </div>
               )}
 
