@@ -86,6 +86,7 @@ export default function ChildHome() {
             <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>
           ))}
           <button onClick={() => nav('/materials')}>📚 Материалы</button>
+          <button onClick={() => nav('/skills')}>🧠 Навыки</button>
         </div>
         <span className="gh-coin-pill">🪙 {balance.balance || 0}</span>
         <button className="gh-logout" onClick={logout}>Выйти</button>

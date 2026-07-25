@@ -16,6 +16,11 @@ import MaterialSubjectPage from './pages/MaterialSubjectPage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
 import MaterialAssignmentPage from './pages/MaterialAssignmentPage.jsx'
 import ArticleEditor from './pages/ArticleEditor.jsx'
+import SkillsPage from './pages/SkillsPage.jsx'
+import SkillCategoryPage from './pages/SkillCategoryPage.jsx'
+import SkillTaskPage from './pages/SkillTaskPage.jsx'
+import SkillsSlideshowPage from './pages/SkillsSlideshowPage.jsx'
+import SkillEditor from './pages/SkillEditor.jsx'
 
 function Guard({ role: need, children }) {
   const { token, role } = useAuth()
@@ -40,6 +45,10 @@ export default function App() {
             <Route path="/materials/:subject" element={<Guard><MaterialSubjectPage /></Guard>} />
             <Route path="/materials/article/:id" element={<Guard><ArticlePage /></Guard>} />
             <Route path="/materials/assignment/:id" element={<Guard><MaterialAssignmentPage /></Guard>} />
+            <Route path="/skills" element={<Guard><SkillsPage /></Guard>} />
+            <Route path="/skills/slideshow" element={<Guard><SkillsSlideshowPage /></Guard>} />
+            <Route path="/skills/task/:id" element={<Guard><SkillTaskPage /></Guard>} />
+            <Route path="/skills/:categoryId" element={<Guard><SkillCategoryPage /></Guard>} />
             <Route path="/parent" element={<Guard role="parent"><ParentDashboard /></Guard>} />
             <Route path="/parent/curriculum" element={<Guard role="parent"><Curriculum /></Guard>} />
             <Route path="/parent/settings" element={<Guard role="parent"><Settings /></Guard>} />
@@ -47,6 +56,9 @@ export default function App() {
             <Route path="/parent/materials" element={<Guard role="parent"><ArticleEditor /></Guard>} />
             <Route path="/parent/materials/new" element={<Guard role="parent"><ArticleEditor /></Guard>} />
             <Route path="/parent/materials/:id/edit" element={<Guard role="parent"><ArticleEditor /></Guard>} />
+            <Route path="/parent/skills" element={<Guard role="parent"><SkillEditor /></Guard>} />
+            <Route path="/parent/skills/new" element={<Guard role="parent"><SkillEditor /></Guard>} />
+            <Route path="/parent/skills/:id/edit" element={<Guard role="parent"><SkillEditor /></Guard>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

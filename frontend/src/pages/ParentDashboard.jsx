@@ -79,6 +79,10 @@ export default function ParentDashboard() {
                   style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', fontSize: 13, borderRadius: 8, padding: '6px 12px' }}>
             📚 Материалы
           </button>
+          <button onClick={() => nav('/parent/skills')}
+                  style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', fontSize: 13, borderRadius: 8, padding: '6px 12px' }}>
+            🧠 Навыки
+          </button>
           <button onClick={() => nav('/parent/settings')}
                   style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', fontSize: 13, borderRadius: 8, padding: '6px 12px' }}>
             ⚙️ Настройки
