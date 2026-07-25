@@ -7,9 +7,54 @@
 - Сервер: `147.45.42.169`, Ubuntu 24.04, Docker, путь `/root/eduquest`
 - Деплой всегда через: `cd /root/eduquest && git pull && docker compose down && docker compose build --no-cache && docker compose up -d`
   (нужна полная пересборка без кэша — иначе фронтенд не обновится)
-- Стек: FastAPI + SQLite (backend/main.py, один файл), React + Vite (frontend/src)
+- Стек: FastAPI + SQLite (backend/, модульная структура — см. «Структура backend» ниже),
+  React + Vite (frontend/src)
 - У Claude нет прямого доступа к самому серверу — только к GitHub. Все данные (программа, уроки)
-  попадают в БД через сид-функции в `init_db()`, которые выполняются при старте контейнера.
+  попадают в БД через сид-функции в `init_db()` (`backend/db.py`), которые выполняются при
+  старте контейнера.
+
+## Структура backend (после рефакторинга, 2026-07)
+`backend/main.py` — теперь всего 32 строки: создание `FastAPI(lifespan=...)`, CORS,
+`app.mount("/uploads", ...)`, `lifespan` (вызывает `db.init_db()`) и десять
+`app.include_router(...)`. Вся логика (70 эндпоинтов) живёт в отдельных модулях:
+
+| Файл | Что там |
+|---|---|
+| `backend/config.py` | Константы из env (`DB_PATH`, `SECRET_KEY`, `UPLOAD_DIR`) + статичные словари `SUBJECT_LABELS`, `MATERIAL_SUBJECTS`. Создаёт папки для БД/загрузок при импорте. |
+| `backend/db.py` | `get_conn()`, `migrate_add_column()`, `init_db()` и все `seed_*`-функции (`seed_lesson_if_missing`, `seed_lesson_regenerate`, `seed_topic_if_missing`, `seed_section_if_missing`, `seed_section_intro_if_missing`, `seed_article_if_missing`/`seed_article_upsert`, `seed_curriculum_if_empty`, `parse_curriculum_text`), плюс `backfill_missing_boss_answers()`/`_lesson_answer_map()`. Именно сюда добавляются вызовы `seed_*` для новых уроков/тем/разделов — они все собраны в теле `init_db()`. |
+| `backend/auth.py` | JWT: `make_token`, `get_role`, `require_parent`, `require_any`, `security`. |
+| `backend/telegram_service.py` | `tg_send`/`tg_send_result`, `get_telegram_config`, `get_integrations`/`save_integrations`. |
+| `backend/content/*.py` | Сами данные уроков/статей/программы — `MATH_5_CURRICULUM`, `RUSSIAN_5_CURRICULUM` и все константы `LESSON_*`/`SECTION_INTRO_*` (`math_content.py`, `russian_content.py`, `academy_content.py`), `ARTICLE_*` (`articles_content.py`). **Сюда добавляются новые LESSON_DICT/статьи** — см. «Как добавляются данные» ниже. |
+| `backend/models/*.py` | Pydantic-модели входных данных запросов, сгруппированы по смыслу: `settings.py` (`SettingsIn`, `TelegramConfigIn`), `curriculum.py` (`SectionIn`, `TopicIn`, `ImportCurriculumIn`), `lessons.py` (`LessonIn`, `StartLessonIn`, `FinishLessonIn`), `articles.py` (`ArticleIn`, `MaterialAssignmentIn`), `skills.py` (`SkillCategoryIn`, `SkillIn`), `misc.py` (`LoginIn`, `MistakeIn`, `PenaltyIn`, `RewardIn`). |
+| `backend/routers/*.py` | Все `APIRouter(prefix="/api")` с эндпоинтами, см. таблицу ниже. |
+
+### Роуты по темам (`backend/routers/`)
+| Файл | Эндпоинты |
+|---|---|
+| `health.py` | `GET /api/health`, `GET /api/config` |
+| `settings.py` | `GET/PUT /api/settings`, `POST /api/settings/reset`, `POST /api/settings/upload`, `GET/PUT /api/integrations/telegram`, `POST /api/integrations/telegram/test` (плюс локальные `get_settings`/`save_settings`/`DEFAULT_SETTINGS`) |
+| `login.py` | `POST /api/login` |
+| `curriculum.py` | `GET /api/curriculum`, CRUD `/api/sections*`, `/api/topics*`, `POST /api/curriculum/import` |
+| `lessons.py` | CRUD `/api/lessons*`, `/api/lessons/{id}/upload-audio`, `/api/lessons/{id}/upload-image`, `DELETE /api/lessons/{id}/infographic` |
+| `articles.py` | CRUD `/api/articles*`, `/api/materials/subjects`, `/api/materials/assignments*` (плюс `pick_next_articles()`) |
+| `progress.py` | `POST /api/progress/start`/`finish`, `GET /api/progress`, `/api/mistakes*`, `GET /api/lessons/{id}/reinforcement-prompt` (плюс `_check_boss_answer()`, `_update_streak()`, `_plural_ru()`) |
+| `skills.py` | CRUD `/api/skill-categories*`, `/api/skills*` |
+| `stats.py` | `GET /api/stats` |
+| `coins.py` | `/api/coins/*`, `/api/rewards/*` |
+
+Если ищешь конкретный эндпоинт — смотри по теме в этой таблице; если не уверен, `grep -rn '"/путь' backend/routers/` найдёт быстро.
+
+### Как добавить новый эндпоинт
+1. Найди подходящий файл в `backend/routers/` по теме (таблица выше) — если ни один не подходит
+   по смыслу, заведи новый `backend/routers/<тема>.py` с `router = APIRouter(prefix="/api")` и
+   зарегистрируй его в `main.py` через `app.include_router(...)`.
+2. Если эндпоинту нужна новая Pydantic-модель — добавь её в подходящий `backend/models/*.py`
+   (или новый файл, если тема новая) и импортируй в роутере.
+3. `get_conn()` — из `db`, `require_parent`/`require_any` — из `auth`, `tg_send`/`tg_send_result` —
+   из `telegram_service`.
+4. Порядок регистрации внутри роутера важен для путей одинаковой длины сегментов (например,
+   `/api/skills/all-active` должен быть объявлен раньше `/api/skills/{skill_id}`, иначе FastAPI
+   примет `all-active` за `{skill_id}`).
 
 ## Архитектура данных
 Класс → Предмет → Раздел → Тема → Урок.
@@ -20,19 +65,26 @@
 
 ## Как добавляются данные (важно!)
 Ручных форм создания/редактирования уроков и разделов через UI больше нет — их убрали специально.
-Всё добавляется кодом в `backend/main.py`:
+Всё добавляется кодом в двух местах:
+- Сам `LESSON_DICT`/`ARTICLE_DICT`/текст программы (`MATH_5_CURRICULUM` и т.п.) — константой в
+  подходящем файле `backend/content/<subject>_content.py` (например, новый урок математики —
+  в `math_content.py`).
+- Вызов `seed_*` с этой константой — строкой в `init_db()` внутри `backend/db.py`.
+
 1. Программа (разделы/темы) — через `seed_curriculum_if_empty()` + текстовый блок вида
    `**1. Раздел**` / `- **Тема:** описание`, либо через UI-импорт на странице «Программа»
-   (парсер тот же, `parse_curriculum_text()`). Работает только на пустой БД (проверяет, что
-   раздел ещё не создан).
+   (парсер тот же, `parse_curriculum_text()`, обе функции в `backend/db.py`). Работает только
+   на пустой БД (проверяет, что раздел ещё не создан).
 2. Добавить тему в уже существующий (ранее засеянный) раздел — через
    `seed_topic_if_missing(conn, grade, subject, section_title, topic_title)`. Добавляет тему в
    конец раздела (order_index = максимальный + 1). Используется, когда нужно дописать тему
    (например, контрольную работу) в раздел, который уже был засеян раньше и `seed_curriculum_if_empty`
    для него больше не сработает.
 3. Введение раздела — через `seed_section_intro_if_missing(conn, grade, subject, section_title, текст)`.
-4. Урок — через `seed_lesson_if_missing(conn, grade, subject, section_title, topic_title, LESSON_DICT)`.
-   Все вызовы добавляются в `init_db()`, они идемпотентны (не дублируют при повторном деплое).
+4. Урок — через `seed_lesson_if_missing(conn, grade, subject, section_title, topic_title, LESSON_DICT)`,
+   где `LESSON_DICT` — константа, добавленная в `backend/content/<subject>_content.py`. Все вызовы
+   `seed_*` добавляются в `init_db()` (`backend/db.py`), они идемпотентны (не дублируют при
+   повторном деплое).
 5. Перегенерировать (заменить содержимое) уже существующий урок — через
    `seed_lesson_regenerate(conn, grade, subject, section_title, topic_title, LESSON_DICT)`. В отличие от
    `seed_lesson_if_missing`, если у темы уже есть активный урок, функция обновляет его поля
@@ -51,7 +103,8 @@
 `MATH_5_CURRICULUM` тоже стоит дописать — на случай полного пересева пустой БД).
 
 Перед пушем ОБЯЗАТЕЛЬНО:
-- `python3 -m py_compile backend/main.py`
+- `python3 -m py_compile backend/main.py backend/db.py backend/content/*.py` (или весь `backend/`,
+  если трогал роутеры/модели: `find backend -name "*.py" | xargs python3 -m py_compile`)
 - Прогнать `init_db()` на временной БД (см. предыдущие коммиты для примера теста через
   `ast.literal_eval` на структуре словаря урока и/или `fastapi.testclient.TestClient`)
 - `cd frontend && npm run build` — если трогал фронтенд
@@ -294,7 +347,7 @@ Claude»):** добавлены в конец соответствующих р�
 ## Статус программы «Математика, 5 класс»
 6 разделов, 41 тема, включая контрольные работы во всех 6 разделах, один сквозной итоговый урок по
 всему курсу и 6 уроков закрепления по ошибкам конкретного ребёнка (полный список — см.
-`MATH_5_CURRICULUM` в `backend/main.py`). Курс полностью укомплектован.
+`MATH_5_CURRICULUM` в `backend/content/math_content.py`). Курс полностью укомплектован.
 Готовые уроки:
 - [x] 1.1 Цифры и натуральные числа
 - [x] 1.2 Сравнение натуральных чисел
@@ -429,7 +482,7 @@ manually_edited). Добавляются через `seed_article_if_missing()` 
 
 **Важно:** список категорий материалов — не текстовый файл, а два захардкоженных словаря, которые
 обязательно нужно держать в синхроне при добавлении новой категории:
-- `MATERIAL_SUBJECTS` в `backend/main.py` (ключ → русское название; ключи в `articles.subject`,
+- `MATERIAL_SUBJECTS` в `backend/config.py` (ключ → русское название; ключи в `articles.subject`,
   которых нет в этом словаре, вообще не покажутся на странице «Материалы» — там строгий перебор
   по словарю, не по фактическим данным в БД).
 - `MATERIAL_SUBJ` + `MATERIAL_SUBJ_ICON` в `frontend/src/materialSubjects.js` (русское название +
@@ -612,7 +665,8 @@ LESSON_DICT. Если попросят добавить такой урок «З
 
 ## Программа взята из
 Учебник «Русский язык, 5 класс» в двух частях — структура и нумерация § сохранены из исходного
-оглавления пользователя (см. `RUSSIAN_5_CURRICULUM` в `backend/main.py`). Нумерация § **начинается
+оглавления пользователя (см. `RUSSIAN_5_CURRICULUM` в `backend/content/russian_content.py`).
+Нумерация § **начинается
 заново в каждой из двух частей** — это не ошибка (в частях 1 и 2 есть, например, «Фонетика» и
 «Фонетика (продолжение)» с параграфами § 1, § 2 в обеих — они в разных разделах, конфликта нет,
 т.к. уникальность темы в БД проверяется в рамках раздела, а не глобально).
@@ -761,7 +815,8 @@ LESSON_DICT. Если попросят добавить такой урок «З
   предстоит из перепутанных абзацев старых черновиков собрать цельные статьи).
 
 ## Статус программы «Русский язык, 5 класс»
-10 разделов, 57 тем (полный список — см. `RUSSIAN_5_CURRICULUM` в `backend/main.py`). Программа
+10 разделов, 57 тем (полный список — см. `RUSSIAN_5_CURRICULUM` в `backend/content/russian_content.py`).
+Программа
 внесена в БД (сама структура разделов/тем). Разделы 1-4 полностью укомплектованы уроками (см.
 запись в «Сюжетной линии» выше); остальные разделы — следующий шаг после этого файла.
 
@@ -821,8 +876,9 @@ LESSON_DICT. Если попросят добавить такой урок «З
   не знает о конкретных предметах, работает по параметру URL), поэтому саму карту мира писать не
   пришлось.
 - Подписи/иконки предмета `academy` добавлены везде, где были захардкожены словари по школьным
-  предметам (чтобы не было пустых подписей/иконок): `SUBJECT_LABELS` и `subject_icons` в
-  `backend/main.py`; `SUBJ`/`SUBJ_KEY` в `ChildHome.jsx` (в сам `SUBJ_KEY`, то есть в сетку
+  предметам (чтобы не было пустых подписей/иконок): `SUBJECT_LABELS` в `backend/config.py` и
+  `subject_icons` (ключ внутри `DEFAULT_SETTINGS`) в `backend/routers/settings.py`;
+  `SUBJ`/`SUBJ_KEY` в `ChildHome.jsx` (в сам `SUBJ_KEY`, то есть в сетку
   «Предметы», `academy` **намеренно не добавлен** — у него отдельный баннер); `SUBJ` в
   `SubjectPage.jsx` и `ParentDashboard.jsx`; `SUBJ_ICON` в `SubjectIcon.jsx` (🧭) и
   `ParentDashboard.jsx`; цветовые классы `.gh-subject-card.academy`/`.gh-badge.academy` в
