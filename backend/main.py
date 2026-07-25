@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 import os, jwt, shutil, re, json
 from datetime import datetime, timedelta
 from typing import Optional
-from pydantic import BaseModel
 import httpx, asyncio
 
 from config import UPLOAD_DIR, SUBJECT_LABELS, MATERIAL_SUBJECTS
@@ -16,6 +15,12 @@ from telegram_service import (
     DEFAULT_INTEGRATIONS, get_integrations, save_integrations, get_telegram_config,
     tg_send, tg_send_result,
 )
+from models.settings import SettingsIn, TelegramConfigIn
+from models.curriculum import SectionIn, TopicIn, ImportCurriculumIn
+from models.lessons import LessonIn, StartLessonIn, FinishLessonIn
+from models.articles import ArticleIn, MaterialAssignmentIn
+from models.skills import SkillCategoryIn, SkillIn
+from models.misc import LoginIn, MistakeIn, PenaltyIn, RewardIn
 
 DEFAULT_SETTINGS = {
     "site_name": "EduQuest",
@@ -86,25 +91,6 @@ def read_settings():
     conn = get_conn(); s = get_settings(conn); conn.close()
     return s
 
-class SettingsIn(BaseModel):
-    site_name: Optional[str] = None
-    logo_url: Optional[str] = None
-    logo_size: Optional[int] = None
-    favicon_url: Optional[str] = None
-    bg_main: Optional[str] = None
-    bg_hero: Optional[str] = None
-    bg_lesson_of_day: Optional[str] = None
-    bg_subject_page: Optional[str] = None
-    sidebar_left_url: Optional[str] = None
-    sidebar_right_url: Optional[str] = None
-    subject_icons: Optional[dict] = None
-    font_heading: Optional[str] = None
-    font_body: Optional[str] = None
-    color_accent: Optional[str] = None
-    color_accent2: Optional[str] = None
-    sound_correct: Optional[str] = None
-    sound_wrong: Optional[str] = None
-
 @app.put("/api/settings")
 def update_settings(data: SettingsIn, role: str = Depends(require_parent)):
     conn = get_conn()
@@ -154,11 +140,6 @@ async def upload_setting_asset(slot: str, file: UploadFile = File(...), role: st
 
 # ── Интеграции (Telegram) ────────────────────────────────────────────────────
 
-class TelegramConfigIn(BaseModel):
-    tg_bot_token: Optional[str] = None
-    tg_chat_id: Optional[str] = None
-    site_url: Optional[str] = None
-
 @app.get("/api/integrations/telegram")
 def get_telegram_settings(role: str = Depends(require_parent)):
     conn = get_conn()
@@ -191,10 +172,6 @@ async def test_telegram(role: str = Depends(require_parent)):
 
 # ── Login ─────────────────────────────────────────────────────────────────────
 
-class LoginIn(BaseModel):
-    password: str
-    role: str
-
 @app.post("/api/login")
 def login(data: LoginIn):
     parent_pass = os.environ.get("PARENT_PASSWORD", "parent123")
@@ -205,18 +182,6 @@ def login(data: LoginIn):
     return {"token": make_token(data.role), "role": data.role}
 
 # ── Curriculum: Класс → Предмет → Раздел → Тема ─────────────────────────────────
-
-class SectionIn(BaseModel):
-    grade: int
-    subject: str
-    title: str
-    order_index: int = 0
-    intro: Optional[str] = None
-
-class TopicIn(BaseModel):
-    section_id: int
-    title: str
-    order_index: int = 0
 
 @app.get("/api/curriculum")
 def get_curriculum(grade: int, subject: str, role: str = Depends(require_any)):
@@ -344,11 +309,6 @@ def get_topic(topic_id: int, role: str = Depends(require_any)):
     conn.close()
     return {**dict(t), "section": dict(s) if s else None, "lessons": [dict(l) for l in lessons]}
 
-class ImportCurriculumIn(BaseModel):
-    grade: int
-    subject: str
-    text: str
-
 @app.post("/api/curriculum/import")
 def import_curriculum(data: ImportCurriculumIn, role: str = Depends(require_parent)):
     """Импорт программы из текста в формате:
@@ -388,19 +348,6 @@ def import_curriculum(data: ImportCurriculumIn, role: str = Depends(require_pare
     return {"sections_found": len(parsed), "sections_created": sections_created, "topics_created": topics_created}
 
 # ── Lessons ───────────────────────────────────────────────────────────────────
-
-class LessonIn(BaseModel):
-    subject: str
-    grade: int = 4
-    topic: str
-    topic_id: Optional[int] = None
-    context_theme: str = "minecraft"
-    explanation: str = ""
-    explanation_game: str = ""
-    questions: Optional[str] = None
-    boss_task: Optional[str] = None
-    coins_lesson: int = 50
-    coins_boss: int = 30
 
 @app.get("/api/lessons")
 def list_lessons(subject: Optional[str] = None, topic_id: Optional[int] = None, role: str = Depends(require_any)):
@@ -503,14 +450,6 @@ async def upload_image(lesson_id: int, file: UploadFile = File(...), role: str =
     return {"infographic": f"/uploads/images/lesson_{lesson_id}.{ext}"}
 
 # ── Articles (познавательные материалы — без контроля знаний) ────────────────────
-
-class ArticleIn(BaseModel):
-    subject: str
-    grade: Optional[int] = None
-    title: str
-    summary: Optional[str] = None
-    cover_image: Optional[str] = None
-    blocks: list
 
 @app.get("/api/materials/subjects")
 def material_subjects(role: str = Depends(require_any)):
@@ -644,10 +583,6 @@ def pick_next_articles(conn, n: int = 3):
     ordered = never_sent + already_sent_sorted
     return ordered[:n]
 
-class MaterialAssignmentIn(BaseModel):
-    coins_reward: int = 30
-    count: int = 3
-
 @app.post("/api/materials/assignments")
 async def create_material_assignment(data: MaterialAssignmentIn, role: str = Depends(require_parent)):
     conn = get_conn()
@@ -767,9 +702,6 @@ async def complete_material_assignment(assignment_id: int, role: str = Depends(r
 
 
 
-class StartLessonIn(BaseModel):
-    lesson_id: int
-
 def _number_group_pattern(digits: str) -> str:
     """Строит паттерн для целой части числа, где между группами по 3 цифры
     (справа налево) допускается необязательный пробел — обычный или
@@ -823,15 +755,6 @@ def _check_boss_answer(expected: str, given: str) -> bool:
     exp_norm = expected.strip().lower()
     pat = r"(?<!\w)" + re.escape(exp_norm) + r"(?!\w)"
     return bool(re.search(pat, given_norm, flags=re.UNICODE))
-
-
-class FinishLessonIn(BaseModel):
-    progress_id: int
-    score: int
-    total: int = 5
-    boss_done: bool = False
-    boss_answer: Optional[str] = None
-
 
 
 @app.post("/api/progress/start")
@@ -912,17 +835,6 @@ def get_progress(role: str = Depends(require_any)):
     return [dict(r) for r in rows]
 
 # ── Навыки (логические/классические задачи — картинка + до 3 подсказок) ────────
-
-class SkillCategoryIn(BaseModel):
-    title: str
-
-class SkillIn(BaseModel):
-    category_id: int
-    image_url: Optional[str] = None
-    hint1: Optional[str] = None
-    hint2: Optional[str] = None
-    hint3: Optional[str] = None
-    answer: Optional[str] = None
 
 @app.get("/api/skill-categories")
 def list_skill_categories(role: str = Depends(require_any)):
@@ -1126,12 +1038,6 @@ def get_balance(role: str = Depends(require_any)):
     conn.close()
     return {"balance": earned - spent, "earned": earned, "spent": spent}
 
-class MistakeIn(BaseModel):
-    lesson_id: int
-    question_text: Optional[str] = None
-    chosen_text: Optional[str] = None
-    correct_text: Optional[str] = None
-
 @app.post("/api/mistakes")
 def log_mistake(data: MistakeIn, role: str = Depends(require_any)):
     """Фиксирует неверный ответ на карточке — без начисления/списания монет,
@@ -1227,11 +1133,6 @@ def list_mistakes(role: str = Depends(require_parent)):
     conn.close()
     return [dict(r) for r in rows]
 
-class PenaltyIn(BaseModel):
-    lesson_id: Optional[int] = None
-    amount: int = 5
-    note: Optional[str] = None
-
 @app.post("/api/coins/penalty")
 def coin_penalty(data: PenaltyIn, role: str = Depends(require_any)):
     """Списывает монеты сразу за неверный ответ — стимулирует отвечать вдумчивее."""
@@ -1244,10 +1145,6 @@ def coin_penalty(data: PenaltyIn, role: str = Depends(require_any)):
     spent  = conn.execute("SELECT COALESCE(SUM(cost_coins),0) as s FROM rewards WHERE status='approved'").fetchone()["s"]
     conn.close()
     return {"balance": earned - spent, "penalty": abs(amt)}
-
-class RewardIn(BaseModel):
-    name: str
-    cost_coins: int
 
 @app.post("/api/rewards/request")
 async def request_reward(data: RewardIn, role: str = Depends(require_any)):
