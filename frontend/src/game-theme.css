@@ -114,6 +114,22 @@
   color: #7cf7c4; padding: 7px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
 }
 
+/* Академия Великих Исследователей — вход, отдельно от школьных предметов */
+.gh-academy-banner {
+  display: flex; align-items: center; gap: 16px; cursor: pointer;
+  border-radius: 18px; padding: 16px 20px; margin-bottom: 24px;
+  background: linear-gradient(120deg, #4a3a12, #7a5c10 55%, #3a2e0a);
+  border: 1px solid rgba(201,162,39,0.4);
+  box-shadow: 0 10px 26px rgba(122,92,16,0.3);
+  transition: transform .12s;
+}
+.gh-academy-banner:hover { transform: translateY(-2px); }
+.gh-academy-banner-icon { font-size: 2.2rem; flex-shrink: 0; }
+.gh-academy-banner-text { flex: 1; }
+.gh-academy-banner-title { font-family: var(--font-num); font-size: 1.05rem; font-weight: 800; color: #f3dfa0; }
+.gh-academy-banner-sub { font-size: 0.8rem; color: #e6d5a3; opacity: 0.9; margin-top: 2px; }
+.gh-academy-banner-arrow { font-size: 1.4rem; color: #f3dfa0; flex-shrink: 0; }
+
 /* Lesson of the day */
 .gh-lod {
   border-radius: 18px; padding: 20px;
@@ -181,6 +197,7 @@
 .gh-subject-card.russian { background: linear-gradient(150deg, #9c2a4a, #5e1830); }
 .gh-subject-card.science { background: linear-gradient(150deg, #1c7a4e, #0f4a30); }
 .gh-subject-card.history { background: linear-gradient(150deg, #6a3ab0, #3f1f6e); }
+.gh-subject-card.academy { background: linear-gradient(150deg, #7a5c10, #3a2e0a); }
 .gh-subject-card.biology     { background: linear-gradient(150deg, #1c8f5a, #0f4a30); }
 .gh-subject-card.chemistry   { background: linear-gradient(150deg, #c0472a, #7a2515); }
 .gh-subject-card.geography   { background: linear-gradient(150deg, #1f8fb0, #12586e); }
@@ -223,6 +240,7 @@
 .gh-badge.russian { background: rgba(255,93,122,0.18); color: #ff8ca1; }
 .gh-badge.science { background: rgba(34,211,139,0.18); color: #5fe6b0; }
 .gh-badge.history { background: rgba(177,123,255,0.18); color: #c6a3ff; }
+.gh-badge.academy { background: rgba(201,162,39,0.18); color: #e0c468; }
 
 .gh-card { background: var(--gh-card); border: 1px solid var(--gh-border); border-radius: 14px; padding: 16px; }
 .gh-empty { text-align: center; padding: 40px 20px; color: var(--gh-muted); }

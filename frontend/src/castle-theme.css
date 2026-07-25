@@ -1,0 +1,26 @@
+/* Тема "Академия Великих Исследователей" — визуальный стиль прохождения миссий (LessonPage).
+   Переиспользует ту же вёрстку и те же классы dl-*, что и detective-theme.css (см. THEMES.castle
+   в LessonPage.jsx) — меняются только CSS-переменные (палитра/шрифты), не структура. */
+.castle-lesson {
+  --board:#2b2620;
+  --board-dark:#1c1812;
+  --paper:#f2e6c9;
+  --paper-dark:#e6d5a3;
+  --ink:#2b1d10;
+  --dl-red:#7a2420;
+  --dl-gold:#c9a227;
+  --dl-navy:#3a2e1f;
+  --dl-green:#3f6b3f;
+  --font-display:'Cinzel', serif;
+  --font-body:'Lora', serif;
+  --font-mono:'IBM Plex Mono', monospace;
+
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.03), transparent 40%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 4px),
+    var(--board);
+  padding-bottom: 60px;
+}

@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
 import dayjs from 'dayjs'
 
-const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
-const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️' }
+const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История', academy: 'Академия Великих Исследователей' }
+const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️', academy: '🧭' }
 
 export default function ParentDashboard() {
   const { token, logout } = useAuth()

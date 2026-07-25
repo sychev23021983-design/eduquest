@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
 import { api } from '../api.js'
 import '../detective-theme.css'
+import '../castle-theme.css'
 import '../game-theme.css'
 
 // Тексты интерфейса урока зависят от lesson.context_theme — так один и тот же компонент/CSS
@@ -85,6 +86,43 @@ const THEMES = {
     coinsForBoss: 'За финальную полосу 🖋️',
     mistakeNote: n => `${n} ${n === 1 ? 'материал потребовал' : 'материала потребовали'} правку — в следующий раз выбирай ответ вдумчивее!`,
     retryNote: '💡 Пройди номер ещё раз, чтобы собрать больше монет!',
+  },
+  castle: {
+    icon: '🏰',
+    loading: '🏰 Открываю карту испытания…',
+    stamp: id => `ИСПЫТАНИЕ №${id}`,
+    coverEyebrow: 'Легенда испытания',
+    audioEyebrow: 'Голос Профессора',
+    coinsNoteLabel: 'За испытание',
+    startBtn: n => n > 0 ? `Войти в испытание — ${n} задач ›` : 'Войти в испытание ›',
+    subIntro: 'Испытание начато',
+    subQuestions: (cur, total) => `Задача ${cur} из ${total}`,
+    subBoss: 'Финальное состязание',
+    subDone: 'Путь открыт',
+    questionEyebrow: n => `Задача №${n}`,
+    wrongExtra: perQ => `, эта задача не принесёт до ${perQ} 🪙 к награде`,
+    nextQuestionBtn: 'Следующая задача →',
+    toBossBtn: 'Финальное состязание →',
+    toDoneBtn: 'Открыть путь →',
+    bossEyebrow: '⚔️ Финальное состязание',
+    bossTitle: 'Пройди последнее испытание Хранителя',
+    bossReward: n => `Награда: +${n} монет за победу!`,
+    bossSubmitBtn: 'Дать ответ →',
+    bossCorrect: '✅ Верно! Путь открыт!',
+    bossWrong: '❌ Не совсем так, но вот решение:',
+    bossSolutionLabel: 'Решение:',
+    bossCloseBtn: 'Понятно, открыть путь →',
+    finaleTitle: 'Испытание пройдено!',
+    rank: pct => pct === 100 ? 'Великий Исследователь — высшая категория!'
+               : pct >= 80  ? 'Исследователь I уровня'
+               : pct >= 60  ? 'Исследователь-новичок'
+               : pct >= 40  ? 'Путь почти открыт — есть над чем подумать'
+               :              'В следующий раз рассуждай внимательнее',
+    scoreLabel: 'Решённых задач',
+    coinsForQuestions: (score, total) => `За задачи (${score}/${total})`,
+    coinsForBoss: 'За финальное состязание ⚔️',
+    mistakeNote: n => `${n} ${n === 1 ? 'задача уменьшила' : 'задачи уменьшили'} награду за испытание — в следующий раз рассуждай внимательнее!`,
+    retryNote: '💡 Пройди испытание ещё раз, чтобы решить больше задач и собрать больше монет!',
   },
 }
 function themeFor(lesson) {
@@ -262,9 +300,10 @@ export default function LessonPage() {
   const boss = (() => { try { return JSON.parse(lesson.boss_task || 'null') } catch { return null } })()
   const stars = score
   const theme = themeFor(lesson)
+  const rootThemeClass = lesson?.context_theme === 'castle' ? 'castle-lesson' : 'detective-lesson'
 
   return (
-    <div className="detective-lesson">
+    <div className={rootThemeClass}>
       <audio ref={correctAudioRef} src={settings?.sound_correct || undefined} preload="auto" style={{ display: 'none' }} />
       <audio ref={wrongAudioRef} src={settings?.sound_wrong || undefined} preload="auto" style={{ display: 'none' }} />
       {/* Top bar */}

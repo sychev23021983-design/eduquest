@@ -6,7 +6,7 @@ import { api } from '../api.js'
 import SubjectIcon from '../components/SubjectIcon.jsx'
 import '../game-theme.css'
 
-const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
+const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История', academy: 'Академия Великих Исследователей' }
 
 // Геометрия змейки: расстояние между узлами по горизонтали и позиции по вертикали (в px)
 const COL_W    = 150   // px между центрами соседних узлов по горизонтали
@@ -114,7 +114,7 @@ export default function SubjectPage() {
           <span className="gh-map-title-text" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <SubjectIcon subj={subject} icons={settings?.subject_icons} size={26} /> {(SUBJ[subject] || '').toUpperCase()}
           </span>
-          <span className="gh-map-grade-pill">{grade} КЛАСС</span>
+          {subject !== 'academy' && <span className="gh-map-grade-pill">{grade} КЛАСС</span>}
         </div>
         <div className="gh-map-right">
           <span className="gh-map-pill star"><span className="ic">⭐</span>{stats.totalStars}</span>

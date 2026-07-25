@@ -6,7 +6,7 @@ import { api } from '../api.js'
 import SubjectIcon from '../components/SubjectIcon.jsx'
 import '../game-theme.css'
 
-const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История' }
+const SUBJ = { math: 'Математика', russian: 'Русский язык', science: 'Окружающий мир', history: 'История', academy: 'Академия Великих Исследователей' }
 const SUBJ_KEY  = ['math', 'russian', 'science', 'history']
 const XP_PER_LEVEL = 300
 
@@ -125,6 +125,16 @@ export default function ChildHome() {
               {streak > 0 && (
                 <div className="gh-streak-chip">🔥 {streak} {streak === 1 ? 'день' : 'дня'} подряд — не останавливайся!</div>
               )}
+            </div>
+
+            {/* Академия Великих Исследователей — отдельный от школьных предметов раздел */}
+            <div className="gh-academy-banner" onClick={() => nav('/subject/academy')}>
+              <div className="gh-academy-banner-icon">🧭</div>
+              <div className="gh-academy-banner-text">
+                <div className="gh-academy-banner-title">Академия Великих Исследователей</div>
+                <div className="gh-academy-banner-sub">Не школьная программа — испытания на логику, изобретательство и другие навыки</div>
+              </div>
+              <span className="gh-academy-banner-arrow">→</span>
             </div>
 
             {/* Subjects grid */}

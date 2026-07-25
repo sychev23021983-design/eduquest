@@ -1,4 +1,4 @@
-const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️' }
+const SUBJ_ICON = { math: '🔢', russian: '📝', science: '🌿', history: '🏛️', academy: '🧭' }
 
 export default function SubjectIcon({ subj, icons, size = 28 }) {
   const custom = icons?.[subj]
