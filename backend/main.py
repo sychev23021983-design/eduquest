@@ -9,14 +9,41 @@ from typing import Optional
 from pydantic import BaseModel
 import httpx, asyncio
 
-# Контент (уроки/статьи/программа) вынесен в backend/content/ — здесь используется через
-# `import *`, чтобы все константы (LESSON_*, ARTICLE_*, SECTION_INTRO_*, *_CURRICULUM)
-# остались в глобальном пространстве имён этого модуля один в один как раньше — это важно
-# для _lesson_answer_map(), которая ищет LESSON_DICT-константы через globals().
-from content.articles_content import *
-from content.math_content import *
-from content.russian_content import *
-from content.academy_content import *
+# Контент (уроки/статьи/программа) вынесен в backend/content/ — модули импортируются и по
+# именам констант (используются напрямую ниже), и как модули целиком (нужны
+# _lesson_answer_map(), которая обходит vars(<module>) в поисках LESSON_DICT-констант).
+from content import articles_content, math_content, russian_content, academy_content
+from content.articles_content import (
+    ARTICLE_HOW_EARTH_FORMED, ARTICLE_CONTINENTS, ARTICLE_UNIVERSE, ARTICLE_PLANTS_GROW,
+    ARTICLE_CELL, ARTICLE_HUMAN_BODY, ARTICLE_EYE, ARTICLE_SLEEP,
+)
+from content.math_content import (
+    LESSON_NATURAL_DIGITS, LESSON_NATURAL_COMPARE, LESSON_ROUNDING, LESSON_DIVISIBILITY,
+    LESSON_PRIME_COMPOSITE, LESSON_GCD_LCM, LESSON_CONTROL_NATURAL_NUMBERS, LESSON_ADD_SUBTRACT,
+    LESSON_MULT_DIVIDE, LESSON_POWER, LESSON_ORDER_OPERATIONS, LESSON_CONTROL_NATURAL_OPERATIONS,
+    LESSON_EXPRESSIONS, LESSON_EQUATIONS, LESSON_FORMULAS, LESSON_CONTROL_EXPRESSIONS_EQUATIONS,
+    SECTION_INTRO_NATURAL_NUMBERS, SECTION_INTRO_NATURAL_OPERATIONS, SECTION_INTRO_EXPRESSIONS_EQUATIONS,
+    SECTION_INTRO_FRACTIONS, LESSON_FRACTION_CONCEPT, LESSON_FRACTION_TYPES, LESSON_FRACTION_PROPERTY,
+    LESSON_FRACTION_OPERATIONS, LESSON_FRACTION_PROBLEMS, LESSON_CONTROL_FRACTIONS, SECTION_INTRO_GEOMETRY,
+    LESSON_GEOMETRY_BASICS, LESSON_GEOMETRY_MEASURE, LESSON_GEOMETRY_POLYGON, LESSON_GEOMETRY_ANGLES,
+    LESSON_GEOMETRY_LINES, LESSON_GEOMETRY_AREA, LESSON_GEOMETRY_VOLUME, LESSON_CONTROL_GEOMETRY,
+    SECTION_INTRO_DATA_ANALYSIS, LESSON_DATA_TABLES, LESSON_AVERAGE, LESSON_TYPICAL_PROBLEMS,
+    LESSON_CONTROL_DATA_ANALYSIS, LESSON_FINAL_EXAM, LESSON_REINFORCE_FRACTION_PROPERTY,
+    LESSON_REINFORCE_FRACTION_OPERATIONS, LESSON_REINFORCE_FRACTION_PROBLEMS, LESSON_REINFORCE_GEOMETRY_VOLUME,
+    LESSON_REINFORCE_CONTROL_GEOMETRY, LESSON_REINFORCE_TYPICAL_PROBLEMS, LESSON_ARCH_MATH_SLIDESHOW,
+    MATH_5_CURRICULUM,
+)
+from content.russian_content import (
+    RUSSIAN_5_CURRICULUM, SECTION_INTRO_RU_REVIEW, LESSON_RU_TEXT, LESSON_RU_PHRASE_SENTENCE,
+    LESSON_RU_WORD_STRUCTURE, LESSON_RU_SPELLING_BASICS, LESSON_RU_PARTS_OF_SPEECH, SECTION_INTRO_RU_CULTURE,
+    LESSON_RU_LANGUAGE_SPEECH, LESSON_RU_NORM_CONCEPT, LESSON_RU_ORTHOEPIC_NORMS, LESSON_RU_MORPH_SYNTAX_PUNCT_NORMS,
+    LESSON_RU_PRECISION_LOGIC, LESSON_RU_RICHNESS_APPROPRIATENESS, LESSON_RU_DIALOGUE_MONOLOGUE, SECTION_INTRO_RU_STYLE,
+    LESSON_RU_SPEECH_SITUATION, LESSON_RU_THREE_STYLES, LESSON_RU_OFFICIAL_PUBLICISTIC, LESSON_RU_SPEECH_NORM,
+    SECTION_INTRO_RU_SYNTAX, LESSON_RU_WORD_COMBINATION, LESSON_RU_SENTENCE_TYPES, LESSON_RU_MAIN_MEMBERS,
+    LESSON_RU_TSYA_TSJA, LESSON_RU_VERB_ENDINGS, LESSON_RU_SECONDARY_MEMBERS, LESSON_RU_HOMOGENEOUS,
+    LESSON_RU_ADDRESS, LESSON_RU_COMPLEX_SENTENCE, LESSON_RU_DIRECT_SPEECH,
+)
+from content.academy_content import SECTION_INTRO_ACADEMY_LOGIC, LESSON_ACADEMY_RIVER_CROSSING
 
 DB_PATH    = os.getenv("DB_PATH",         "/app/data/eduquest.db")
 SECRET_KEY = os.getenv("SECRET_KEY",      "eduquest-secret-key-2026")
@@ -223,15 +250,16 @@ def seed_lesson_regenerate(conn, grade: int, subject: str, section_title: str, t
          existing["id"]))
 
 def _lesson_answer_map():
-    """Собирает {topic: answer} из всех LESSON_DICT-констант модуля верхнего уровня, у которых
+    """Собирает {topic: answer} из всех LESSON_DICT-констант content-модулей, у которых
     задан boss_task.answer. Используется backfill_missing_boss_answers() как источник истины —
     "правильный" ответ для темы всегда тот, что сейчас записан в коде."""
     result = {}
-    for val in globals().values():
-        if isinstance(val, dict) and isinstance(val.get("boss_task"), dict) and val.get("topic"):
-            ans = val["boss_task"].get("answer")
-            if ans:
-                result[val["topic"]] = ans
+    for module in (math_content, russian_content, academy_content, articles_content):
+        for val in vars(module).values():
+            if isinstance(val, dict) and isinstance(val.get("boss_task"), dict) and val.get("topic"):
+                ans = val["boss_task"].get("answer")
+                if ans:
+                    result[val["topic"]] = ans
     return result
 
 def backfill_missing_boss_answers(conn):
