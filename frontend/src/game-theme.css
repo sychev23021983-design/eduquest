@@ -580,6 +580,8 @@
 }
 .gh-skill-hint-label { font-size: 0.78rem; font-weight: 700; color: var(--gh-amber); }
 .gh-skill-hint-box p { margin: 6px 0 0; font-size: 0.92rem; }
+.gh-skill-answer-box { background: rgba(34,211,139,0.10); border-color: var(--gh-green); }
+.gh-skill-answer-label { color: var(--gh-green); }
 
 /* Навыки — слайдшоу заданий */
 .gh-skill-slideshow-row { display: flex; align-items: center; gap: 14px; }

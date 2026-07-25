@@ -26,7 +26,7 @@ export default function SkillEditor() {
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
 
-  const [form, setForm] = useState({ category_id: '', hint1: '', hint2: '', hint3: '', image_url: '' })
+  const [form, setForm] = useState({ category_id: '', hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [uploadingSlot, setUploadingSlot] = useState(null)
@@ -63,7 +63,7 @@ export default function SkillEditor() {
     setCategories(cats)
     setForm({
       category_id: s.category_id, hint1: s.hint1 || '', hint2: s.hint2 || '', hint3: s.hint3 || '',
-      image_url: s.image_url || '',
+      answer: s.answer || '', image_url: s.image_url || '',
     })
   }
 
@@ -72,7 +72,7 @@ export default function SkillEditor() {
     setCategories(cats)
     const qsCategory = Number(searchParams.get('category_id'))
     const category_id = cats.some(c => c.id === qsCategory) ? qsCategory : (cats[0]?.id || '')
-    setForm({ category_id, hint1: '', hint2: '', hint3: '', image_url: '' })
+    setForm({ category_id, hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
     setCreatedId(null)
     newSlotId.current = Math.random().toString(36).slice(2, 10)
   }
@@ -94,6 +94,7 @@ export default function SkillEditor() {
         await api.updateSkill(token, effectiveId, {
           category_id: Number(form.category_id), image_url: newUrl,
           hint1: form.hint1 || null, hint2: form.hint2 || null, hint3: form.hint3 || null,
+          answer: form.answer || null,
         })
         setMsg('✅ Картинка загружена и сохранена')
       } else {
@@ -139,6 +140,7 @@ export default function SkillEditor() {
       const payload = {
         category_id: Number(form.category_id), image_url: form.image_url || null,
         hint1: form.hint1 || null, hint2: form.hint2 || null, hint3: form.hint3 || null,
+        answer: form.answer || null,
       }
       if (effectiveId) {
         await api.updateSkill(token, effectiveId, payload)
@@ -155,7 +157,7 @@ export default function SkillEditor() {
 
   function createAnother() {
     const category_id = form.category_id
-    setForm({ category_id, hint1: '', hint2: '', hint3: '', image_url: '' })
+    setForm({ category_id, hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
     setCreatedId(null)
     newSlotId.current = Math.random().toString(36).slice(2, 10)
     setMsg('')
@@ -267,6 +269,7 @@ export default function SkillEditor() {
                               <div style={{ fontWeight: 500 }}>Задание #{s.id}</div>
                               <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
                                 Подсказок: {[s.hint1, s.hint2, s.hint3].filter(Boolean).length} / 3
+                                {' · '}Ответ: {s.answer ? 'есть' : 'нет'}
                               </div>
                             </div>
                             <button className="btn btn-sm" onClick={() => window.open(`/skills/task/${s.id}`, '_blank')}>👁 Посмотреть</button>
@@ -373,11 +376,20 @@ export default function SkillEditor() {
                 Ребёнок сможет открыть их по одной, если задание покажется трудным.
               </p>
               {[1, 2, 3].map(n => (
-                <div key={n} style={{ marginBottom: n < 3 ? 12 : 0 }}>
+                <div key={n} style={{ marginBottom: 12 }}>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Подсказка {n}</label>
                   <textarea className="input" rows={2} value={form[`hint${n}`]} onChange={e => setF(`hint${n}`, e.target.value)} />
                 </div>
               ))}
+            </div>
+
+            <div className="card" style={{ marginBottom: 20 }}>
+              <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Правильный ответ (необязательно)</h3>
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
+                Ребёнок увидит это описание решения только после того, как откроет все подсказки и нажмёт
+                кнопку «Сдаюсь».
+              </p>
+              <textarea className="input" rows={3} value={form.answer} onChange={e => setF('answer', e.target.value)} />
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginBottom: 40, flexWrap: 'wrap' }}>
