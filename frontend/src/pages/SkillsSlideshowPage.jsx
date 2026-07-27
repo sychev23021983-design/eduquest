@@ -136,7 +136,7 @@ export default function SkillsSlideshowPage() {
       )}
 
       {current && (
-        <div className="gh-wrap" style={{ maxWidth: 900 }}>
+        <div className="gh-wrap" style={{ maxWidth: 1400 }}>
           <div className="gh-skill-slideshow-row">
             <button className="gh-slideshow-arrow static" onClick={prev} disabled={index === 0} aria-label="Предыдущее">‹</button>
             <div style={{ flex: 1 }}>

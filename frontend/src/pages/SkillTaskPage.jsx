@@ -46,7 +46,7 @@ export default function SkillTaskPage() {
         </div>
       </div>
 
-      <div className="gh-wrap" style={{ maxWidth: 900 }}>
+      <div className="gh-wrap" style={{ maxWidth: 1400 }}>
         <SkillTaskView key={skill.id} skill={skill} />
 
         <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
