@@ -150,10 +150,10 @@ def seed_lesson_regenerate(conn, grade: int, subject: str, section_title: str, t
         seed_lesson_if_missing(conn, grade, subject, section_title, topic_title, lesson)
         return
     conn.execute("""UPDATE lessons SET
-        context_theme=?, explanation=?, explanation_game=?, questions=?, boss_task=?, coins_lesson=?, coins_boss=?,
+        topic=?, context_theme=?, explanation=?, explanation_game=?, questions=?, boss_task=?, coins_lesson=?, coins_boss=?,
         lesson_type=?, slides=?
         WHERE id=?""",
-        (lesson.get("context_theme", "detective"),
+        (lesson.get("topic", topic_title), lesson.get("context_theme", "detective"),
          lesson.get("explanation", ""), lesson.get("explanation_game", ""),
          json.dumps(lesson.get("questions", []), ensure_ascii=False),
          json.dumps(lesson["boss_task"], ensure_ascii=False) if lesson.get("boss_task") else None,
