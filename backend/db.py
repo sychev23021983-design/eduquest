@@ -417,7 +417,7 @@ def init_db():
     seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
     seed_curriculum_if_empty(conn, 5, "russian", RUSSIAN_5_CURRICULUM)
     seed_section_intro_if_missing(conn, 5, "russian", "Повторение изученного в начальных классах", SECTION_INTRO_RU_REVIEW)
-    seed_lesson_if_missing(conn, 5, "russian", "Повторение изученного в начальных классах", "§ 1. Текст", LESSON_RU_TEXT)
+    seed_lesson_regenerate(conn, 5, "russian", "Повторение изученного в начальных классах", "§ 1. Текст", LESSON_RU_TEXT)
     seed_lesson_if_missing(conn, 5, "russian", "Повторение изученного в начальных классах", "§ 2. Словосочетание. Предложение", LESSON_RU_PHRASE_SENTENCE)
     seed_lesson_if_missing(conn, 5, "russian", "Повторение изученного в начальных классах", "§ 3. Состав слова. Орфограмма", LESSON_RU_WORD_STRUCTURE)
     seed_lesson_if_missing(conn, 5, "russian", "Повторение изученного в начальных классах", "§ 4. Правописание", LESSON_RU_SPELLING_BASICS)
