@@ -222,7 +222,7 @@ export default function Curriculum() {
                         <input className="input" value={editText} onChange={e => setEditText(e.target.value)}
                                onKeyDown={e => e.key === 'Enter' && renameTopic(t)} autoFocus style={{ flex: 1 }} />
                       ) : (
-                        <span style={{ flex: 1 }}>{ti + 1}. {t.title}</span>
+                        <span style={{ flex: 1 }}>{ti + 1}. {lesson?.topic || t.title}</span>
                       )}
                       <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
                         {isSlideshow ? `🖼 ${filledCount}/${slideSlots.length}` : t.lesson_count > 0 ? `📚 ${t.lesson_count}` : '🤖 ждёт урок'}

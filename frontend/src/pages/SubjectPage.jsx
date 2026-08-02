@@ -167,7 +167,7 @@ export default function SubjectPage() {
             const state = nodeState(t, prevDone)
             nodes.push({
               kind: 'topic', topic: t, state,
-              badge: `${si + 1}.${ti + 1}`, title: t.title,
+              badge: `${si + 1}.${ti + 1}`, title: t.lessons?.[0]?.topic || t.title,
               stars: t.stars || 0,
             })
             prevDone = t.completed
