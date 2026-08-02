@@ -1,0 +1,5 @@
+.mission-page .gh-nav { background: #102344 !important; }
+.mission-page .gh-card { background: #162b4a; }
+.mission-page .gh-card[style*="rgba"] { background: #123b49 !important; }
+.mission-page .gh-card button { background: #17345b !important; }
+.mission-page .gh-card button[style*="rgba"] { background: #17345b !important; }

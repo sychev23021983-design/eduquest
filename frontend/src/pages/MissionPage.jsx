@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSettings } from '../context/SettingsContext.jsx'
 import '../game-theme.css'
+import '../mission-theme.css'
 
 const INITIAL = {
   north: ['Создавать полезные вещи', 'Не сдаваться, когда трудно', 'Быстро учиться'],
@@ -42,7 +43,7 @@ export default function MissionPage() {
   const selectedQualities = QUALITIES.filter(([, name]) => data.north.includes(name))
   const recommendedSkills = [...new Set(selectedQualities.flatMap(([, , skills]) => skills))]
   const toggle = i => setData(d => ({ ...d, today: d.today.map((x, n) => n === i ? x.startsWith('✅') ? x.slice(2) : `✅ ${x}` : x) }))
-  return <div className="game-home" style={bg}>
+  return <div className="game-home mission-page" style={bg}>
     <div className="gh-topbar"><button className="gh-back-btn" onClick={() => nav('/')}>‹</button><div className="gh-map-title"><span className="gh-map-title-text">🧭 МИССИЯ</span></div></div>
     <div className="gh-wrap" style={{ maxWidth: 1120 }}>
       <div className="gh-hero" style={{ background: 'linear-gradient(120deg, rgba(27,75,140,.92), rgba(20,148,130,.86))' }}><div style={{ fontSize: 42 }}>🧭</div><h1>Моя миссия</h1><p>Не профессия. Путь человека, которым ты становишься.</p></div>
