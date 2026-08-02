@@ -87,6 +87,7 @@ export default function ChildHome() {
           ))}
           <button onClick={() => nav('/materials')}>📚 Материалы</button>
           <button onClick={() => nav('/skills')}>🧠 Навыки</button>
+          <button onClick={() => nav('/mission')}>🧭 Миссия</button>
         </div>
         <span className="gh-coin-pill">🪙 {balance.balance || 0}</span>
         <button className="gh-logout" onClick={logout}>Выйти</button>

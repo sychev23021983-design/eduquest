@@ -21,6 +21,7 @@ import SkillCategoryPage from './pages/SkillCategoryPage.jsx'
 import SkillTaskPage from './pages/SkillTaskPage.jsx'
 import SkillsSlideshowPage from './pages/SkillsSlideshowPage.jsx'
 import SkillEditor from './pages/SkillEditor.jsx'
+import MissionPage from './pages/MissionPage.jsx'
 
 function Guard({ role: need, children }) {
   const { token, role } = useAuth()
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/materials/article/:id" element={<Guard><ArticlePage /></Guard>} />
             <Route path="/materials/assignment/:id" element={<Guard><MaterialAssignmentPage /></Guard>} />
             <Route path="/skills" element={<Guard><SkillsPage /></Guard>} />
+            <Route path="/mission" element={<Guard><MissionPage /></Guard>} />
             <Route path="/skills/slideshow" element={<Guard><SkillsSlideshowPage /></Guard>} />
             <Route path="/skills/task/:id" element={<Guard><SkillTaskPage /></Guard>} />
             <Route path="/skills/:categoryId" element={<Guard><SkillCategoryPage /></Guard>} />
