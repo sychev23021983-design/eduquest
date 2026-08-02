@@ -363,6 +363,24 @@ export default function LessonPage() {
               </div>
             )}
 
+            <div className="dl-card" style={{ marginBottom: 16 }}>
+              <div className="dl-pin" />
+              <div className="dl-eyebrow">Маршрут миссии</div>
+              <div style={{ display: 'grid', gap: 10 }}>
+                {[
+                  ['🔍', 'Самостоятельное исследование', 'Сначала попробуй решить задачу сам и найди закономерность.'],
+                  ['🧠', 'Вспоминание без подсказки', 'Закрой объяснение и расскажи, что ты понял своими словами.'],
+                  ['🛠', 'Практическое применение', 'Используй правило в новой задаче, а не только выбери ответ.'],
+                  ['🎯', 'Мини-проект', 'Создай небольшой результат: текст, исправленное сообщение или собственный пример.'],
+                ].map(([icon, title, text]) => (
+                  <div key={title} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid var(--paper-dark)' }}>
+                    <span style={{ fontSize: 20 }}>{icon}</span>
+                    <div><b>{title}</b><div style={{ fontSize: 13, color: '#6f604d', marginTop: 2 }}>{text}</div></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="dl-coins-note">
               🪙 {theme.coinsNoteLabel}: <b>+{lesson.coins_lesson} монет</b> · за финальное задание: <b>+{lesson.coins_boss} монет</b>
             </div>
