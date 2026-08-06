@@ -60,6 +60,8 @@ export default function MissionPage() {
         <div className="gh-card" style={{ marginTop: 18, borderTop: '4px solid #3b82f6' }}>
           <div style={{ fontSize: 44 }}>🌉</div><h2>Построй самый прочный мост</h2>
           <p style={{ color: 'var(--gh-muted)' }}>Построй мост между двумя книгами и проверь, сколько монет он выдержит.</p>
+          <img src="/mission-icons/bridge-types.png" alt="Типы мостов: балочный, арочный, ферменный и подвесной" style={{ width: '100%', borderRadius: 12, margin: '14px 0', display: 'block' }} />
+          <p style={{ color: 'var(--gh-muted)', fontStyle: 'italic' }}>Посмотри на разные конструкции. Какую идею ты попробуешь первой?</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '14px 0' }}><span className="gh-chip gem">🧠 Решение задач</span><span className="gh-chip gem">🛠 Создание вещей</span><span className="gh-chip gem">🧗 Настойчивость</span><span className="gh-chip gem">⚡ Быстрое обучение</span></div>
           <p><b>Время:</b> 45–60 минут · <b>Сложность:</b> ⭐⭐</p>
           {bridgeStep === 0 && <button className="gh-btn blue" onClick={() => setBridgeStep(1)}>Начать экспедицию →</button>}
