@@ -65,7 +65,7 @@ def list_deleted_skill_categories(role: str = Depends(require_parent)):
 def list_skills(category_id: int, role: str = Depends(require_any)):
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, category_id, image_url, hint1, hint2, hint3, answer, order_index FROM skills "
+        "SELECT id, category_id, content, image_url, hint1, hint2, hint3, answer, order_index FROM skills "
         "WHERE active=1 AND category_id=? ORDER BY order_index, id",
         (category_id,)
     ).fetchall()
@@ -78,7 +78,7 @@ def list_all_active_skills(role: str = Depends(require_any)):
        по категориям делается на фронтенде, как и в MaterialsSlideshowPage)."""
     conn = get_conn()
     rows = conn.execute("""
-        SELECT sk.id, sk.category_id, sk.image_url, sk.hint1, sk.hint2, sk.hint3, sk.answer, sc.title as category_title
+        SELECT sk.id, sk.category_id, sk.content, sk.image_url, sk.hint1, sk.hint2, sk.hint3, sk.answer, sc.title as category_title
         FROM skills sk
         JOIN skill_categories sc ON sc.id = sk.category_id
         WHERE sk.active=1 AND sc.active=1
@@ -104,8 +104,8 @@ def create_skill(data: SkillIn, role: str = Depends(require_parent)):
         "SELECT MAX(order_index) as m FROM skills WHERE category_id=?", (data.category_id,)
     ).fetchone()["m"]
     c.execute(
-        "INSERT INTO skills (category_id,image_url,hint1,hint2,hint3,answer,order_index) VALUES (?,?,?,?,?,?,?)",
-        (data.category_id, data.image_url, data.hint1, data.hint2, data.hint3, data.answer, (max_order or 0) + 1)
+        "INSERT INTO skills (category_id,content,image_url,hint1,hint2,hint3,answer,order_index) VALUES (?,?,?,?,?,?,?,?)",
+        (data.category_id, data.content, data.image_url, data.hint1, data.hint2, data.hint3, data.answer, (max_order or 0) + 1)
     )
     conn.commit(); sid = c.lastrowid; conn.close()
     return {"id": sid}
@@ -114,8 +114,8 @@ def create_skill(data: SkillIn, role: str = Depends(require_parent)):
 def update_skill(skill_id: int, data: SkillIn, role: str = Depends(require_parent)):
     conn = get_conn()
     conn.execute(
-        "UPDATE skills SET category_id=?,image_url=?,hint1=?,hint2=?,hint3=?,answer=? WHERE id=?",
-        (data.category_id, data.image_url, data.hint1, data.hint2, data.hint3, data.answer, skill_id)
+        "UPDATE skills SET category_id=?,content=?,image_url=?,hint1=?,hint2=?,hint3=?,answer=? WHERE id=?",
+        (data.category_id, data.content, data.image_url, data.hint1, data.hint2, data.hint3, data.answer, skill_id)
     )
     conn.commit(); conn.close()
     return {"ok": True}
@@ -138,7 +138,7 @@ def restore_skill(skill_id: int, role: str = Depends(require_parent)):
 def list_deleted_skills(role: str = Depends(require_parent)):
     conn = get_conn()
     rows = conn.execute("""
-        SELECT sk.id, sk.category_id, sk.image_url, sk.hint1, sk.hint2, sk.hint3, sc.title as category_title
+        SELECT sk.id, sk.category_id, sk.content, sk.image_url, sk.hint1, sk.hint2, sk.hint3, sc.title as category_title
         FROM skills sk
         LEFT JOIN skill_categories sc ON sc.id = sk.category_id
         WHERE sk.active=0

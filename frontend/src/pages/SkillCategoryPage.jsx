@@ -53,7 +53,11 @@ export default function SkillCategoryPage() {
               <div key={s.id} className="gh-skill-thumb" onClick={() => nav(`/skills/task/${s.id}?category_id=${categoryId}`)}>
                 {s.image_url
                   ? <img src={s.image_url} alt="" />
-                  : <span style={{ fontSize: 28 }}>🧩</span>}
+                  : s.content
+                    ? <span style={{ fontSize: 11, lineHeight: 1.25, padding: 6, textAlign: 'center', overflow: 'hidden' }}>
+                        {s.content.split('\n')[0].slice(0, 55)}
+                      </span>
+                    : <span style={{ fontSize: 28 }}>🧩</span>}
                 <span className="gh-skill-thumb-num">{i + 1}</span>
               </div>
             ))}

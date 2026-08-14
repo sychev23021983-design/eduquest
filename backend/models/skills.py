@@ -8,6 +8,7 @@ class SkillCategoryIn(BaseModel):
 
 class SkillIn(BaseModel):
     category_id: int
+    content: Optional[str] = None
     image_url: Optional[str] = None
     hint1: Optional[str] = None
     hint2: Optional[str] = None

@@ -13,11 +13,18 @@ export function SkillTaskView({ skill }) {
 
   return (
     <div className="gh-skill-task">
-      <div className="gh-skill-task-img-box">
-        {skill.image_url
-          ? <img src={skill.image_url} alt="Задание" />
-          : <div className="gh-empty">Картинка ещё не загружена 🖼️</div>}
-      </div>
+      {skill.content && (
+        <div className="gh-skill-hint-box" style={{ marginBottom: 14, whiteSpace: 'pre-wrap' }}>
+          <span className="gh-skill-hint-label">🧩 Задание</span>
+          <p>{skill.content}</p>
+        </div>
+      )}
+      {skill.image_url && (
+        <div className="gh-skill-task-img-box">
+          <img src={skill.image_url} alt="Задание" />
+        </div>
+      )}
+      {!skill.content && !skill.image_url && <div className="gh-empty">Задание ещё не добавлено 🧩</div>}
 
       {hints.length > 0 && (
         <div className="gh-skill-hints">

@@ -396,6 +396,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS skills (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             category_id  INTEGER NOT NULL,
+            content      TEXT,
             image_url    TEXT,
             hint1        TEXT,
             hint2        TEXT,
@@ -414,6 +415,7 @@ def init_db():
     migrate_add_column(conn, "articles", "cover_image", "TEXT")
     migrate_add_column(conn, "articles", "manually_edited", "INTEGER DEFAULT 0")
     migrate_add_column(conn, "skills", "answer", "TEXT")
+    migrate_add_column(conn, "skills", "content", "TEXT")
     seed_curriculum_if_empty(conn, 5, "math", MATH_5_CURRICULUM)
     seed_curriculum_if_empty(conn, 5, "russian", RUSSIAN_5_CURRICULUM)
     seed_section_intro_if_missing(conn, 5, "russian", "Повторение изученного в начальных классах", SECTION_INTRO_RU_REVIEW)

@@ -26,7 +26,7 @@ export default function SkillEditor() {
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
 
-  const [form, setForm] = useState({ category_id: '', hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
+  const [form, setForm] = useState({ category_id: '', content: '', hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [uploadingSlot, setUploadingSlot] = useState(null)
@@ -62,7 +62,7 @@ export default function SkillEditor() {
     const [s, cats] = await Promise.all([api.skill(token, id), api.skillCategories(token)])
     setCategories(cats)
     setForm({
-      category_id: s.category_id, hint1: s.hint1 || '', hint2: s.hint2 || '', hint3: s.hint3 || '',
+      category_id: s.category_id, content: s.content || '', hint1: s.hint1 || '', hint2: s.hint2 || '', hint3: s.hint3 || '',
       answer: s.answer || '', image_url: s.image_url || '',
     })
   }
@@ -72,7 +72,7 @@ export default function SkillEditor() {
     setCategories(cats)
     const qsCategory = Number(searchParams.get('category_id'))
     const category_id = cats.some(c => c.id === qsCategory) ? qsCategory : (cats[0]?.id || '')
-    setForm({ category_id, hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
+    setForm({ category_id, content: '', hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
     setCreatedId(null)
     newSlotId.current = Math.random().toString(36).slice(2, 10)
   }
@@ -93,6 +93,7 @@ export default function SkillEditor() {
       if (effectiveId) {
         await api.updateSkill(token, effectiveId, {
           category_id: Number(form.category_id), image_url: newUrl,
+          content: form.content || null,
           hint1: form.hint1 || null, hint2: form.hint2 || null, hint3: form.hint3 || null,
           answer: form.answer || null,
         })
@@ -139,6 +140,7 @@ export default function SkillEditor() {
     try {
       const payload = {
         category_id: Number(form.category_id), image_url: form.image_url || null,
+        content: form.content || null,
         hint1: form.hint1 || null, hint2: form.hint2 || null, hint3: form.hint3 || null,
         answer: form.answer || null,
       }
@@ -157,7 +159,7 @@ export default function SkillEditor() {
 
   function createAnother() {
     const category_id = form.category_id
-    setForm({ category_id, hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
+    setForm({ category_id, content: '', hint1: '', hint2: '', hint3: '', answer: '', image_url: '' })
     setCreatedId(null)
     newSlotId.current = Math.random().toString(36).slice(2, 10)
     setMsg('')
@@ -266,7 +268,7 @@ export default function SkillEditor() {
                                 : <span style={{ color: 'var(--muted)', fontSize: 10 }}>нет</span>}
                             </div>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 500 }}>Задание #{s.id}</div>
+                              <div style={{ fontWeight: 500 }}>{s.content?.split('\n')[0] || `Задание #${s.id}`}</div>
                               <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
                                 Подсказок: {[s.hint1, s.hint2, s.hint3].filter(Boolean).length} / 3
                                 {' · '}Ответ: {s.answer ? 'есть' : 'нет'}
@@ -329,6 +331,14 @@ export default function SkillEditor() {
 
         {mode !== 'list' && (
           <>
+            <div className="card" style={{ marginBottom: 20 }}>
+              <h3 style={{ fontWeight: 700, marginBottom: 6 }}>Текст задания</h3>
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
+                Условие, описание или текст для чтения. Оно показывается ребёнку перед подсказками.
+              </p>
+              <textarea className="input" rows={6} value={form.content} onChange={e => setF('content', e.target.value)} />
+            </div>
+
             <div className="card" style={{ marginBottom: 20 }}>
               <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Основное</h3>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Категория</label>
