@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Новый чат.md",
+                "file": "01_PROJECT.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Новый чат"
+              "title": "01_PROJECT"
             }
           }
         ]
@@ -190,6 +190,12 @@
   },
   "active": "0488a957f27a164b",
   "lastOpenFiles": [
+    "00_INDEX.md",
+    "01_PROJECT.md",
+    "02_CURRENT_STATUS.md",
+    "03_ROADMAP.md",
+    "04_CHAT_PROMPTS.md",
+    "05_DECISIONS.md",
     "Новый чат.md"
   ]
 }

@@ -35,6 +35,8 @@ from content.russian_content import (
     SECTION_INTRO_RU_SYNTAX, LESSON_RU_WORD_COMBINATION, LESSON_RU_SENTENCE_TYPES, LESSON_RU_MAIN_MEMBERS,
     LESSON_RU_TSYA_TSJA, LESSON_RU_VERB_ENDINGS, LESSON_RU_SECONDARY_MEMBERS, LESSON_RU_HOMOGENEOUS,
     LESSON_RU_ADDRESS, LESSON_RU_COMPLEX_SENTENCE, LESSON_RU_DIRECT_SPEECH,
+    SECTION_INTRO_RU_TEXTS, LESSON_RU_TEXT_CONCEPT, LESSON_RU_TEXT_FEATURES, LESSON_RU_TEXT_COHESION,
+    LESSON_RU_TEXT_TYPES,
 )
 from content.academy_content import SECTION_INTRO_ACADEMY_LOGIC, LESSON_ACADEMY_RIVER_CROSSING
 
@@ -448,6 +450,11 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "russian", "Синтаксис и пунктуация", "§ 24. Обращение", LESSON_RU_ADDRESS)
     seed_lesson_if_missing(conn, 5, "russian", "Синтаксис и пунктуация", "§ 25. Строение сложного предложения", LESSON_RU_COMPLEX_SENTENCE)
     seed_lesson_if_missing(conn, 5, "russian", "Синтаксис и пунктуация", "§ 26. Предложения с прямой речью. Знаки препинания в предложениях с прямой речью", LESSON_RU_DIRECT_SPEECH)
+    seed_section_intro_if_missing(conn, 5, "russian", "Текст", SECTION_INTRO_RU_TEXTS)
+    seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 27. Понятие о тексте", LESSON_RU_TEXT_CONCEPT)
+    seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 28. Основные признаки текста", LESSON_RU_TEXT_FEATURES)
+    seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 29. Виды связи предложений в тексте", LESSON_RU_TEXT_COHESION)
+    seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 30. Как строится текст. Повествование, описание, рассуждение", LESSON_RU_TEXT_TYPES)
     seed_section_intro_if_missing(conn, 5, "math", "Натуральные числа", SECTION_INTRO_NATURAL_NUMBERS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Цифры и натуральные числа", LESSON_NATURAL_DIGITS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Сравнение натуральных чисел", LESSON_NATURAL_COMPARE)
