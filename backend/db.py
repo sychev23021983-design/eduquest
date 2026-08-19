@@ -37,6 +37,16 @@ from content.russian_content import (
     LESSON_RU_ADDRESS, LESSON_RU_COMPLEX_SENTENCE, LESSON_RU_DIRECT_SPEECH,
     SECTION_INTRO_RU_TEXTS, LESSON_RU_TEXT_CONCEPT, LESSON_RU_TEXT_FEATURES, LESSON_RU_TEXT_COHESION,
     LESSON_RU_TEXT_TYPES,
+    SECTION_INTRO_RU_ORTHOGRAPHY, LESSON_RU_UNSTRESSED_VOWEL_ROOT, LESSON_RU_CONSONANT_ROOT,
+    LESSON_RU_UNSTRESSED_VOWEL_ENDING, LESSON_RU_PREFIX_SPELLING, LESSON_RU_PREFIX_Z_S,
+    LESSON_RU_Y_I_AFTER_PREFIX, LESSON_RU_O_YO_HISSING_ROOT, LESSON_RU_O_YO_HISSING_ENDING,
+    LESSON_RU_O_YO_HISSING_SUFFIX, LESSON_RU_ROOT_GOR_GAR, LESSON_RU_ROOT_LAG_LOZH,
+    LESSON_RU_ROOT_KOS_KAS, LESSON_RU_ROOT_BER_BIR, LESSON_RU_I_Y_AFTER_TS,
+    LESSON_RU_SOFT_SIGN_HISSING,
+    SECTION_INTRO_RU_LEXICON, LESSON_RU_WORD_MEANING, LESSON_RU_MONOSEMY_POLYSEMY,
+    LESSON_RU_SYNONYMS, LESSON_RU_ANTONYMS, LESSON_RU_NATIVE_BORROWED,
+    LESSON_RU_COMMON_PROFESSIONAL, LESSON_RU_ARCHAISMS_NEOLOGISMS, LESSON_RU_PHRASEOLOGY,
+    SECTION_INTRO_RU_FINAL_REVIEW, LESSON_RU_FINAL_REVIEW,
 )
 from content.academy_content import SECTION_INTRO_ACADEMY_LOGIC, LESSON_ACADEMY_RIVER_CROSSING
 
@@ -455,6 +465,34 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 28. Основные признаки текста", LESSON_RU_TEXT_FEATURES)
     seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 29. Виды связи предложений в тексте", LESSON_RU_TEXT_COHESION)
     seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 30. Как строится текст. Повествование, описание, рассуждение", LESSON_RU_TEXT_TYPES)
+    seed_section_intro_if_missing(conn, 5, "russian", "Орфография", SECTION_INTRO_RU_ORTHOGRAPHY)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 3. Правописание безударных гласных в корне слова", LESSON_RU_UNSTRESSED_VOWEL_ROOT)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 4. Правописание согласных в корне слова", LESSON_RU_CONSONANT_ROOT)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 5. Правописание безударных гласных в окончании", LESSON_RU_UNSTRESSED_VOWEL_ENDING)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 6. Правописание гласных и согласных в приставках", LESSON_RU_PREFIX_SPELLING)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 7. Правописание букв з и с на конце приставок", LESSON_RU_PREFIX_Z_S)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 8. Правописание ы, и после приставок на согласный", LESSON_RU_Y_I_AFTER_PREFIX)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 9. Правописание о, ё после шипящих в корне слова", LESSON_RU_O_YO_HISSING_ROOT)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 10. Правописание о, ё после шипящих и ц в окончаниях имён существительных и имён прилагательных", LESSON_RU_O_YO_HISSING_ENDING)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 11. Правописание о, ё после шипящих и ц в суффиксах имён существительных и имён прилагательных", LESSON_RU_O_YO_HISSING_SUFFIX)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 12. Правописание гласных о, а в корнях с чередованием -гор-//-гар-, -зор-//-зар-, -клон-//-клан-", LESSON_RU_ROOT_GOR_GAR)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 13. Правописание гласных о, а в корнях с чередованием -лаг-//-лож-, -раст- (-ращ-)//-рос-", LESSON_RU_ROOT_LAG_LOZH)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 14. Правописание гласных о, а в корнях с чередованием -кос-//-кас-", LESSON_RU_ROOT_KOS_KAS)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 15. Правописание корней с чередованием гласных е, и", LESSON_RU_ROOT_BER_BIR)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 16. Правописание и, ы после ц", LESSON_RU_I_Y_AFTER_TS)
+    seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 17. Правописание буквы ь после шипящих", LESSON_RU_SOFT_SIGN_HISSING)
+    seed_section_intro_if_missing(conn, 5, "russian", "Лексика", SECTION_INTRO_RU_LEXICON)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 18. Слово и его лексическое значение. Прямое и переносное значения слова", LESSON_RU_WORD_MEANING)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 19. Однозначные и многозначные слова", LESSON_RU_MONOSEMY_POLYSEMY)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 20. Синонимы", LESSON_RU_SYNONYMS)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 21. Антонимы", LESSON_RU_ANTONYMS)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 22. Исконно русские и заимствованные слова", LESSON_RU_NATIVE_BORROWED)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 23. Общеупотребительные слова. Профессиональные слова и термины", LESSON_RU_COMMON_PROFESSIONAL)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 24. Устаревшие слова. Неологизмы", LESSON_RU_ARCHAISMS_NEOLOGISMS)
+    seed_lesson_if_missing(conn, 5, "russian", "Лексика", "§ 25. Фразеологические обороты, их отличие от свободных словосочетаний", LESSON_RU_PHRASEOLOGY)
+    seed_topic_if_missing(conn, 5, "russian", "Повторение изученного в 5-м классе", "Итоговое повторение")
+    seed_section_intro_if_missing(conn, 5, "russian", "Повторение изученного в 5-м классе", SECTION_INTRO_RU_FINAL_REVIEW)
+    seed_lesson_if_missing(conn, 5, "russian", "Повторение изученного в 5-м классе", "Итоговое повторение", LESSON_RU_FINAL_REVIEW)
     seed_section_intro_if_missing(conn, 5, "math", "Натуральные числа", SECTION_INTRO_NATURAL_NUMBERS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Цифры и натуральные числа", LESSON_NATURAL_DIGITS)
     seed_lesson_if_missing(conn, 5, "math", "Натуральные числа", "Сравнение натуральных чисел", LESSON_NATURAL_COMPARE)
