@@ -37,6 +37,8 @@ from content.russian_content import (
     LESSON_RU_ADDRESS, LESSON_RU_COMPLEX_SENTENCE, LESSON_RU_DIRECT_SPEECH,
     SECTION_INTRO_RU_TEXTS, LESSON_RU_TEXT_CONCEPT, LESSON_RU_TEXT_FEATURES, LESSON_RU_TEXT_COHESION,
     LESSON_RU_TEXT_TYPES,
+    SECTION_INTRO_RU_PHONETICS_1, LESSON_RU_SOUNDS_LETTERS, LESSON_RU_VOWELS_CONSONANTS,
+    SECTION_INTRO_RU_PHONETICS_2, LESSON_RU_SOFT_CONSONANT_MARKING, LESSON_RU_SYLLABLE_STRESS,
     SECTION_INTRO_RU_ORTHOGRAPHY, LESSON_RU_UNSTRESSED_VOWEL_ROOT, LESSON_RU_CONSONANT_ROOT,
     LESSON_RU_UNSTRESSED_VOWEL_ENDING, LESSON_RU_PREFIX_SPELLING, LESSON_RU_PREFIX_Z_S,
     LESSON_RU_Y_I_AFTER_PREFIX, LESSON_RU_O_YO_HISSING_ROOT, LESSON_RU_O_YO_HISSING_ENDING,
@@ -465,6 +467,12 @@ def init_db():
     seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 28. Основные признаки текста", LESSON_RU_TEXT_FEATURES)
     seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 29. Виды связи предложений в тексте", LESSON_RU_TEXT_COHESION)
     seed_lesson_if_missing(conn, 5, "russian", "Текст", "§ 30. Как строится текст. Повествование, описание, рассуждение", LESSON_RU_TEXT_TYPES)
+    seed_section_intro_if_missing(conn, 5, "russian", "Фонетика", SECTION_INTRO_RU_PHONETICS_1)
+    seed_lesson_if_missing(conn, 5, "russian", "Фонетика", "§ 31. Звуки речи и буквы", LESSON_RU_SOUNDS_LETTERS)
+    seed_lesson_if_missing(conn, 5, "russian", "Фонетика", "§ 32. Гласные и согласные звуки речи", LESSON_RU_VOWELS_CONSONANTS)
+    seed_section_intro_if_missing(conn, 5, "russian", "Фонетика (продолжение)", SECTION_INTRO_RU_PHONETICS_2)
+    seed_lesson_if_missing(conn, 5, "russian", "Фонетика (продолжение)", "§ 1. Обозначение мягкости согласных на письме. Двойная роль букв е, ё, ю, я", LESSON_RU_SOFT_CONSONANT_MARKING)
+    seed_lesson_if_missing(conn, 5, "russian", "Фонетика (продолжение)", "§ 2. Слог. Правила переноса слов. Ударение", LESSON_RU_SYLLABLE_STRESS)
     seed_section_intro_if_missing(conn, 5, "russian", "Орфография", SECTION_INTRO_RU_ORTHOGRAPHY)
     seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 3. Правописание безударных гласных в корне слова", LESSON_RU_UNSTRESSED_VOWEL_ROOT)
     seed_lesson_if_missing(conn, 5, "russian", "Орфография", "§ 4. Правописание согласных в корне слова", LESSON_RU_CONSONANT_ROOT)
