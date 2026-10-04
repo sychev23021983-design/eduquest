@@ -8,7 +8,7 @@ stored in `assets/skill-images/skill-ID.png` and must be visually reviewed befor
 attachment. Unknown answers, colors, order and relationships must remain unknown
 in the illustration. Rejected variants are retained outside the Git asset set.
 
-The first reviewed set is IDs 12–20. Generation of the remaining tasks is pending.
+Reviewed sets: IDs 12–40 (29 task images). Generation and QA of the remaining 238 tasks are pending.
 
 ## Local installation
 
