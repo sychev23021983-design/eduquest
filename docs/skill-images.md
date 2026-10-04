@@ -8,7 +8,7 @@ stored in `assets/skill-images/skill-ID.png` and must be visually reviewed befor
 attachment. Unknown answers, colors, order and relationships must remain unknown
 in the illustration. The knowledge block uses topic headings and scenes; its existing factual paragraphs remain in the application rather than being duplicated in the image. This release does not constitute a factual audit of those paragraphs. Rejected variants are retained outside the Git asset set.
 
-Reviewed sets: IDs 12–247 (236 task images). Generation and QA of the remaining 31 tasks are pending.
+Reviewed set: all IDs 12–278 (267 task images). All images have passed visual QA. Together with the 11 original logic images, all 278 active tasks have illustrations.
 
 ## Local installation
 
