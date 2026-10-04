@@ -6,9 +6,9 @@ URLs and prompts. Images are generated separately with built-in ImageGen, using
 the existing illustrated logic cards as a style reference. Each final image is
 stored in `assets/skill-images/skill-ID.png` and must be visually reviewed before
 attachment. Unknown answers, colors, order and relationships must remain unknown
-in the illustration. Rejected variants are retained outside the Git asset set.
+in the illustration. The knowledge block uses topic headings and scenes; its existing factual paragraphs remain in the application rather than being duplicated in the image. This release does not constitute a factual audit of those paragraphs. Rejected variants are retained outside the Git asset set.
 
-Reviewed sets: IDs 12–69 (58 task images). Generation and QA of the remaining 209 tasks are pending.
+Reviewed sets: IDs 12–101 (90 task images). Generation and QA of the remaining 177 tasks are pending.
 
 ## Local installation
 
